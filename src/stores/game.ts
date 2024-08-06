@@ -1,6 +1,5 @@
-import Phaser from 'phaser';
 import { defineStore } from 'pinia';
-import Dungeon from 'src/utils/dungeonGenerator';
+// import Dungeon from 'src/utils/dungeonGenerator';
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -19,7 +18,7 @@ export const useGameStore = defineStore('game', {
     },
 
     setLevelContent() {
-      new Dungeon();
+      // new Dungeon();
     },
   },
 });
