@@ -1,47 +1,39 @@
 <template>
-  <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
-  </q-page>
+  <span style="display: none; height: 0px">Placeholder</span>
 </template>
 
 <script setup lang="ts">
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
-import { ref } from 'vue';
+'components/ExampleComponent.vue';
+import { onMounted } from 'vue';
 import { useGameStore } from 'src/stores/game';
+import * as Phaser from 'phaser';
+
+import Dungeon from '../scene/dungeon';
 
 const gameStore = useGameStore();
 
-gameStore.setLevelContent();
+// gameStore.setLevelContent();
 
-const todos = ref<Todo[]>([
-  {
-    id: 1,
-    content: 'ct1',
-  },
-  {
-    id: 2,
-    content: 'ct2',
-  },
-  {
-    id: 3,
-    content: 'ct3',
-  },
-  {
-    id: 4,
-    content: 'ct4',
-  },
-  {
-    id: 5,
-    content: 'ct5',
-  },
-]);
-const meta = ref<Meta>({
-  totalCount: 1200,
+onMounted(() => {
+  console.log('onMounted');
+
+  const eachWHeight = Math.floor(window.innerHeight / 9);
+
+  gameStore.game = new Phaser.Game({
+    type: Phaser.AUTO,
+    width: 16 * eachWHeight,
+    height: 9 * eachWHeight,
+    parent: 'q-app', // Specity the parent container of the game
+    scene: [Dungeon],
+    physics: {
+      default: 'arcade',
+      arcade: {
+        gravity: { y: 0, x: 0 },
+        // debug: false,
+      },
+    },
+  });
+
+  // if(gameStore.game.scene !== undefined){}
 });
 </script>
