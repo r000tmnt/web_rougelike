@@ -33,10 +33,21 @@ export default class Dungeon {
 
     this.map = Array(9).fill([]);
 
-    // Set the room as the starting point
-    const startFrom = Math.floor(Math.random() * this.map.length);
-    console.log(`room ${startFrom}`);
-    this.#setDoorDirections(startFrom);
+    this.#setRoom();
+  }
+
+  #setRoom(index = -1) {
+    let startFrom = 0;
+    if (index >= 0) {
+      startFrom = index;
+      console.log(`room ${startFrom}`);
+      this.#setDoorDirections(startFrom);
+    } else {
+      // Set the room as the starting point
+      startFrom = Math.floor(Math.random() * this.map.length);
+      console.log(`room ${startFrom}`);
+      this.#setDoorDirections(startFrom);
+    }
 
     // for (let i = 0; i < this.map.length; i++) {
     // Choose a width and height for the room / block
@@ -44,16 +55,6 @@ export default class Dungeon {
       this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
     const height =
       this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
-
-    // if (width > height) {
-    //   do {
-    //     this.tunnelSize = Math.floor(Math.random() * width);
-    //   } while (this.tunnelSize === 0);
-    // } else {
-    //   do {
-    //     this.tunnelSize = Math.floor(Math.random() * height);
-    //   } while (this.tunnelSize === 0);
-    // }
 
     this.tunnelSize = width + height;
 
@@ -70,7 +71,7 @@ export default class Dungeon {
       }
     }
 
-    console.log('map before dig tunnels :>>>', this.map[startFrom]);
+    // console.log('map before dig tunnels :>>>', this.map[startFrom]);
 
     this.#digTunnels(this.map[startFrom], width, height);
   }
@@ -155,33 +156,38 @@ export default class Dungeon {
         } else {
           // console.log(`Digging room ${startFrom}`);
           // Change the value on the map
-          room[row][col] = 0;
-          // Wider the tunnel
-          for (let i = 0; i < radomWidth; i++) {
-            if (randomDirection[1] === 0) {
-              // Horizontal
-              if (col - i > 0) {
-                room[row][col - i] = 0;
-              } else if (col + i < width - 1) {
-                room[row][col + i] = 0;
-              }
-            } else if (randomDirection[0] === 0) {
-              // Vetical
-              if (row - i > 0) {
-                room[row - i][col] = 0;
-              } else if (row + i < width - 1) {
-                room[row + i][col] = 0;
+          if (room[row] !== undefined) {
+            room[row][col] = 0;
+
+            // Wider the tunnel
+            for (let i = 0; i < radomWidth; i++) {
+              if (randomDirection[1] === 0) {
+                // Horizontal
+                if (col - i > 0) {
+                  room[row][col - i] = 0;
+                } else if (col + i < width - 1) {
+                  room[row][col + i] = 0;
+                }
+              } else if (randomDirection[0] === 0) {
+                // Vetical
+                if (row - i > 0) {
+                  room[row - i][col] = 0;
+                } else if (row + i < width - 1) {
+                  room[row + i][col] = 0;
+                }
               }
             }
+
+            // Step to the next direction
+            row += randomDirection[0];
+            col += randomDirection[1];
+
+            console.log(`Next position row: ${row} col: ${col}`);
+
+            randomLength--;
+          } else {
+            break;
           }
-
-          // Step to the next direction
-          row += randomDirection[0];
-          col += randomDirection[1];
-
-          console.log(`Next position row: ${row} col: ${col}`);
-
-          randomLength--;
         }
       }
 
@@ -244,11 +250,34 @@ export default class Dungeon {
           break;
         case 'right':
           {
-            const row = Math.floor(Math.random() * unWalkables.length);
-            const col = unWalkables[row].length - 1;
-            // Check if is in a corner or a corridor
-            console.log('set door right');
-            room[row][col] = 2;
+            let doorRow = 0;
+            let doorCol = 0;
+            let done = false;
+
+            const placeDoor = () => {
+              do {
+                doorRow = Math.floor(Math.random() * unWalkables.length);
+              } while (doorRow === 0 || doorRow === height - 1);
+
+              doorCol =
+                unWalkables[doorRow][unWalkables[doorRow].length - 1][1];
+              // Check if is in a corner or a corridor
+              console.log('set door right');
+              room[doorRow][doorCol] = 2;
+            };
+
+            do {
+              placeDoor();
+
+              if (
+                room[doorRow - 1][doorCol] !== 1 ||
+                room[doorRow + 1][doorCol] !== 1
+              ) {
+                room[doorRow][doorCol] = 1;
+              } else {
+                done = true;
+              }
+            } while (!done);
           }
           break;
         case 'down':
@@ -267,10 +296,42 @@ export default class Dungeon {
           break;
         case 'left':
           {
-            const row = Math.floor(Math.random() * unWalkables.length);
-            // Check if is in a corner or a corridor
-            console.log('set door left');
-            room[row][0] = 2;
+            let doorRow = 0;
+            let doorCol = 0;
+            let done = false;
+
+            const placeDoor = () => {
+              do {
+                doorRow = Math.floor(Math.random() * unWalkables.length);
+              } while (doorRow === 0 || doorRow === height - 1);
+              // Check if is in a corner or a corridor
+
+              do {
+                doorCol = Math.floor(
+                  Math.random() * unWalkables[doorRow].length
+                );
+              } while (
+                room[doorRow][doorCol + 1] === 1 ||
+                room[doorRow][doorCol - 1] === 0 ||
+                room[doorRow - 1][doorCol] === 0 ||
+                room[doorRow + 1][doorCol] === 0
+              );
+
+              console.log('set door left');
+              room[doorRow][doorCol] = 2;
+            };
+
+            // Check if the door is stick with the wall
+            do {
+              placeDoor();
+
+              if (room[doorRow - 1][0] !== 1 || room[doorRow + 1][0] !== 1) {
+                //Check if the door is facing the floor
+                if (room[doorRow][1]) room[doorRow][0] = 1;
+              } else {
+                done = true;
+              }
+            } while (!done);
           }
           break;
       }
