@@ -1,5 +1,5 @@
-export default class Dungeon {
-  //   scene: Phaser.Scene;
+export default class DungeonGenerator {
+  scene: Phaser.Scene;
   roomSize: number[]; // Possible numbers for size
   tileSize: number;
   map: number[][][];
@@ -9,9 +9,9 @@ export default class Dungeon {
   tunnelWidth: number[];
   doorDirection: string[];
 
-  //   constructor(scene: Phaser.Scene) {
-  constructor() {
-    // this.scene = scene;
+  constructor(scene: Phaser.Scene) {
+    // constructor() {
+    this.scene = scene;
     this.roomSize = [9, 12, 16, 18, 25, 32];
     this.tunnelSize = 0;
     this.tunnelWidth = [2, 3];
