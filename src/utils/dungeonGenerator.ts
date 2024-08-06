@@ -229,8 +229,6 @@ export default class Dungeon {
     this.doorDirection.forEach((d) => {
       switch (d) {
         case 'up':
-          // let upRow = -1;
-          // let upCol = -1;
           // Find the nearist tiles on the up direction
           for (let i = 0; i < unWalkables.length; i++) {
             const row = unWalkables[i];
@@ -238,27 +236,42 @@ export default class Dungeon {
             if (row.length) {
               // const row = rows[i][0];
               const col = row[Math.floor(row.length / 2)];
+              console.log('set door up');
               room[col[0]][col[1]] = 2;
               break;
             }
-            // upCol = rows[i].findIndex((col) => col === 0);
-
-            // if (upCol >= 0 && i > 0) {
-            //   upRow = i;
-            //   break;
-            // }
           }
-
-          //Check all the direction around the tile
-          // if (this.map[upRow - 1][upCol][0] === 1) {
-          // }
-
           break;
         case 'right':
+          {
+            const row = Math.floor(Math.random() * unWalkables.length);
+            const col = unWalkables[row].length - 1;
+            // Check if is in a corner or a corridor
+            console.log('set door right');
+            room[row][col] = 2;
+          }
           break;
         case 'down':
+          // Find the nearist tiles on the down direction
+          for (let i = unWalkables.length - 1; i >= 0; i--) {
+            const row = unWalkables[i];
+            console.log('row :>>>', row);
+            if (row.length) {
+              // const row = rows[i][0];
+              const col = row[Math.floor(row.length / 2)];
+              console.log('set door down');
+              room[col[0]][col[1]] = 2;
+              break;
+            }
+          }
           break;
         case 'left':
+          {
+            const row = Math.floor(Math.random() * unWalkables.length);
+            // Check if is in a corner or a corridor
+            console.log('set door left');
+            room[row][0] = 2;
+          }
           break;
       }
     });
