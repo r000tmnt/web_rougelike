@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
+import { useGameStore } from 'src/stores/game';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
@@ -32,6 +33,10 @@ export default class Dungeon extends Scene {
   }
 
   create() {
+    const gameStore = useGameStore();
+    const windowWidth = gameStore.getWindowWidth;
+    const windowHeight = gameStore.getWindowHeight;
+
     // Generate tileMap
     if (this.content !== null) {
       const room = this.content.level.find((room) => room.length);
@@ -60,13 +65,49 @@ export default class Dungeon extends Scene {
         console.log('groundLayer :>>>', this.groundLayer);
         // console.log('stuffLayer :>>>', this.stuffLayer);
 
+        // Initialize the camera and limit the movement based on the size of the tileMap
+
+        const limitWidth: number = room[0].length * 48;
+        const limitHeight: number = room.length * 48;
+
+        // Limit camera movement based on the size of the tileMap
         this.camera = this.cameras.main.setBounds(
           0,
           0,
-          room[0].length * 48,
-          room.length * 48
+          limitWidth,
+          limitHeight
         );
 
+        console.log('windowWidth :>>>', windowWidth);
+        console.log('limitWidth :>>>', limitWidth);
+        console.log('windowHeight :>>>', windowHeight);
+        console.log('limitHeight :>>>', limitHeight);
+
+        // If the map is smaller then the window, move the layer position
+        if (limitWidth < windowWidth || limitHeight < windowHeight) {
+          const offSetX =
+            limitWidth < windowWidth
+              ? (windowWidth - limitWidth) / 2
+              : (limitWidth - windowWidth) / 2;
+
+          const offSetY =
+            limitHeight < windowHeight
+              ? (windowHeight - limitHeight) / 2
+              : (limitHeight - windowHeight) / 2;
+
+          this.groundLayer?.setPosition(offSetX, offSetY);
+          // this.camera.scrollX = -windowWidth / 2;
+          // this.camera.scrollY = -windowHeight / 2;
+
+          this.camera = this.cameras.main.setBounds(
+            0,
+            0,
+            limitWidth + offSetX,
+            limitHeight + offSetY
+          );
+        }
+
+        // Listen to the mouse event
         this.input.on('pointermove', (pointer: any) => {
           if (pointer.isDown) {
             if (this.camera !== null) {
