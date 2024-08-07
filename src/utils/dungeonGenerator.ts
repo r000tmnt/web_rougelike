@@ -254,13 +254,12 @@ export default class DungeonGenerator {
             let done = false;
 
             const placeDoor = () => {
-              do {
-                doorRow = Math.floor(Math.random() * unWalkables.length);
-              } while (doorRow === 0 || doorRow === height - 1);
+              const tempRow = Math.floor(Math.random() * unWalkables.length);
 
-              if (unWalkables[doorRow].length) {
+              if (unWalkables[tempRow].length) {
+                doorRow = unWalkables[tempRow][0][0];
                 doorCol =
-                  unWalkables[doorRow][unWalkables[doorRow].length - 1][1];
+                  unWalkables[tempRow][unWalkables[tempRow].length - 1][1];
                 // Check if is in a corner or a corridor
                 console.log('set door right');
                 room[doorRow][doorCol] = 2;
@@ -271,8 +270,11 @@ export default class DungeonGenerator {
               placeDoor();
 
               if (
+                doorRow === 0 ||
+                doorRow === height - 1 ||
                 room[doorRow - 1][doorCol] !== 1 ||
-                room[doorRow + 1][doorCol] !== 1
+                room[doorRow + 1][doorCol] !== 1 ||
+                room[doorRow][doorCol - 1] !== 0
               ) {
                 room[doorRow][doorCol] = 1;
               } else {
@@ -302,33 +304,31 @@ export default class DungeonGenerator {
             let done = false;
 
             const placeDoor = () => {
-              do {
-                doorRow = Math.floor(Math.random() * unWalkables.length);
-              } while (doorRow === 0 || doorRow === height - 1);
+              const tempRow = Math.floor(Math.random() * unWalkables.length);
               // Check if is in a corner or a corridor
 
-              do {
-                doorCol = Math.floor(
-                  Math.random() * unWalkables[doorRow].length
-                );
-              } while (
-                room[doorRow][doorCol + 1] === 1 ||
-                room[doorRow][doorCol - 1] === 0 ||
-                room[doorRow - 1][doorCol] === 0 ||
-                room[doorRow + 1][doorCol] === 0
-              );
+              if (unWalkables[tempRow].length) {
+                doorRow = unWalkables[tempRow][0][0];
+                doorCol = unWalkables[tempRow][0][1];
 
-              console.log('set door left');
-              room[doorRow][doorCol] = 2;
+                console.log('set door left');
+                room[doorRow][doorCol] = 2;
+              }
             };
 
             // Check if the door is stick with the wall
             do {
               placeDoor();
 
-              if (room[doorRow - 1][0] !== 1 || room[doorRow + 1][0] !== 1) {
+              if (
+                doorRow === 0 ||
+                doorRow === height - 1 ||
+                room[doorRow - 1][doorCol] !== 1 ||
+                room[doorRow + 1][doorCol] !== 1 ||
+                room[doorRow][doorCol + 1] !== 0
+              ) {
                 //Check if the door is facing the floor
-                if (room[doorRow][1]) room[doorRow][0] = 1;
+                if (room[doorRow][doorCol] === 0) room[doorRow][0] = 1;
               } else {
                 done = true;
               }
