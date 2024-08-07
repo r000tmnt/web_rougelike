@@ -1,7 +1,8 @@
+import { mapBorder } from 'src/model/dungeon';
+
 export default class DungeonGenerator {
   scene: Phaser.Scene;
   roomSize: number[]; // Possible numbers for size
-  tileSize: number;
   level: number[][][];
   tunnelSize: number;
   directions: number[][];
@@ -22,7 +23,6 @@ export default class DungeonGenerator {
       [0, -1],
     ]; // top, right, down, left
     this.lastDirection = [];
-    this.tileSize = 48;
     this.level = [];
     this.doorDirection = [];
     this.init();
@@ -209,10 +209,13 @@ export default class DungeonGenerator {
     // }
 
     // Get all the tiles around the floor
-    const unWalkables: number[][][] = [];
+    const unWalkables: mapBorder[] = [];
 
     for (let i = 0; i < room.length; i++) {
-      unWalkables[i] = [];
+      unWalkables[i] = {
+        row: i,
+        cols: [],
+      };
       for (let j = 0; j < room[i].length; j++) {
         if (room[i][j] === 1) {
           // Check if the tile is next to the floor
@@ -222,11 +225,18 @@ export default class DungeonGenerator {
             (i + 1 <= height - 1 && room[i + 1][j] === 0) ||
             (j - 1 >= 0 && room[i][j - 1] === 0)
           ) {
-            unWalkables[i].push([i, j]);
+            unWalkables[i].cols.push(j);
           }
         }
       }
     }
+
+    // Remove empty array
+    unWalkables.forEach((row, index) => {
+      if (!row.cols.length) {
+        unWalkables.splice(index, 1);
+      }
+    });
 
     console.log('unWalkables :>>>', unWalkables);
 
@@ -237,14 +247,11 @@ export default class DungeonGenerator {
           // Find the nearist tiles on the up direction
           for (let i = 0; i < unWalkables.length; i++) {
             const row = unWalkables[i];
-            console.log('row :>>>', row);
-            if (row.length) {
-              // const row = rows[i][0];
-              const col = row[Math.floor(row.length / 2)];
-              console.log('set door up');
-              room[col[0]][col[1]] = 2;
-              break;
-            }
+            console.log('row :>>>', row.row);
+            const col = row.cols[Math.floor(row.cols.length / 2)];
+            console.log('set door up');
+            room[row.row][col] = 2;
+            break;
           }
           break;
         case 'right':
@@ -256,14 +263,12 @@ export default class DungeonGenerator {
             const placeDoor = () => {
               const tempRow = Math.floor(Math.random() * unWalkables.length);
 
-              if (unWalkables[tempRow].length) {
-                doorRow = unWalkables[tempRow][0][0];
-                doorCol =
-                  unWalkables[tempRow][unWalkables[tempRow].length - 1][1];
-                // Check if is in a corner or a corridor
-                console.log('set door right');
-                room[doorRow][doorCol] = 2;
-              }
+              doorRow = unWalkables[tempRow].row;
+              doorCol =
+                unWalkables[tempRow].cols[unWalkables[tempRow].cols.length - 1];
+              // Check if is in a corner or a corridor
+              console.log('set door right');
+              room[doorRow][doorCol] = 2;
             };
 
             do {
@@ -287,14 +292,11 @@ export default class DungeonGenerator {
           // Find the nearist tiles on the down direction
           for (let i = unWalkables.length - 1; i >= 0; i--) {
             const row = unWalkables[i];
-            console.log('row :>>>', row);
-            if (row.length) {
-              // const row = rows[i][0];
-              const col = row[Math.floor(row.length / 2)];
-              console.log('set door down');
-              room[col[0]][col[1]] = 2;
-              break;
-            }
+            console.log('row :>>>', row.row);
+            const col = row.cols[Math.floor(row.cols.length / 2)];
+            console.log('set door down');
+            room[row.row][col] = 2;
+            break;
           }
           break;
         case 'left':
@@ -307,13 +309,11 @@ export default class DungeonGenerator {
               const tempRow = Math.floor(Math.random() * unWalkables.length);
               // Check if is in a corner or a corridor
 
-              if (unWalkables[tempRow].length) {
-                doorRow = unWalkables[tempRow][0][0];
-                doorCol = unWalkables[tempRow][0][1];
+              doorRow = unWalkables[tempRow].row;
+              doorCol = unWalkables[tempRow].cols[0];
 
-                console.log('set door left');
-                room[doorRow][doorCol] = 2;
-              }
+              console.log('set door left');
+              room[doorRow][doorCol] = 2;
             };
 
             // Check if the door is stick with the wall
