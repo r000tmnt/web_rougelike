@@ -60,25 +60,20 @@ export default class Dungeon extends Scene {
         console.log('groundLayer :>>>', this.groundLayer);
         // console.log('stuffLayer :>>>', this.stuffLayer);
 
-        this.camera = this.cameras.main;
-
-        let cameraDragStartX: number | undefined;
-        let cameraDragStartY: number | undefined;
-
-        this.input.on('pointerdown', () => {
-          cameraDragStartX = this.camera?.x;
-          cameraDragStartY = this.camera?.y;
-        });
+        this.camera = this.cameras.main.setBounds(
+          0,
+          0,
+          room[0].length * 48,
+          room.length * 48
+        );
 
         this.input.on('pointermove', (pointer: any) => {
           if (pointer.isDown) {
             if (this.camera !== null) {
-              this.camera.x = cameraDragStartX
-                ? cameraDragStartX
-                : 0 + (pointer.downX - pointer.x);
-              this.camera.y = cameraDragStartY
-                ? cameraDragStartY
-                : 0 + (pointer.downY - pointer.y);
+              this.camera.scrollX -=
+                (pointer.x - pointer.prevPosition.x) / this.camera.zoom;
+              this.camera.scrollY -=
+                (pointer.y - pointer.prevPosition.y) / this.camera.zoom;
             }
           }
         });
