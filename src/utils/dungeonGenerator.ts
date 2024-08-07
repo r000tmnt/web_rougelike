@@ -2,7 +2,7 @@ export default class DungeonGenerator {
   scene: Phaser.Scene;
   roomSize: number[]; // Possible numbers for size
   tileSize: number;
-  map: number[][][];
+  level: number[][][];
   tunnelSize: number;
   directions: number[][];
   lastDirection: number[];
@@ -23,7 +23,7 @@ export default class DungeonGenerator {
     ]; // top, right, down, left
     this.lastDirection = [];
     this.tileSize = 48;
-    this.map = [];
+    this.level = [];
     this.doorDirection = [];
     this.init();
   }
@@ -31,7 +31,7 @@ export default class DungeonGenerator {
   init() {
     console.log('room size :>>>', this.roomSize);
 
-    this.map = Array(9).fill([]);
+    this.level = Array(9).fill([]);
 
     this.#setRoom();
   }
@@ -44,12 +44,12 @@ export default class DungeonGenerator {
       this.#setDoorDirections(startFrom);
     } else {
       // Set the room as the starting point
-      startFrom = Math.floor(Math.random() * this.map.length);
+      startFrom = Math.floor(Math.random() * this.level.length);
       console.log(`room ${startFrom}`);
       this.#setDoorDirections(startFrom);
     }
 
-    // for (let i = 0; i < this.map.length; i++) {
+    // for (let i = 0; i < this.level.length; i++) {
     // Choose a width and height for the room / block
     const width =
       this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
@@ -64,16 +64,16 @@ export default class DungeonGenerator {
 
     for (let i = 0; i < height; i++) {
       console.log('row :>>>', i);
-      this.map[startFrom][i] = [];
-      for (let j = 0, row = this.map[startFrom][i]; j < width; j++) {
+      this.level[startFrom][i] = [];
+      for (let j = 0, row = this.level[startFrom][i]; j < width; j++) {
         // console.log('col :>>>', j);
         row.push(1);
       }
     }
 
-    // console.log('map before dig tunnels :>>>', this.map[startFrom]);
+    // console.log('map before dig tunnels :>>>', this.level[startFrom]);
 
-    this.#digTunnels(this.map[startFrom], width, height);
+    this.#digTunnels(this.level[startFrom], width, height);
   }
 
   #setDoorDirections(startFrom: number) {
@@ -109,7 +109,7 @@ export default class DungeonGenerator {
   }
 
   #digTunnels(room: number[][], width: number, height: number) {
-    // console.log('room :>>>', this.map[i]);
+    // console.log('room :>>>', this.level[i]);
 
     let randomDirection: number[] = [];
     let randomLength = 0;
@@ -208,7 +208,7 @@ export default class DungeonGenerator {
     //   room[i][width - 1] = 1
     // }
 
-    // Get all the tiles with value 1
+    // Get all the tiles around the floor
     const unWalkables: number[][][] = [];
 
     for (let i = 0; i < room.length; i++) {
@@ -216,13 +216,12 @@ export default class DungeonGenerator {
       for (let j = 0; j < room[i].length; j++) {
         if (room[i][j] === 1) {
           // Check if the tile is next to the floor
-          if (room[i - 1] !== undefined && room[i - 1][j] === 0) {
-            unWalkables[i].push([i, j]);
-          } else if (room[i][j + 1] !== undefined && room[i][j + 1] === 0) {
-            unWalkables[i].push([i, j]);
-          } else if (room[i + 1] !== undefined && room[i + 1][j] === 0) {
-            unWalkables[i].push([i, j]);
-          } else if (room[i][j - 1] !== undefined && room[i][j - 1] === 0) {
+          if (
+            (i - 1 >= 0 && room[i - 1][j] === 0) ||
+            (j + 1 <= width - 1 && room[i][j + 1] === 0) ||
+            (i + 1 <= height - 1 && room[i + 1][j] === 0) ||
+            (j - 1 >= 0 && room[i][j - 1] === 0)
+          ) {
             unWalkables[i].push([i, j]);
           }
         }
@@ -259,11 +258,13 @@ export default class DungeonGenerator {
                 doorRow = Math.floor(Math.random() * unWalkables.length);
               } while (doorRow === 0 || doorRow === height - 1);
 
-              doorCol =
-                unWalkables[doorRow][unWalkables[doorRow].length - 1][1];
-              // Check if is in a corner or a corridor
-              console.log('set door right');
-              room[doorRow][doorCol] = 2;
+              if (unWalkables[doorRow].length) {
+                doorCol =
+                  unWalkables[doorRow][unWalkables[doorRow].length - 1][1];
+                // Check if is in a corner or a corridor
+                console.log('set door right');
+                room[doorRow][doorCol] = 2;
+              }
             };
 
             do {
@@ -338,7 +339,7 @@ export default class DungeonGenerator {
     });
     // }
 
-    // console.log('map :>>>', this.map);
+    // console.log('map :>>>', this.level);
     let rowString = '';
     for (let i = 0; i < room.length; i++) {
       // console.log('row :>>>', room[i]);
