@@ -24,6 +24,7 @@ onMounted(() => {
     width: 16 * eachWHeight,
     height: 9 * eachWHeight,
     parent: 'q-app', // Specity the parent container of the game
+    pixelArt: true,
     scene: [Dungeon],
     physics: {
       default: 'arcade',
