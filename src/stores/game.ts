@@ -6,10 +6,14 @@ export const useGameStore = defineStore('game', {
     game: {},
     player: {},
     level: {},
+    windowWidth: 0,
+    windowHeight: 0,
   }),
 
   getters: {
     getGameContent: (state) => state.game,
+    getWindowWidth: (state) => state.windowWidth,
+    getWindowHeight: (state) => state.windowHeight,
   },
 
   actions: {
