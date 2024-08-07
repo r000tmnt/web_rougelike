@@ -8,12 +8,14 @@ export const useGameStore = defineStore('game', {
     level: {},
     windowWidth: 0,
     windowHeight: 0,
+    tileSize: 48,
   }),
 
   getters: {
     getGameContent: (state) => state.game,
     getWindowWidth: (state) => state.windowWidth,
     getWindowHeight: (state) => state.windowHeight,
+    getTileSize: (state) => state.tileSize,
   },
 
   actions: {
