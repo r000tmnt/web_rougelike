@@ -18,11 +18,13 @@ onMounted(() => {
   console.log('onMounted');
 
   const eachWHeight = Math.floor(window.innerHeight / 9);
+  gameStore.windowWidth = 16 * eachWHeight;
+  gameStore.windowHeight = 9 * eachWHeight;
 
   gameStore.game = new Phaser.Game({
     type: Phaser.AUTO,
-    width: 16 * eachWHeight,
-    height: 9 * eachWHeight,
+    width: gameStore.getWindowWidth,
+    height: gameStore.getWindowHeight,
     parent: 'q-app', // Specity the parent container of the game
     pixelArt: true,
     scene: [Dungeon],
