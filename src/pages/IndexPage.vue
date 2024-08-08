@@ -3,10 +3,10 @@
 </template>
 
 <script setup lang="ts">
-'components/ExampleComponent.vue';
 import { onMounted } from 'vue';
 import { useGameStore } from 'src/stores/game';
 import * as Phaser from 'phaser';
+import { GridEngine } from 'grid-engine';
 
 import Dungeon from '../scene/dungeon';
 
@@ -35,8 +35,17 @@ onMounted(() => {
         // debug: false,
       },
     },
+    plugins: {
+      scene: [
+        {
+          key: 'gridEngine',
+          plugin: GridEngine,
+          mapping: 'gridEngine',
+        },
+      ],
+    },
   });
 
-  // if(gameStore.game.scene !== undefined){}
+  console.log('game :>>>', gameStore.game);
 });
 </script>
