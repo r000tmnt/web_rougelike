@@ -10,6 +10,8 @@ export default class Dungeon extends Scene {
   camera: Phaser.Cameras.Scene2D.Camera | null;
   player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | null;
   playerIdelCount: number;
+  offsetX: number;
+  offsetY: number;
 
   constructor() {
     super('Dungeon');
@@ -21,6 +23,8 @@ export default class Dungeon extends Scene {
     this.camera = null;
     this.player = null;
     this.playerIdelCount = 0;
+    this.offsetX = 0;
+    this.offsetY = 0;
   }
 
   setTheme(theme: string) {
@@ -78,14 +82,6 @@ export default class Dungeon extends Scene {
         const limitWidth: number = room[0].length * tileSize;
         const limitHeight: number = room.length * tileSize;
 
-        // Limit camera movement based on the size of the tileMap
-        this.camera = this.cameras.main.setBounds(
-          0,
-          0,
-          limitWidth,
-          limitHeight
-        );
-
         console.log('windowWidth :>>>', windowWidth);
         console.log('limitWidth :>>>', limitWidth);
         console.log('windowHeight :>>>', windowHeight);
@@ -93,25 +89,34 @@ export default class Dungeon extends Scene {
 
         // If the map is smaller then the window, move the layer position
         if (limitWidth < windowWidth || limitHeight < windowHeight) {
-          const offSetX =
+          this.offsetX =
             limitWidth < windowWidth
-              ? (windowWidth - limitWidth) / 2
-              : (limitWidth - windowWidth) / 2;
+              ? Math.floor((windowWidth - limitWidth) / 2)
+              : Math.floor((limitWidth - windowWidth) / 2);
 
-          const offSetY =
+          this.offsetY =
             limitHeight < windowHeight
-              ? (windowHeight - limitHeight) / 2
-              : (limitHeight - windowHeight) / 2;
+              ? Math.floor((windowHeight - limitHeight) / 2)
+              : Math.floor((limitHeight - windowHeight) / 2);
 
-          this.groundLayer?.setPosition(offSetX, offSetY);
-          // this.camera.scrollX = -windowWidth / 2;
-          // this.camera.scrollY = -windowHeight / 2;
+          this.groundLayer?.setPosition(this.offsetX, this.offsetY);
+
+          console.log('off set x :>>>', this.offsetX);
+          console.log('off set y :>>>', this.offsetY);
 
           this.camera = this.cameras.main.setBounds(
             0,
             0,
-            limitWidth + offSetX,
-            limitHeight + offSetY
+            limitWidth + this.offsetX,
+            limitHeight + this.offsetY
+          );
+        } else {
+          // Limit camera movement based on the size of the tileMap
+          this.camera = this.cameras.main.setBounds(
+            0,
+            0,
+            limitWidth,
+            limitHeight
           );
         }
 
@@ -133,11 +138,17 @@ export default class Dungeon extends Scene {
         );
 
         // Set up player
+        const playerX = this.content.startingPoint[1] * tileSize;
+        const playerY = this.content.startingPoint[0] * tileSize;
         this.player = this.physics.add.sprite(
-          this.content.startingPoint[1] * tileSize,
-          this.content.startingPoint[0] * tileSize,
+          playerX + this.offsetX,
+          playerY + this.offsetY,
           'demo-player'
         );
+
+        this.player.setOrigin(0, 0);
+
+        console.log('player :>>>', this.player);
 
         // Set animation
         this.anims.create({
