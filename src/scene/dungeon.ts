@@ -1,7 +1,7 @@
-import { Scene } from 'phaser';
+import { Scene, Display } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
-import { Direction, GridEngine } from 'grid-engine';
+// import { Direction, GridEngine } from 'grid-engine';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
@@ -16,7 +16,7 @@ export default class Dungeon extends Scene {
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
 
-  private gridEngine!: GridEngine;
+  // private gridEngine!: GridEngine;
 
   constructor() {
     super('Dungeon');
@@ -37,10 +37,12 @@ export default class Dungeon extends Scene {
     this.theme = theme;
   }
 
-  preload() {
+  init() {
     // Generate a part of dungeon
     this.content = new DungeonGenerator(this);
+  }
 
+  preload() {
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
     this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
@@ -78,13 +80,20 @@ export default class Dungeon extends Scene {
         );
         // this.groundLayer = this.map.createBlankLayer('Layer 1', tileset);
         // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
-
+        // Set collision
+        console.log('border :>>>', this.content.borders);
+        // const collisionSet = this.map
+        const collisionSet = this.groundLayer?.setCollision(
+          this.content.borders,
+          true,
+          false
+        );
+        console.log('collisionSet :>>>', collisionSet);
         console.log('tileset :>>>', tileset);
         console.log('groundLayer :>>>', this.groundLayer);
         // console.log('stuffLayer :>>>', this.stuffLayer);
 
         // Initialize the camera and limit the movement based on the size of the tileMap
-
         const limitWidth: number = room[0].length * tileSize;
         const limitHeight: number = room.length * tileSize;
 
@@ -92,6 +101,14 @@ export default class Dungeon extends Scene {
         console.log('limitWidth :>>>', limitWidth);
         console.log('windowHeight :>>>', windowHeight);
         console.log('limitHeight :>>>', limitHeight);
+
+        // Limit camera movement based on the size of the tileMap
+        this.camera = this.cameras.main.setBounds(
+          0,
+          0,
+          limitWidth,
+          limitHeight
+        );
 
         // If the map is smaller then the window, move the layer position
         if (limitWidth < windowWidth || limitHeight < windowHeight) {
@@ -110,20 +127,15 @@ export default class Dungeon extends Scene {
           console.log('off set x :>>>', this.offsetX);
           console.log('off set y :>>>', this.offsetY);
 
-          this.camera = this.cameras.main.setBounds(
-            0,
-            0,
-            limitWidth + this.offsetX,
-            limitHeight + this.offsetY
-          );
-        } else {
-          // Limit camera movement based on the size of the tileMap
-          this.camera = this.cameras.main.setBounds(
-            0,
-            0,
-            limitWidth,
-            limitHeight
-          );
+          // this.camera = this.cameras.main.setBounds(
+          //   0,
+          //   0,
+          //   limitWidth + this.offsetX,
+          //   limitHeight + this.offsetY
+          // );
+
+          this.camera.scrollX -= this.offsetX;
+          this.camera.scrollY -= this.offsetY;
         }
 
         // Listen to the mouse event
@@ -143,10 +155,23 @@ export default class Dungeon extends Scene {
           this.content.startingPoint
         );
 
+        const tileColor = new Display.Color(105, 210, 231, 200);
+        const colldingTileColor = new Display.Color(243, 134, 48, 200);
+        const faceColor = new Display.Color(40, 39, 37, 255);
+        this.map.renderDebug(this.add.graphics(), {
+          tileColor: tileColor, // Non-colliding tiles
+          collidingTileColor: colldingTileColor, // Colliding tiles
+          faceColor: faceColor, // Interesting faces, i.e. colliding edges
+        });
+
         // Set up player
         const playerX = this.content.startingPoint[1] * tileSize;
         const playerY = this.content.startingPoint[0] * tileSize;
-        this.player = this.physics.add.sprite(0, 0, 'demo-player');
+        this.player = this.physics.add.sprite(
+          playerX + this.offsetX,
+          playerY + this.offsetY,
+          'demo-player'
+        );
 
         this.player.setOrigin(0, 0);
         this.player.setCollideWorldBounds(true);
@@ -187,44 +212,60 @@ export default class Dungeon extends Scene {
         // Init key events
         this.cursor = this.input.keyboard?.createCursorKeys();
 
+        // Set collision
+        this.physics.add.existing(this.player);
+        // this.physics.add.collider(this.player, this.groundLayer)
+
         // Config grid movement & player
-        try {
-          this.gridEngine.create(this.map, {
-            characters: [
-              {
-                id: 'player',
-                sprite: this.player,
-                walkingAnimationMapping: 0,
-                startPosition: {
-                  x: playerX + this.offsetX,
-                  y: playerY + this.offsetY,
-                },
-              },
-            ],
-          });
-        } catch (error) {
-          console.log('failed to use grid-engine :>>>', error);
-        }
+        // try {
+        //   this.gridEngine.create(this.map, {
+        //     characters: [
+        //       {
+        //         id: 'player',
+        //         sprite: this.player,
+        //         walkingAnimationMapping: 0,
+        //         startPosition: {
+        //           x: playerX + this.offsetX,
+        //           y: playerY + this.offsetY,
+        //         },
+        //       },
+        //     ],
+        //   });
+        // } catch (error) {
+        //   console.log('failed to use grid-engine :>>>', error);
+        // }
       }
     }
   }
 
   update() {
-    // const gameStore = useGameStore();
-    // const tileSize = gameStore.getTileSize;
+    const gameStore = useGameStore();
+    const tileSize = gameStore.getTileSize;
 
     // let walkingDistance = 0
 
     if (this.content) {
+      const room = this.content.roomIndex;
       // Listen to key press
       if (this.cursor?.left.isDown) {
-        this.gridEngine.move('player', Direction.LEFT);
+        this.player?.setVelocityX(-tileSize * 2);
+        // this.#watchAnimation('left', tileSize, room);
+        // this.gridEngine.move('player', Direction.LEFT);
       } else if (this.cursor?.right.isDown) {
-        this.gridEngine.move('player', Direction.RIGHT);
+        this.player?.setVelocityX(tileSize * 2);
+        // this.#watchAnimation('right', tileSize, room);
+        // this.gridEngine.move('player', Direction.RIGHT);
       } else if (this.cursor?.up.isDown) {
-        this.gridEngine.move('player', Direction.UP);
+        this.player?.setVelocityY(-tileSize * 2);
+        // this.#watchAnimation('up', tileSize, room);
+        // this.gridEngine.move('player', Direction.UP);
       } else if (this.cursor?.down.isDown) {
-        this.gridEngine.move('player', Direction.DOWN);
+        this.player?.setVelocityY(tileSize * 2);
+        // this.#watchAnimation('down', tileSize, room);
+        // this.gridEngine.move('player', Direction.DOWN);
+      } else {
+        this.player?.setVelocityX(0);
+        this.player?.setVelocityY(0);
       }
     }
   }
@@ -235,5 +276,50 @@ export default class Dungeon extends Scene {
     const col = Math.floor((x - this.offsetX) / tileSize);
 
     return { row, col };
+  }
+
+  #watchAnimation(direction: string, tileSize: number, room: number) {
+    if (this.content) {
+      const animationWatcher = setInterval(() => {
+        const { row, col } = this.#getPosition(this.player, tileSize);
+
+        switch (direction) {
+          case 'up':
+            if (row >= 0 && this.content?.level[room][row][col] == 1) {
+              console.log('To the top :>>>', row, col);
+              clearInterval(animationWatcher);
+              this.player?.setVelocityY(0);
+            }
+            break;
+          case 'down':
+            if (
+              row <= this.content.level.length - 1 &&
+              this.content?.level[room][row][col] == 1
+            ) {
+              console.log('To the bottom :>>>', row, col);
+              clearInterval(animationWatcher);
+              this.player?.setVelocityY(0);
+            }
+            break;
+          case 'left':
+            if (col >= 0 && this.content?.level[room][row][col] == 1) {
+              console.log('To the left :>>>', row, col);
+              clearInterval(animationWatcher);
+              this.player?.setVelocityX(0);
+            }
+            break;
+          case 'right':
+            if (
+              col <= this.content.level[room][row].length - 1 &&
+              this.content?.level[this.content.roomIndex][row][col] == 1
+            ) {
+              console.log('To the right :>>>', row, col);
+              clearInterval(animationWatcher);
+              this.player?.setVelocityX(0);
+            }
+            break;
+        }
+      }, 100);
+    }
   }
 }

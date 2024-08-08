@@ -12,6 +12,7 @@ export default class DungeonGenerator {
   startingPosition: string;
   startingPoint: number[];
   roomIndex: number;
+  borders: number[];
 
   constructor(scene: Phaser.Scene) {
     // constructor() {
@@ -31,6 +32,7 @@ export default class DungeonGenerator {
     this.startingPosition = '';
     this.startingPoint = [];
     this.roomIndex = -1;
+    this.borders = [];
     this.init();
   }
 
@@ -68,7 +70,7 @@ export default class DungeonGenerator {
     console.log('random tunnel :>>>', this.tunnelSize);
 
     for (let i = 0; i < height; i++) {
-      console.log('row :>>>', i);
+      // console.log('row :>>>', i);
       this.level[this.roomIndex][i] = [];
       for (let j = 0, row = this.level[this.roomIndex][i]; j < width; j++) {
         // console.log('col :>>>', j);
@@ -225,14 +227,16 @@ export default class DungeonGenerator {
 
     // Get all the tiles around the floor
     const unWalkables: mapBorder[] = [];
-
+    let tileCounts = -1;
     for (let i = 0; i < room.length; i++) {
       unWalkables[i] = {
         row: i,
         cols: [],
       };
       for (let j = 0; j < room[i].length; j++) {
+        tileCounts += 1;
         if (room[i][j] === 1) {
+          this.borders.push(tileCounts);
           // Check if the tile is next to the floor
           if (
             (i - 1 >= 0 && room[i - 1][j] === 0) ||
@@ -417,7 +421,7 @@ export default class DungeonGenerator {
       case 'up-center':
         {
           const center = Math.floor(walkables[0].cols.length / 2);
-          this.startingPoint = [walkables[0].row, center];
+          this.startingPoint = [walkables[0].row, walkables[0].cols[center]];
         }
         break;
       case 'up-right':
