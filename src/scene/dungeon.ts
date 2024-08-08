@@ -1,6 +1,8 @@
 import { Scene } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
+import { Direction, GridEngine } from 'grid-engine';
+
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
   theme: string;
@@ -13,6 +15,8 @@ export default class Dungeon extends Scene {
   offsetX: number;
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
+
+  private gridEngine!: GridEngine;
 
   constructor() {
     super('Dungeon');
@@ -142,11 +146,7 @@ export default class Dungeon extends Scene {
         // Set up player
         const playerX = this.content.startingPoint[1] * tileSize;
         const playerY = this.content.startingPoint[0] * tileSize;
-        this.player = this.physics.add.sprite(
-          playerX + this.offsetX,
-          playerY + this.offsetY,
-          'demo-player'
-        );
+        this.player = this.physics.add.sprite(0, 0, 'demo-player');
 
         this.player.setOrigin(0, 0);
         this.player.setCollideWorldBounds(true);
@@ -186,60 +186,46 @@ export default class Dungeon extends Scene {
 
         // Init key events
         this.cursor = this.input.keyboard?.createCursorKeys();
+
+        // Config grid movement & player
+        try {
+          this.gridEngine.create(this.map, {
+            characters: [
+              {
+                id: 'player',
+                sprite: this.player,
+                walkingAnimationMapping: 0,
+                startPosition: {
+                  x: playerX + this.offsetX,
+                  y: playerY + this.offsetY,
+                },
+              },
+            ],
+          });
+        } catch (error) {
+          console.log('failed to use grid-engine :>>>', error);
+        }
       }
     }
   }
 
   update() {
-    const gameStore = useGameStore();
-    const tileSize = gameStore.getTileSize;
+    // const gameStore = useGameStore();
+    // const tileSize = gameStore.getTileSize;
 
     // let walkingDistance = 0
 
     if (this.content) {
       // Listen to key press
       if (this.cursor?.left.isDown) {
-        console.log('To the left');
-        const { row, col } = this.#getPosition(this.player, tileSize);
-        const room = this.content.level[this.content.roomIndex];
-
-        console.log(row, col);
-
-        // const animationWatcher = setInterval(() => {
-        //   if (this.player)
-        //     if (this.player.x - this.offsetX - col * tileSize >= 48) {
-        //       clearInterval(animationWatcher);
-        //       this.player?.setVelocityX(0);
-        //     }
-        // }, 100);
-
-        // Check if the tile is walkable
-        if (col - 1 >= 0 && room[row][col - 1] !== 1) {
-          this.player?.setVelocityX(-tileSize * 2);
-        }
-
-        // player.value.anims.play('left', true);
+        this.gridEngine.move('player', Direction.LEFT);
       } else if (this.cursor?.right.isDown) {
-        console.log('To the right');
-        const { row, col } = this.#getPosition(this.player, tileSize);
-        const room = this.content.level[this.content.roomIndex];
-
-        console.log(row, col);
-
-        if (col + 1 <= room[row].length - 1 && room[row][col + 1] !== 1) {
-          this.player?.setVelocityX(tileSize * 2);
-        }
-        // player.value.setVelocityX(160);
-        // player.value.anims.play('right', true);
-      } else {
-        this.player?.setVelocityX(0);
-        this.player?.setVelocityY(0);
-        // player.value.anims.play('turn');
+        this.gridEngine.move('player', Direction.RIGHT);
+      } else if (this.cursor?.up.isDown) {
+        this.gridEngine.move('player', Direction.UP);
+      } else if (this.cursor?.down.isDown) {
+        this.gridEngine.move('player', Direction.DOWN);
       }
-
-      // if (cursor.value.up.isDown && player.value.body.touching.down) {
-      //   player.value.setVelocityY(-450);
-      // }
     }
   }
 
