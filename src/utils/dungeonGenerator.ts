@@ -219,6 +219,7 @@ export default class DungeonGenerator {
     //   room[i][0] = 1
     //   room[i][width - 1] = 1
     // }
+    this.#setStartingPosition(room);
 
     // Get all the tiles around the floor
     const unWalkables: mapBorder[] = [];
@@ -369,14 +370,31 @@ export default class DungeonGenerator {
     const walkables: mapBorder[] = [];
 
     for (let i = 0; i < room.length; i++) {
-      walkables[i] = {
+      walkables.push({
         row: i,
         cols: [],
-      };
+      });
       for (let j = 0; j < room[i].length; j++) {
-        if (room[i][j] === 0) walkables[i].cols.push(j);
+        if (room[i][j] === 0) {
+          walkables[walkables.length - 1].cols.push(j);
+        }
+
+        if (
+          j === room[i].length - 1 &&
+          !walkables[walkables.length - 1].cols.length
+        ) {
+          walkables.pop();
+        }
       }
     }
+
+    // walkables.forEach((tile, index) => {
+    //   if (!tile.cols.length) walkables.splice(index, 1);
+    // });
+
+    console.log('walkables :>>>', walkables);
+
+    const lastRow = walkables.length - 1;
 
     switch (this.startingPosition) {
       case 'up':
@@ -395,20 +413,63 @@ export default class DungeonGenerator {
         this.startingPoint = [walkables[0].row, walkables[0].cols[0]];
         break;
       case 'up-center':
-        const center = Math.floor(walkables[0].cols.length / 2);
-        this.startingPoint = [walkables[0].row, center];
-        // for(let i=0; i < walkables.length; i++){
-
-        // }
+        {
+          const center = Math.floor(walkables[0].cols.length / 2);
+          this.startingPoint = [walkables[0].row, center];
+        }
         break;
       case 'up-right':
         this.startingPoint = [walkables[0].row, walkables[0].cols.length - 1];
         break;
       case 'left-center':
+        {
+          const center = Math.floor(walkables.length / 2);
+          this.startingPoint = [
+            walkables[center].row,
+            walkables[center].cols[0],
+          ];
+        }
         // for(let i=0; i < walkables.length; i++){
         //   const tempRow = Math.floor(Math.random() * walkables.length);
         //   const tempCol = Math.floor(Math.random() * walkables.length);
         // }
+        break;
+      case 'center':
+        const rowCenter = Math.floor(walkables.length / 2);
+        this.startingPoint = [
+          walkables[rowCenter].row,
+          walkables[rowCenter].cols.length / 2,
+        ];
+        break;
+      case 'right-center':
+        {
+          const center = Math.floor(walkables.length / 2);
+          this.startingPoint = [
+            walkables[center].row,
+            walkables[center].cols.length - 1,
+          ];
+        }
+        break;
+      case 'down-left':
+        this.startingPoint = [
+          walkables[lastRow].row,
+          walkables[lastRow].cols[0],
+        ];
+        break;
+      case 'down-center':
+        {
+          const center = Math.floor(walkables[lastRow].cols.length / 2);
+          this.startingPoint = [
+            walkables[center].row,
+            walkables[center].cols.length / 2,
+          ];
+        }
+        break;
+      case 'down-right':
+        this.startingPoint = [
+          walkables[lastRow].row,
+          walkables[lastRow].cols.length - 1,
+        ];
         break;
     }
   }
