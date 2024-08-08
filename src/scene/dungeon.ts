@@ -12,6 +12,7 @@ export default class Dungeon extends Scene {
   playerIdelCount: number;
   offsetX: number;
   offsetY: number;
+  cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
 
   constructor() {
     super('Dungeon');
@@ -25,6 +26,7 @@ export default class Dungeon extends Scene {
     this.playerIdelCount = 0;
     this.offsetX = 0;
     this.offsetY = 0;
+    this.cursor = undefined;
   }
 
   setTheme(theme: string) {
@@ -38,8 +40,8 @@ export default class Dungeon extends Scene {
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
     this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
-      frameWidth: 48,
-      frameHeight: 48,
+      frameWidth: 44,
+      frameHeight: 42,
     });
   }
 
@@ -51,7 +53,7 @@ export default class Dungeon extends Scene {
 
     // Generate tileMap
     if (this.content !== null) {
-      const room = this.content.level.find((room) => room.length);
+      const room = this.content?.level[this.content.roomIndex];
       console.log('room :>>>', room);
 
       if (room) {
@@ -147,7 +149,7 @@ export default class Dungeon extends Scene {
         );
 
         this.player.setOrigin(0, 0);
-
+        this.player.setCollideWorldBounds(true);
         console.log('player :>>>', this.player);
 
         // Set animation
@@ -162,7 +164,7 @@ export default class Dungeon extends Scene {
         });
 
         this.player.on('animationcomplete', (context: any) => {
-          console.log('context :>>>', context);
+          // console.log('context :>>>', context);
           // Check animation name
           if (context.key === 'player-idel') {
             this.player?.anims.pause(); // Pause the animation
@@ -178,11 +180,74 @@ export default class Dungeon extends Scene {
 
         // Play animation
         this.player.anims.play('player-idel', true);
+
+        // Set the camera to follow the player
+        this.camera.startFollow(this.player, true);
+
+        // Init key events
+        this.cursor = this.input.keyboard?.createCursorKeys();
       }
     }
   }
 
   update() {
-    //
+    const gameStore = useGameStore();
+    const tileSize = gameStore.getTileSize;
+
+    // let walkingDistance = 0
+
+    if (this.content) {
+      // Listen to key press
+      if (this.cursor?.left.isDown) {
+        console.log('To the left');
+        const { row, col } = this.#getPosition(this.player, tileSize);
+        const room = this.content.level[this.content.roomIndex];
+
+        console.log(row, col);
+
+        // const animationWatcher = setInterval(() => {
+        //   if (this.player)
+        //     if (this.player.x - this.offsetX - col * tileSize >= 48) {
+        //       clearInterval(animationWatcher);
+        //       this.player?.setVelocityX(0);
+        //     }
+        // }, 100);
+
+        // Check if the tile is walkable
+        if (col - 1 >= 0 && room[row][col - 1] !== 1) {
+          this.player?.setVelocityX(-tileSize * 2);
+        }
+
+        // player.value.anims.play('left', true);
+      } else if (this.cursor?.right.isDown) {
+        console.log('To the right');
+        const { row, col } = this.#getPosition(this.player, tileSize);
+        const room = this.content.level[this.content.roomIndex];
+
+        console.log(row, col);
+
+        if (col + 1 <= room[row].length - 1 && room[row][col + 1] !== 1) {
+          this.player?.setVelocityX(tileSize * 2);
+        }
+        // player.value.setVelocityX(160);
+        // player.value.anims.play('right', true);
+      } else {
+        this.player?.setVelocityX(0);
+        this.player?.setVelocityY(0);
+        // player.value.anims.play('turn');
+      }
+
+      // if (cursor.value.up.isDown && player.value.body.touching.down) {
+      //   player.value.setVelocityY(-450);
+      // }
+    }
+  }
+
+  #getPosition(target: any, tileSize: number) {
+    const { x, y } = target;
+    const row = Math.floor((y - this.offsetY) / tileSize);
+    const col = Math.floor((x - this.offsetX) / tileSize);
+
+    return { row, col };
   }
 }
