@@ -419,7 +419,10 @@ export default class DungeonGenerator {
         }
         break;
       case 'up-right':
-        this.startingPoint = [walkables[0].row, walkables[0].cols.length - 1];
+        this.startingPoint = [
+          walkables[0].row,
+          walkables[0].cols[walkables[0].cols.length - 1],
+        ];
         break;
       case 'left-center':
         {
@@ -446,7 +449,7 @@ export default class DungeonGenerator {
           const center = Math.floor(walkables.length / 2);
           this.startingPoint = [
             walkables[center].row,
-            walkables[center].cols.length - 1,
+            walkables[center].cols[walkables[center].cols.length - 1],
           ];
         }
         break;
@@ -468,7 +471,7 @@ export default class DungeonGenerator {
       case 'down-right':
         this.startingPoint = [
           walkables[lastRow].row,
-          walkables[lastRow].cols.length - 1,
+          walkables[lastRow].cols[walkables[lastRow].cols.length - 1],
         ];
         break;
     }
