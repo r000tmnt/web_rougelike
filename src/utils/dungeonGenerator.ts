@@ -11,6 +11,7 @@ export default class DungeonGenerator {
   doorDirection: string[];
   startingPosition: string;
   startingPoint: number[];
+  roomIndex: number;
 
   constructor(scene: Phaser.Scene) {
     // constructor() {
@@ -29,6 +30,7 @@ export default class DungeonGenerator {
     this.doorDirection = [];
     this.startingPosition = '';
     this.startingPoint = [];
+    this.roomIndex = -1;
     this.init();
   }
 
@@ -41,16 +43,16 @@ export default class DungeonGenerator {
   }
 
   #setRoom(index = -1) {
-    let startFrom = 0;
+    this.roomIndex = 0;
     if (index >= 0) {
-      startFrom = index;
+      this.roomIndex = index;
     } else {
       // Set the room as the starting point
-      startFrom = Math.floor(Math.random() * this.level.length);
+      this.roomIndex = Math.floor(Math.random() * this.level.length);
     }
 
-    console.log(`room ${startFrom}`);
-    this.#setDoorDirections(startFrom);
+    console.log(`room ${this.roomIndex}`);
+    this.#setDoorDirections();
 
     // for (let i = 0; i < this.level.length; i++) {
     // Choose a width and height for the room / block
@@ -67,20 +69,20 @@ export default class DungeonGenerator {
 
     for (let i = 0; i < height; i++) {
       console.log('row :>>>', i);
-      this.level[startFrom][i] = [];
-      for (let j = 0, row = this.level[startFrom][i]; j < width; j++) {
+      this.level[this.roomIndex][i] = [];
+      for (let j = 0, row = this.level[this.roomIndex][i]; j < width; j++) {
         // console.log('col :>>>', j);
         row.push(1);
       }
     }
 
-    // console.log('map before dig tunnels :>>>', this.level[startFrom]);
+    // console.log('map before dig tunnels :>>>', this.level[this.roomIndex]);
 
-    this.#digTunnels(this.level[startFrom], width, height);
+    this.#digTunnels(this.level[this.roomIndex], width, height);
   }
 
-  #setDoorDirections(startFrom: number) {
-    switch (startFrom) {
+  #setDoorDirections() {
+    switch (this.roomIndex) {
       case 0:
         this.doorDirection = ['right', 'down'];
         this.startingPosition = 'up-left';
@@ -157,16 +159,16 @@ export default class DungeonGenerator {
       while (randomLength > 0) {
         // Check if the random direction will be outside of the map
         if (
-          (row === 1 && randomDirection[0] === -1) ||
-          (col === 1 && randomDirection[1] === -1) ||
-          (row === height - 2 && randomDirection[0] === 1) ||
-          (col === width - 2 && randomDirection[1] === 1)
+          (row <= 1 && randomDirection[0] === -1) ||
+          (col <= 1 && randomDirection[1] === -1) ||
+          (row >= height - 2 && randomDirection[0] === 1) ||
+          (col >= width - 2 && randomDirection[1] === 1)
         ) {
           console.log('Outside or on the same step');
           // Reroll step
           break;
         } else {
-          // console.log(`Digging room ${startFrom}`);
+          // console.log(`Digging room ${this.roomIndex}`);
           // Change the value on the map
           if (room[row] !== undefined) {
             room[row][col] = 0;
@@ -441,7 +443,9 @@ export default class DungeonGenerator {
         const rowCenter = Math.floor(walkables.length / 2);
         this.startingPoint = [
           walkables[rowCenter].row,
-          walkables[rowCenter].cols.length / 2,
+          walkables[rowCenter].cols[
+            Math.floor(walkables[rowCenter].cols.length / 2)
+          ],
         ];
         break;
       case 'right-center':
