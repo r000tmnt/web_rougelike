@@ -44,8 +44,8 @@ export default class Dungeon extends Scene {
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
     this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
-      frameWidth: 44,
-      frameHeight: 42,
+      frameWidth: 48,
+      frameHeight: 48,
     });
   }
 
