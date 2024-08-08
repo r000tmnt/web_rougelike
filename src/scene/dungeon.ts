@@ -1,7 +1,6 @@
 import { Scene } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
-
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
   theme: string;
@@ -9,6 +8,8 @@ export default class Dungeon extends Scene {
   groundLayer: Phaser.Tilemaps.TilemapLayer | null;
   stuffLayer: Phaser.Tilemaps.TilemapLayer | null;
   camera: Phaser.Cameras.Scene2D.Camera | null;
+  player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | null;
+  playerIdelCount: number;
 
   constructor() {
     super('Dungeon');
@@ -18,6 +19,8 @@ export default class Dungeon extends Scene {
     this.groundLayer = null;
     this.stuffLayer = null;
     this.camera = null;
+    this.player = null;
+    this.playerIdelCount = 0;
   }
 
   setTheme(theme: string) {
@@ -30,12 +33,17 @@ export default class Dungeon extends Scene {
 
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
+    this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
+      frameWidth: 48,
+      frameHeight: 48,
+    });
   }
 
   create() {
     const gameStore = useGameStore();
     const windowWidth = gameStore.getWindowWidth;
     const windowHeight = gameStore.getWindowHeight;
+    const tileSize = gameStore.getTileSize;
 
     // Generate tileMap
     if (this.content !== null) {
@@ -44,8 +52,8 @@ export default class Dungeon extends Scene {
 
       if (room) {
         this.map = this.make.tilemap({
-          tileHeight: 48, // Need to match the height of the image for each tile
-          tileWidth: 48, // Need to match the width of the image for each tile
+          tileHeight: tileSize, // Need to match the height of the image for each tile
+          tileWidth: tileSize, // Need to match the width of the image for each tile
           data: room,
         });
 
@@ -67,8 +75,8 @@ export default class Dungeon extends Scene {
 
         // Initialize the camera and limit the movement based on the size of the tileMap
 
-        const limitWidth: number = room[0].length * 48;
-        const limitHeight: number = room.length * 48;
+        const limitWidth: number = room[0].length * tileSize;
+        const limitHeight: number = room.length * tileSize;
 
         // Limit camera movement based on the size of the tileMap
         this.camera = this.cameras.main.setBounds(
@@ -118,6 +126,47 @@ export default class Dungeon extends Scene {
             }
           }
         });
+
+        console.log(
+          'player starting position: >>>',
+          this.content.startingPoint
+        );
+
+        // Set up player
+        this.player = this.physics.add.sprite(
+          this.content.startingPoint[1] * tileSize,
+          this.content.startingPoint[0] * tileSize,
+          'demo-player'
+        );
+
+        // Set animation
+        this.anims.create({
+          key: 'player-idel',
+          frames: this.anims.generateFrameNames('demo-player', {
+            start: 0,
+            end: 2,
+          }),
+          frameRate: 5,
+          repeat: 0,
+        });
+
+        this.player.on('animationcomplete', (context: any) => {
+          console.log('context :>>>', context);
+          // Check animation name
+          if (context.key === 'player-idel') {
+            this.player?.anims.pause(); // Pause the animation
+            this.playerIdelCount += 1;
+            // Play the animation back and forth
+            if (this.playerIdelCount % 2 === 0) {
+              this.player?.anims.play('player-idel', true);
+            } else {
+              this.player?.anims.playReverse('player-idel');
+            }
+          }
+        });
+
+        // Play animation
+        this.player.anims.play('player-idel', true);
       }
     }
   }
