@@ -12,7 +12,7 @@ export default class DungeonGenerator {
   startingPosition: string;
   startingPoint: number[];
   roomIndex: number;
-  borders: number[];
+  doors: number[][];
 
   constructor(scene: Phaser.Scene) {
     // constructor() {
@@ -32,7 +32,7 @@ export default class DungeonGenerator {
     this.startingPosition = '';
     this.startingPoint = [];
     this.roomIndex = -1;
-    this.borders = [];
+    this.doors = [];
     this.init();
   }
 
@@ -223,20 +223,23 @@ export default class DungeonGenerator {
     //   room[i][0] = 1
     //   room[i][width - 1] = 1
     // }
-    this.#setStartingPosition(room);
 
     // Get all the tiles around the floor
     const unWalkables: mapBorder[] = [];
+    const walkables: mapBorder[] = [];
     let tileCounts = -1;
     for (let i = 0; i < room.length; i++) {
       unWalkables[i] = {
         row: i,
         cols: [],
       };
+      walkables.push({
+        row: i,
+        cols: [],
+      });
       for (let j = 0; j < room[i].length; j++) {
         tileCounts += 1;
         if (room[i][j] === 1) {
-          this.borders.push(tileCounts);
           // Check if the tile is next to the floor
           if (
             (i - 1 >= 0 && room[i - 1][j] === 0) ||
@@ -247,8 +250,21 @@ export default class DungeonGenerator {
             unWalkables[i].cols.push(j);
           }
         }
+
+        if (room[i][j] === 0) {
+          walkables[walkables.length - 1].cols.push(j);
+        }
+
+        if (
+          j === room[i].length - 1 &&
+          !walkables[walkables.length - 1].cols.length
+        ) {
+          walkables.pop();
+        }
       }
     }
+
+    this.#setStartingPosition(walkables);
 
     // Remove empty array
     unWalkables.forEach((row, index) => {
@@ -270,6 +286,7 @@ export default class DungeonGenerator {
             const col = row.cols[Math.floor(row.cols.length / 2)];
             console.log('set door up');
             room[row.row][col] = 2;
+            this.doors.push([row.row, col]);
             break;
           }
           break;
@@ -302,6 +319,7 @@ export default class DungeonGenerator {
               ) {
                 room[doorRow][doorCol] = 1;
               } else {
+                this.doors.push([doorRow, doorCol]);
                 done = true;
               }
             } while (!done);
@@ -315,6 +333,7 @@ export default class DungeonGenerator {
             const col = row.cols[Math.floor(row.cols.length / 2)];
             console.log('set door down');
             room[row.row][col] = 2;
+            this.doors.push([row.row, col]);
             break;
           }
           break;
@@ -349,6 +368,7 @@ export default class DungeonGenerator {
                 //Check if the door is facing the floor
                 if (room[doorRow][doorCol] === 0) room[doorRow][0] = 1;
               } else {
+                this.doors.push([doorRow, doorCol]);
                 done = true;
               }
             } while (!done);
@@ -372,32 +392,7 @@ export default class DungeonGenerator {
     console.log(rowString);
   }
 
-  #setStartingPosition(room: number[][]) {
-    const walkables: mapBorder[] = [];
-
-    for (let i = 0; i < room.length; i++) {
-      walkables.push({
-        row: i,
-        cols: [],
-      });
-      for (let j = 0; j < room[i].length; j++) {
-        if (room[i][j] === 0) {
-          walkables[walkables.length - 1].cols.push(j);
-        }
-
-        if (
-          j === room[i].length - 1 &&
-          !walkables[walkables.length - 1].cols.length
-        ) {
-          walkables.pop();
-        }
-      }
-    }
-
-    // walkables.forEach((tile, index) => {
-    //   if (!tile.cols.length) walkables.splice(index, 1);
-    // });
-
+  #setStartingPosition(walkables: mapBorder[]) {
     console.log('walkables :>>>', walkables);
 
     const lastRow = walkables.length - 1;
