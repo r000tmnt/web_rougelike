@@ -15,6 +15,7 @@ export default class Dungeon extends Scene {
   offsetX: number;
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
+  // doors: Phaser.Physics.Arcade.StaticGroup | undefined;
 
   // private gridEngine!: GridEngine;
 
@@ -31,6 +32,7 @@ export default class Dungeon extends Scene {
     this.offsetX = 0;
     this.offsetY = 0;
     this.cursor = undefined;
+    // this.doors = undefined;
   }
 
   setTheme(theme: string) {
@@ -78,17 +80,8 @@ export default class Dungeon extends Scene {
           0,
           0
         );
-        // this.groundLayer = this.map.createBlankLayer('Layer 1', tileset);
         // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
-        // Set collision
-        console.log('border :>>>', this.content.borders);
-        // const collisionSet = this.map
-        // const collisionSet = this.groundLayer?.setCollision(
-        //   this.content.borders,
-        //   true,
-        //   false
-        // );
-        // console.log('collisionSet :>>>', collisionSet);
+
         console.log('tileset :>>>', tileset);
         console.log('groundLayer :>>>', this.groundLayer);
         // console.log('stuffLayer :>>>', this.stuffLayer);
@@ -101,14 +94,6 @@ export default class Dungeon extends Scene {
         console.log('limitWidth :>>>', limitWidth);
         console.log('windowHeight :>>>', windowHeight);
         console.log('limitHeight :>>>', limitHeight);
-
-        // Limit camera movement based on the size of the tileMap
-        this.camera = this.cameras.main.setBounds(
-          0,
-          0,
-          limitWidth,
-          limitHeight
-        );
 
         // If the map is smaller then the window, move the layer position
         if (limitWidth < windowWidth || limitHeight < windowHeight) {
@@ -127,26 +112,37 @@ export default class Dungeon extends Scene {
           console.log('off set x :>>>', this.offsetX);
           console.log('off set y :>>>', this.offsetY);
 
-          // this.camera = this.cameras.main.setBounds(
-          //   0,
-          //   0,
-          //   limitWidth + this.offsetX,
-          //   limitHeight + this.offsetY
-          // );
+          this.camera = this.cameras.main.setBounds(
+            0,
+            0,
+            limitWidth + this.offsetX,
+            limitHeight + this.offsetY
+          );
 
           this.camera.scrollX -= this.offsetX;
           this.camera.scrollY -= this.offsetY;
+        } else {
+          // Limit camera movement based on the size of the tileMap
+          this.camera = this.cameras.main.setBounds(
+            0,
+            0,
+            limitWidth,
+            limitHeight
+          );
         }
 
         // Listen to the mouse event
         this.input.on('pointermove', (pointer: any) => {
           if (pointer.isDown) {
             if (this.camera !== null) {
+              // this.camera.stopFollow();
               this.camera.scrollX -=
                 (pointer.x - pointer.prevPosition.x) / this.camera.zoom;
               this.camera.scrollY -=
                 (pointer.y - pointer.prevPosition.y) / this.camera.zoom;
             }
+          } else {
+            // this.camera?.startFollow(this.player);
           }
         });
 
@@ -155,6 +151,18 @@ export default class Dungeon extends Scene {
           this.content.startingPoint
         );
 
+        // Set collision on doors
+        // this.doors = this.physics.add.staticGroup();
+        this.content.doors.forEach((door) => {
+          // const doorX = door[1] * tileSize;
+          // const doorY = door[0] * tileSize;
+          // const doorCollide = this.doors
+          //   ?.create(doorX + this.offsetX, doorY + this.offsetY)
+          //   .setScale(1.5);
+          // // Reset position origin
+          // doorCollide.setOrigin(0, 0);
+          this.groundLayer.setTileIndexCallback(2, this.#doorHit, this);
+        });
         // Set up player
         const playerX = this.content.startingPoint[1] * tileSize;
         const playerY = this.content.startingPoint[0] * tileSize;
@@ -165,7 +173,19 @@ export default class Dungeon extends Scene {
         );
 
         this.player.setOrigin(0, 0);
-        this.player.setCollideWorldBounds(true);
+        // this.player.setCollideWorldBounds(true);
+
+        // Check player position
+        if (
+          this.player.x - this.offsetX !== playerX ||
+          this.player.y - this.offsetY !== playerY
+        ) {
+          this.player.setPosition(
+            playerX + this.offsetX,
+            playerY + this.offsetY
+          );
+        }
+
         console.log('player :>>>', this.player);
 
         // Set animation
@@ -211,16 +231,17 @@ export default class Dungeon extends Scene {
           false
         );
         this.physics.add.collider(this.groundLayer, this.player);
+        this.physics.add.collider(this.player, this.doors, this.#doorHit);
 
         // Show the collide tiles and none collide tiles for debug
-        const tileColor = new Display.Color(105, 210, 231, 200);
-        const colldingTileColor = new Display.Color(243, 134, 48, 200);
-        const faceColor = new Display.Color(40, 39, 37, 255);
-        this.map.renderDebug(this.add.graphics(), {
-          tileColor: tileColor, // Non-colliding tiles
-          collidingTileColor: colldingTileColor, // Colliding tiles
-          faceColor: faceColor, // Interesting faces, i.e. colliding edges
-        });
+        // const tileColor = new Display.Color(105, 210, 231, 200);
+        // const colldingTileColor = new Display.Color(243, 134, 48, 200);
+        // const faceColor = new Display.Color(40, 39, 37, 255);
+        // this.map.renderDebug(this.add.graphics(), {
+        //   tileColor: tileColor, // Non-colliding tiles
+        //   collidingTileColor: colldingTileColor, // Colliding tiles
+        //   faceColor: faceColor, // Interesting faces, i.e. colliding edges
+        // });
 
         // Config grid movement & player
         // try {
@@ -327,5 +348,13 @@ export default class Dungeon extends Scene {
         }
       }, 100);
     }
+  }
+
+  #doorHit(player: any, door: any) {
+    console.log('The door hit :>>>', door);
+  }
+
+  #doorUnhit(player: any, door: any) {
+    console.log('The door unhit :>>>', door);
   }
 }
