@@ -1,4 +1,4 @@
-import { Scene, Display } from 'phaser';
+import { Scene, Display, Input } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
 // import { Direction, GridEngine } from 'grid-engine';
@@ -16,7 +16,10 @@ export default class Dungeon extends Scene {
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   doors: Phaser.GameObjects.Zone[];
+  doorAnchor: string[];
   doorTouching: number;
+
+  private enteractKey!: Key | undefined;
 
   // private gridEngine!: GridEngine;
 
@@ -34,6 +37,7 @@ export default class Dungeon extends Scene {
     this.offsetY = 0;
     this.cursor = undefined;
     this.doors = [];
+    this.doorAnchor = [];
     this.doorTouching = -1;
   }
 
@@ -60,6 +64,9 @@ export default class Dungeon extends Scene {
     const windowWidth = gameStore.getWindowWidth;
     const windowHeight = gameStore.getWindowHeight;
     const tileSize = gameStore.getTileSize;
+
+    // Bind keyborad input
+    this.enteractKey = this.input.keyboard?.addKey(Input.Keyboard.KeyCodes.F);
 
     // Generate tileMap
     if (this.content !== null) {
@@ -164,6 +171,7 @@ export default class Dungeon extends Scene {
           //   .setScale(1.5);
           // // Reset position origin
           // doorCollide.setOrigin(0, 0);
+          this.doorAnchor.push(door.direction);
           switch (door.direction) {
             case 'up':
               {
@@ -281,7 +289,9 @@ export default class Dungeon extends Scene {
           false
         );
         this.physics.add.collider(this.groundLayer, this.player);
-        // this.physics.add.collider(this.player, this.doors, this.#doorHit);
+        this.physics.world.bounds.width = limitWidth + this.offsetX;
+        this.physics.world.bounds.height = limitHeight + this.offsetY;
+        this.player.setCollideWorldBounds(true);
 
         // Enable zoom
         this.doors.forEach((door, index) => {
@@ -362,6 +372,22 @@ export default class Dungeon extends Scene {
         console.log('checking overlap :>>>');
         if (!this.doors[this.doorTouching].body.embedded) {
           gameStore.setTextContent('');
+          this.doorTouching = -1;
+        }
+
+        if (this.enteractKey.isDown) {
+          console.log(`Open the door ${this.doorAnchor[this.doorTouching]}`);
+
+          switch (this.doorAnchor[this.doorTouching]) {
+            case 'up':
+              break;
+            case 'right':
+              break;
+            case 'down':
+              break;
+            case 'left':
+              break;
+          }
         }
       }
     }
