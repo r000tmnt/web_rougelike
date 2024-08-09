@@ -1,5 +1,5 @@
 <template>
-  <span id="textLayer" ref="textLayer">{{textContent}}</span>
+  <span id="textLayer" ref="textLayer">{{ textContent }}</span>
 </template>
 
 <script setup lang="ts">
@@ -12,7 +12,7 @@ import Dungeon from '../scene/dungeon';
 
 const gameStore = useGameStore();
 
-const textContent = computed(() => gameStore.getTextContent)
+const textContent = computed(() => gameStore.getTextContent);
 
 const textLayer = ref<HTMLSpanElement | null>(null);
 
@@ -34,7 +34,7 @@ onMounted(() => {
       default: 'arcade',
       arcade: {
         gravity: { y: 0, x: 0 },
-        // debug: false,
+        debug: true,
       },
     },
     plugins: {
