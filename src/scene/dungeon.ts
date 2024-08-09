@@ -15,7 +15,8 @@ export default class Dungeon extends Scene {
   offsetX: number;
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
-  // doors: Phaser.Physics.Arcade.StaticGroup | undefined;
+  doors: Phaser.GameObjects.Zone[];
+  doorTouching: number;
 
   // private gridEngine!: GridEngine;
 
@@ -32,7 +33,8 @@ export default class Dungeon extends Scene {
     this.offsetX = 0;
     this.offsetY = 0;
     this.cursor = undefined;
-    // this.doors = undefined;
+    this.doors = [];
+    this.doorTouching = -1;
   }
 
   setTheme(theme: string) {
@@ -154,14 +156,62 @@ export default class Dungeon extends Scene {
         // Set collision on doors
         // this.doors = this.physics.add.staticGroup();
         this.content.doors.forEach((door) => {
-          // const doorX = door[1] * tileSize;
-          // const doorY = door[0] * tileSize;
+          const doorX = door.col * tileSize;
+          const doorY = door.row * tileSize;
+          const halfHeight = tileSize / 2;
           // const doorCollide = this.doors
           //   ?.create(doorX + this.offsetX, doorY + this.offsetY)
           //   .setScale(1.5);
           // // Reset position origin
           // doorCollide.setOrigin(0, 0);
-          this.groundLayer.setTileIndexCallback(2, this.#doorHit, this);
+          switch (door.direction) {
+            case 'up':
+              {
+                const sensor = this.add.zone(
+                  doorX + this.offsetX,
+                  doorY + this.offsetY + halfHeight,
+                  tileSize,
+                  tileSize
+                );
+                this.doors.push(sensor);
+              }
+              break;
+            case 'right':
+              {
+                const sensor = this.add.zone(
+                  doorX + this.offsetX - halfHeight,
+                  doorY + this.offsetY,
+                  tileSize,
+                  tileSize
+                );
+                this.doors.push(sensor);
+              }
+              break;
+            case 'down':
+              {
+                const sensor = this.add.zone(
+                  doorX + this.offsetX,
+                  doorY + this.offsetY - halfHeight,
+                  tileSize,
+                  tileSize
+                );
+                this.doors.push(sensor);
+              }
+              break;
+            case 'left':
+              {
+                const sensor = this.add.zone(
+                  doorX + this.offsetX + halfHeight,
+                  doorY + this.offsetY,
+                  tileSize,
+                  tileSize
+                );
+                this.doors.push(sensor);
+              }
+              break;
+          }
+
+          // this.groundLayer.setTileIndexCallback(2, this.#doorHit, this);
         });
         // Set up player
         const playerX = this.content.startingPoint[1] * tileSize;
@@ -231,7 +281,20 @@ export default class Dungeon extends Scene {
           false
         );
         this.physics.add.collider(this.groundLayer, this.player);
-        this.physics.add.collider(this.player, this.doors, this.#doorHit);
+        // this.physics.add.collider(this.player, this.doors, this.#doorHit);
+
+        // Enable zoom
+        this.doors.forEach((door, index) => {
+          door.setOrigin(0, 0);
+          this.physics.add.existing(door, false);
+          if (door.body) door.body.moves = false;
+
+          this.physics.add.overlap(door, this.player, (player, zone) => {
+            console.log('overlap!');
+            gameStore.setTextContent('OPEN (F)');
+            this.doorTouching = index;
+          });
+        });
 
         // Show the collide tiles and none collide tiles for debug
         // const tileColor = new Display.Color(105, 210, 231, 200);
@@ -294,6 +357,13 @@ export default class Dungeon extends Scene {
         this.player?.setVelocityX(0);
         this.player?.setVelocityY(0);
       }
+
+      if (this.doorTouching >= 0 && this.doors !== undefined) {
+        console.log('checking overlap :>>>');
+        if (!this.doors[this.doorTouching].body.embedded) {
+          gameStore.setTextContent('');
+        }
+      }
     }
   }
 
@@ -303,60 +373,5 @@ export default class Dungeon extends Scene {
     const col = Math.floor((x - this.offsetX) / tileSize);
 
     return { row, col };
-  }
-
-  #watchAnimation(direction: string, tileSize: number, room: number) {
-    if (this.content) {
-      const animationWatcher = setInterval(() => {
-        const { row, col } = this.#getPosition(this.player, tileSize);
-
-        switch (direction) {
-          case 'up':
-            if (row >= 0 && this.content?.level[room][row][col] == 1) {
-              console.log('To the top :>>>', row, col);
-              clearInterval(animationWatcher);
-              this.player?.setVelocityY(0);
-            }
-            break;
-          case 'down':
-            if (
-              row <= this.content.level.length - 1 &&
-              this.content?.level[room][row][col] == 1
-            ) {
-              console.log('To the bottom :>>>', row, col);
-              clearInterval(animationWatcher);
-              this.player?.setVelocityY(0);
-            }
-            break;
-          case 'left':
-            if (col >= 0 && this.content?.level[room][row][col] == 1) {
-              console.log('To the left :>>>', row, col);
-              clearInterval(animationWatcher);
-              this.player?.setVelocityX(0);
-            }
-            break;
-          case 'right':
-            if (
-              col <= this.content.level[room][row].length - 1 &&
-              this.content?.level[this.content.roomIndex][row][col] == 1
-            ) {
-              console.log('To the right :>>>', row, col);
-              clearInterval(animationWatcher);
-              this.player?.setVelocityX(0);
-            }
-            break;
-        }
-      }, 100);
-    }
-  }
-
-  #doorHit(player: any, door: any) {
-    console.log('The door hit :>>>', door);
-    const gameStore = useGameStore();
-    gameStore.setTextContent('OPEN (F)');
-  }
-
-  #doorUnhit(player: any, door: any) {
-    console.log('The door unhit :>>>', door);
   }
 }
