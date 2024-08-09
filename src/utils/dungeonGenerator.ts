@@ -41,10 +41,10 @@ export default class DungeonGenerator {
 
     this.level = Array(9).fill([]);
 
-    this.#setRoom();
+    this.setRoom();
   }
 
-  async #setRoom(index = -1) {
+  async setRoom(index = -1) {
     this.roomIndex = 0;
     if (index >= 0) {
       this.roomIndex = index;
@@ -366,13 +366,16 @@ export default class DungeonGenerator {
             do {
               placeDoor();
 
-              if (
-                doorRow === 0 ||
-                doorRow === height - 1 ||
+              if (doorRow === 0 || doorRow === height - 1) {
+                console.log('out of range');
+                //Check if the door is facing the floor
+                if (room[doorRow][doorCol] === 0) room[doorRow][0] = 1;
+              } else if (
                 room[doorRow - 1][doorCol] !== 1 ||
                 room[doorRow + 1][doorCol] !== 1 ||
                 room[doorRow][doorCol + 1] !== 0
               ) {
+                console.log('Not a wall');
                 //Check if the door is facing the floor
                 if (room[doorRow][doorCol] === 0) room[doorRow][0] = 1;
               } else {
