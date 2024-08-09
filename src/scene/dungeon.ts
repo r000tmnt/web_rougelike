@@ -272,7 +272,7 @@ export default class Dungeon extends Scene {
     // let walkingDistance = 0
 
     if (this.content) {
-      const room = this.content.roomIndex;
+      // const room = this.content.roomIndex;
       // Listen to key press
       if (this.cursor?.left.isDown) {
         this.player?.setVelocityX(-tileSize * 2);
@@ -352,6 +352,8 @@ export default class Dungeon extends Scene {
 
   #doorHit(player: any, door: any) {
     console.log('The door hit :>>>', door);
+    const gameStore = useGameStore();
+    gameStore.setTextContent('OPEN (F)');
   }
 
   #doorUnhit(player: any, door: any) {
