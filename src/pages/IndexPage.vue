@@ -19,9 +19,11 @@ const textLayer = ref<HTMLSpanElement | null>(null);
 onMounted(() => {
   console.log('onMounted');
 
-  const eachWHeight = Math.floor(window.innerHeight / 9);
-  gameStore.windowWidth = 16 * eachWHeight;
-  gameStore.windowHeight = 9 * eachWHeight;
+  // const eachWHeight = Math.floor(window.innerHeight / 9);
+  // gameStore.windowWidth = 16 * eachWHeight;
+  // gameStore.windowHeight = 9 * eachWHeight;
+  gameStore.windowWidth = 1280;
+  gameStore.windowHeight = 720;
 
   gameStore.game = new Phaser.Game({
     type: Phaser.AUTO,
