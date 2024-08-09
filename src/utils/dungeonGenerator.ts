@@ -44,7 +44,7 @@ export default class DungeonGenerator {
     this.#setRoom();
   }
 
-  #setRoom(index = -1) {
+  async #setRoom(index = -1) {
     this.roomIndex = 0;
     if (index >= 0) {
       this.roomIndex = index;
@@ -54,7 +54,7 @@ export default class DungeonGenerator {
     }
 
     console.log(`room ${this.roomIndex}`);
-    this.#setDoorDirections();
+    await this.#setDoorDirections();
 
     // for (let i = 0; i < this.level.length; i++) {
     // Choose a width and height for the room / block
@@ -83,7 +83,7 @@ export default class DungeonGenerator {
     this.#digTunnels(this.level[this.roomIndex], width, height);
   }
 
-  #setDoorDirections() {
+  async #setDoorDirections() {
     switch (this.roomIndex) {
       case 0:
         this.doorDirection = ['right', 'down'];
@@ -119,7 +119,7 @@ export default class DungeonGenerator {
         break;
       case 8:
         this.doorDirection = ['up', 'left'];
-        this.startingPosition = 'down-righ';
+        this.startingPosition = 'down-right';
         break;
     }
   }
@@ -227,18 +227,17 @@ export default class DungeonGenerator {
     // Get all the tiles around the floor
     const unWalkables: mapBorder[] = [];
     const walkables: mapBorder[] = [];
-    let tileCounts = -1;
+
     for (let i = 0; i < room.length; i++) {
-      unWalkables[i] = {
+      unWalkables.push({
         row: i,
         cols: [],
-      };
+      });
       walkables.push({
         row: i,
         cols: [],
       });
       for (let j = 0; j < room[i].length; j++) {
-        tileCounts += 1;
         if (room[i][j] === 1) {
           // Check if the tile is next to the floor
           if (
@@ -247,7 +246,7 @@ export default class DungeonGenerator {
             (i + 1 <= height - 1 && room[i + 1][j] === 0) ||
             (j - 1 >= 0 && room[i][j - 1] === 0)
           ) {
-            unWalkables[i].cols.push(j);
+            unWalkables[unWalkables.length - 1].cols.push(j);
           }
         }
 
@@ -255,23 +254,20 @@ export default class DungeonGenerator {
           walkables[walkables.length - 1].cols.push(j);
         }
 
-        if (
-          j === room[i].length - 1 &&
-          !walkables[walkables.length - 1].cols.length
-        ) {
-          walkables.pop();
+        // Remove empty array
+        if (j === room[i].length - 1) {
+          if (!walkables[walkables.length - 1].cols.length) {
+            walkables.pop();
+          }
+
+          if (!unWalkables[unWalkables.length - 1].cols.length) {
+            unWalkables.pop();
+          }
         }
       }
     }
 
     this.#setStartingPosition(walkables);
-
-    // Remove empty array
-    unWalkables.forEach((row, index) => {
-      if (!row.cols.length) {
-        unWalkables.splice(index, 1);
-      }
-    });
 
     console.log('unWalkables :>>>', unWalkables);
 
@@ -394,21 +390,26 @@ export default class DungeonGenerator {
 
   #setStartingPosition(walkables: mapBorder[]) {
     console.log('walkables :>>>', walkables);
+    console.log('startingPosition :>>>', this.startingPosition);
 
     const lastRow = walkables.length - 1;
 
     switch (this.startingPosition) {
       case 'up':
         // Find the door on the up direction
+        console.log('up');
         break;
       case 'right':
         // Find the door on the right direction
+        console.log('right');
         break;
       case 'down':
         // Find the door on the down direction
+        console.log('down');
         break;
       case 'left':
         // Find the door on the left direction
+        console.log('left');
         break;
       case 'up-left':
         this.startingPoint = [walkables[0].row, walkables[0].cols[0]];
@@ -478,5 +479,7 @@ export default class DungeonGenerator {
         ];
         break;
     }
+
+    console.log('startingPoint set :>>>', this.startingPoint);
   }
 }
