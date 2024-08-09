@@ -1,9 +1,9 @@
 <template>
-  <span style="display: none; height: 0px">Placeholder</span>
+  <span id="textLayer" ref="textLayer">{{textContent}}</span>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useGameStore } from 'src/stores/game';
 import * as Phaser from 'phaser';
 import { GridEngine } from 'grid-engine';
@@ -12,7 +12,9 @@ import Dungeon from '../scene/dungeon';
 
 const gameStore = useGameStore();
 
-// gameStore.setLevelContent();
+const textContent = computed(() => gameStore.getTextContent)
+
+const textLayer = ref<HTMLSpanElement | null>(null);
 
 onMounted(() => {
   console.log('onMounted');
@@ -47,5 +49,22 @@ onMounted(() => {
   });
 
   console.log('game :>>>', gameStore.game);
+
+  // Set text layer position
+  if (textLayer.value) {
+    textLayer.value.style.transform = `translateY(${
+      gameStore.getWindowHeight - gameStore.tileSize
+    }px)`;
+  }
 });
 </script>
+
+<style lang="scss">
+#textLayer {
+  height: 0px;
+  margin: 0 auto;
+  position: absolute;
+  color: white;
+  font-size: bold;
+}
+</style>
