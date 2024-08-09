@@ -369,7 +369,7 @@ export default class DungeonGenerator {
               if (doorRow === 0 || doorRow === height - 1) {
                 console.log('out of range');
                 //Check if the door is facing the floor
-                if (room[doorRow][doorCol] === 0) room[doorRow][0] = 1;
+                room[doorRow][0] = 1;
               } else if (
                 room[doorRow - 1][doorCol] !== 1 ||
                 room[doorRow + 1][doorCol] !== 1 ||
@@ -377,7 +377,7 @@ export default class DungeonGenerator {
               ) {
                 console.log('Not a wall');
                 //Check if the door is facing the floor
-                if (room[doorRow][doorCol] === 0) room[doorRow][0] = 1;
+                room[doorRow][0] = 1;
               } else {
                 this.doors.push({
                   direction: d,
@@ -487,7 +487,7 @@ export default class DungeonGenerator {
           const center = Math.floor(walkables[lastRow].cols.length / 2);
           this.startingPoint = [
             walkables[lastRow].row,
-            walkables[center].cols[center],
+            walkables[lastRow].cols[center],
           ];
         }
         break;
