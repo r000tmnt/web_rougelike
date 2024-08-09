@@ -9,6 +9,8 @@ export const useGameStore = defineStore('game', {
     windowWidth: 0,
     windowHeight: 0,
     tileSize: 48,
+    textContent: '',
+    textIcon: '',
   }),
 
   getters: {
@@ -16,6 +18,8 @@ export const useGameStore = defineStore('game', {
     getWindowWidth: (state) => state.windowWidth,
     getWindowHeight: (state) => state.windowHeight,
     getTileSize: (state) => state.tileSize,
+    getTextContent: (state) => state.textContent,
+    getTextIcon: (state) => state.textIcon,
   },
 
   actions: {
@@ -23,8 +27,8 @@ export const useGameStore = defineStore('game', {
       this.game = phaserGame;
     },
 
-    setLevelContent() {
-      // new Dungeon();
+    setTextContent(content: string) {
+      this.textContent = content;
     },
   },
 });
