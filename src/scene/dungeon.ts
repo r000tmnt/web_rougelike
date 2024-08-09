@@ -348,19 +348,19 @@ export default class Dungeon extends Scene {
       // const room = this.content.roomIndex;
       // Listen to key press
       if (this.cursor?.left.isDown) {
-        this.player?.setVelocityX(-tileSize * 2);
+        this.player?.setVelocityX(-tileSize * 2.5);
         // this.#watchAnimation('left', tileSize, room);
         // this.gridEngine.move('player', Direction.LEFT);
       } else if (this.cursor?.right.isDown) {
-        this.player?.setVelocityX(tileSize * 2);
+        this.player?.setVelocityX(tileSize * 2.5);
         // this.#watchAnimation('right', tileSize, room);
         // this.gridEngine.move('player', Direction.RIGHT);
       } else if (this.cursor?.up.isDown) {
-        this.player?.setVelocityY(-tileSize * 2);
+        this.player?.setVelocityY(-tileSize * 2.5);
         // this.#watchAnimation('up', tileSize, room);
         // this.gridEngine.move('player', Direction.UP);
       } else if (this.cursor?.down.isDown) {
-        this.player?.setVelocityY(tileSize * 2);
+        this.player?.setVelocityY(tileSize * 2.5);
         // this.#watchAnimation('down', tileSize, room);
         // this.gridEngine.move('player', Direction.DOWN);
       } else {
