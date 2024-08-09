@@ -1,7 +1,7 @@
 import { Scene, Display } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
-// import { Direction, GridEngine } from 'grid-engine';
+import { Direction, GridEngine } from 'grid-engine';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
@@ -16,7 +16,7 @@ export default class Dungeon extends Scene {
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
 
-  // private gridEngine!: GridEngine;
+  private gridEngine!: GridEngine;
 
   constructor() {
     super('Dungeon');
@@ -217,23 +217,23 @@ export default class Dungeon extends Scene {
         // this.physics.add.collider(this.player, this.groundLayer)
 
         // Config grid movement & player
-        // try {
-        //   this.gridEngine.create(this.map, {
-        //     characters: [
-        //       {
-        //         id: 'player',
-        //         sprite: this.player,
-        //         walkingAnimationMapping: 0,
-        //         startPosition: {
-        //           x: playerX + this.offsetX,
-        //           y: playerY + this.offsetY,
-        //         },
-        //       },
-        //     ],
-        //   });
-        // } catch (error) {
-        //   console.log('failed to use grid-engine :>>>', error);
-        // }
+        try {
+          this.gridEngine.create(this.map, {
+            characters: [
+              {
+                id: 'player',
+                sprite: this.player,
+                walkingAnimationMapping: 0,
+                startPosition: {
+                  x: playerX + this.offsetX,
+                  y: playerY + this.offsetY,
+                },
+              },
+            ],
+          });
+        } catch (error) {
+          console.log('failed to use grid-engine :>>>', error);
+        }
       }
     }
   }
@@ -248,21 +248,21 @@ export default class Dungeon extends Scene {
       const room = this.content.roomIndex;
       // Listen to key press
       if (this.cursor?.left.isDown) {
-        this.player?.setVelocityX(-tileSize * 2);
+        // this.player?.setVelocityX(-tileSize * 2);
         // this.#watchAnimation('left', tileSize, room);
-        // this.gridEngine.move('player', Direction.LEFT);
+        this.gridEngine.move('player', Direction.LEFT);
       } else if (this.cursor?.right.isDown) {
-        this.player?.setVelocityX(tileSize * 2);
+        // this.player?.setVelocityX(tileSize * 2);
         // this.#watchAnimation('right', tileSize, room);
-        // this.gridEngine.move('player', Direction.RIGHT);
+        this.gridEngine.move('player', Direction.RIGHT);
       } else if (this.cursor?.up.isDown) {
-        this.player?.setVelocityY(-tileSize * 2);
+        // this.player?.setVelocityY(-tileSize * 2);
         // this.#watchAnimation('up', tileSize, room);
-        // this.gridEngine.move('player', Direction.UP);
+        this.gridEngine.move('player', Direction.UP);
       } else if (this.cursor?.down.isDown) {
-        this.player?.setVelocityY(tileSize * 2);
+        // this.player?.setVelocityY(tileSize * 2);
         // this.#watchAnimation('down', tileSize, room);
-        // this.gridEngine.move('player', Direction.DOWN);
+        this.gridEngine.move('player', Direction.DOWN);
       } else {
         this.player?.setVelocityX(0);
         this.player?.setVelocityY(0);
