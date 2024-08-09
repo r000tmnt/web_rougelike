@@ -1,7 +1,7 @@
 import { Scene, Display } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
-import { Direction, GridEngine } from 'grid-engine';
+// import { Direction, GridEngine } from 'grid-engine';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
@@ -16,7 +16,7 @@ export default class Dungeon extends Scene {
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
 
-  private gridEngine!: GridEngine;
+  // private gridEngine!: GridEngine;
 
   constructor() {
     super('Dungeon');
@@ -83,12 +83,12 @@ export default class Dungeon extends Scene {
         // Set collision
         console.log('border :>>>', this.content.borders);
         // const collisionSet = this.map
-        const collisionSet = this.groundLayer?.setCollision(
-          this.content.borders,
-          true,
-          false
-        );
-        console.log('collisionSet :>>>', collisionSet);
+        // const collisionSet = this.groundLayer?.setCollision(
+        //   this.content.borders,
+        //   true,
+        //   false
+        // );
+        // console.log('collisionSet :>>>', collisionSet);
         console.log('tileset :>>>', tileset);
         console.log('groundLayer :>>>', this.groundLayer);
         // console.log('stuffLayer :>>>', this.stuffLayer);
@@ -155,15 +155,6 @@ export default class Dungeon extends Scene {
           this.content.startingPoint
         );
 
-        const tileColor = new Display.Color(105, 210, 231, 200);
-        const colldingTileColor = new Display.Color(243, 134, 48, 200);
-        const faceColor = new Display.Color(40, 39, 37, 255);
-        this.map.renderDebug(this.add.graphics(), {
-          tileColor: tileColor, // Non-colliding tiles
-          collidingTileColor: colldingTileColor, // Colliding tiles
-          faceColor: faceColor, // Interesting faces, i.e. colliding edges
-        });
-
         // Set up player
         const playerX = this.content.startingPoint[1] * tileSize;
         const playerY = this.content.startingPoint[0] * tileSize;
@@ -213,27 +204,42 @@ export default class Dungeon extends Scene {
         this.cursor = this.input.keyboard?.createCursorKeys();
 
         // Set collision
-        this.physics.add.existing(this.player);
-        // this.physics.add.collider(this.player, this.groundLayer)
+        this.groundLayer?.setCollisionBetween(
+          1,
+          room.length * room[0].length,
+          true,
+          false
+        );
+        this.physics.add.collider(this.groundLayer, this.player);
+
+        // Show the collide tiles and none collide tiles for debug
+        const tileColor = new Display.Color(105, 210, 231, 200);
+        const colldingTileColor = new Display.Color(243, 134, 48, 200);
+        const faceColor = new Display.Color(40, 39, 37, 255);
+        this.map.renderDebug(this.add.graphics(), {
+          tileColor: tileColor, // Non-colliding tiles
+          collidingTileColor: colldingTileColor, // Colliding tiles
+          faceColor: faceColor, // Interesting faces, i.e. colliding edges
+        });
 
         // Config grid movement & player
-        try {
-          this.gridEngine.create(this.map, {
-            characters: [
-              {
-                id: 'player',
-                sprite: this.player,
-                walkingAnimationMapping: 0,
-                startPosition: {
-                  x: playerX + this.offsetX,
-                  y: playerY + this.offsetY,
-                },
-              },
-            ],
-          });
-        } catch (error) {
-          console.log('failed to use grid-engine :>>>', error);
-        }
+        // try {
+        //   this.gridEngine.create(this.map, {
+        //     characters: [
+        //       {
+        //         id: 'player',
+        //         sprite: this.player,
+        //         walkingAnimationMapping: 0,
+        //         startPosition: {
+        //           x: playerX + this.offsetX,
+        //           y: playerY + this.offsetY,
+        //         },
+        //       },
+        //     ],
+        //   });
+        // } catch (error) {
+        //   console.log('failed to use grid-engine :>>>', error);
+        // }
       }
     }
   }
@@ -248,21 +254,21 @@ export default class Dungeon extends Scene {
       const room = this.content.roomIndex;
       // Listen to key press
       if (this.cursor?.left.isDown) {
-        // this.player?.setVelocityX(-tileSize * 2);
+        this.player?.setVelocityX(-tileSize * 2);
         // this.#watchAnimation('left', tileSize, room);
-        this.gridEngine.move('player', Direction.LEFT);
+        // this.gridEngine.move('player', Direction.LEFT);
       } else if (this.cursor?.right.isDown) {
-        // this.player?.setVelocityX(tileSize * 2);
+        this.player?.setVelocityX(tileSize * 2);
         // this.#watchAnimation('right', tileSize, room);
-        this.gridEngine.move('player', Direction.RIGHT);
+        // this.gridEngine.move('player', Direction.RIGHT);
       } else if (this.cursor?.up.isDown) {
-        // this.player?.setVelocityY(-tileSize * 2);
+        this.player?.setVelocityY(-tileSize * 2);
         // this.#watchAnimation('up', tileSize, room);
-        this.gridEngine.move('player', Direction.UP);
+        // this.gridEngine.move('player', Direction.UP);
       } else if (this.cursor?.down.isDown) {
-        // this.player?.setVelocityY(tileSize * 2);
+        this.player?.setVelocityY(tileSize * 2);
         // this.#watchAnimation('down', tileSize, room);
-        this.gridEngine.move('player', Direction.DOWN);
+        // this.gridEngine.move('player', Direction.DOWN);
       } else {
         this.player?.setVelocityX(0);
         this.player?.setVelocityY(0);
