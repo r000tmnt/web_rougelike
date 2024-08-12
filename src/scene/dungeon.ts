@@ -16,11 +16,11 @@ export default class Dungeon extends Scene {
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   doors: Phaser.GameObjects.Zone[];
-  doorAnchor: string[];
   doorTouching: number;
+  limitWidth: number;
+  limitHeight: number;
 
-  private enteractKey!: Key | undefined;
-
+  private fKey!: Input.Keyboard.Key | undefined;
   // private gridEngine!: GridEngine;
 
   constructor() {
@@ -37,8 +37,9 @@ export default class Dungeon extends Scene {
     this.offsetY = 0;
     this.cursor = undefined;
     this.doors = [];
-    this.doorAnchor = [];
     this.doorTouching = -1;
+    this.limitWidth = 0;
+    this.limitHeight = 0;
   }
 
   setTheme(theme: string) {
@@ -66,255 +67,50 @@ export default class Dungeon extends Scene {
     const tileSize = gameStore.getTileSize;
 
     // Bind keyborad input
-    this.enteractKey = this.input.keyboard?.addKey(Input.Keyboard.KeyCodes.F);
+    this.fKey = this.input.keyboard?.addKey(Input.Keyboard.KeyCodes.F);
 
     // Generate tileMap
     if (this.content !== null) {
       const room = this.content?.level[this.content.roomIndex];
       console.log('room :>>>', room);
 
+      this.limitWidth = room[0].length * tileSize;
+      this.limitHeight = room.length * tileSize;
+
       if (room) {
-        this.map = this.make.tilemap({
-          tileHeight: tileSize, // Need to match the height of the image for each tile
-          tileWidth: tileSize, // Need to match the width of the image for each tile
-          data: room,
-        });
+        this.#setTileMap(room, tileSize);
 
         console.log('map :>>>', this.map);
 
-        const tileset = this.map.addTilesetImage('tiles');
-        this.groundLayer = this.map.createLayer(
-          0,
-          tileset ? tileset : [],
-          0,
-          0
-        );
-        // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
-
-        console.log('tileset :>>>', tileset);
-        console.log('groundLayer :>>>', this.groundLayer);
-        // console.log('stuffLayer :>>>', this.stuffLayer);
-
         // Initialize the camera and limit the movement based on the size of the tileMap
-        const limitWidth: number = room[0].length * tileSize;
-        const limitHeight: number = room.length * tileSize;
-
-        console.log('windowWidth :>>>', windowWidth);
-        console.log('limitWidth :>>>', limitWidth);
-        console.log('windowHeight :>>>', windowHeight);
-        console.log('limitHeight :>>>', limitHeight);
-
-        // If the map is smaller then the window, move the layer position
-        if (limitWidth < windowWidth || limitHeight < windowHeight) {
-          this.offsetX =
-            limitWidth < windowWidth
-              ? Math.floor((windowWidth - limitWidth) / 2)
-              : Math.floor((limitWidth - windowWidth) / 2);
-
-          this.offsetY =
-            limitHeight < windowHeight
-              ? Math.floor((windowHeight - limitHeight) / 2)
-              : Math.floor((limitHeight - windowHeight) / 2);
-
-          this.groundLayer?.setPosition(this.offsetX, this.offsetY);
-
-          console.log('off set x :>>>', this.offsetX);
-          console.log('off set y :>>>', this.offsetY);
-
-          this.camera = this.cameras.main.setBounds(
-            0,
-            0,
-            limitWidth + this.offsetX,
-            limitHeight + this.offsetY
-          );
-
-          this.camera.scrollX -= this.offsetX;
-          this.camera.scrollY -= this.offsetY;
-        } else {
-          // Limit camera movement based on the size of the tileMap
-          this.camera = this.cameras.main.setBounds(
-            0,
-            0,
-            limitWidth,
-            limitHeight
-          );
-        }
+        this.#setCamera(room, tileSize, windowWidth, windowHeight);
 
         // Listen to the mouse event
-        this.input.on('pointermove', (pointer: any) => {
-          if (pointer.isDown) {
-            if (this.camera !== null) {
-              // this.camera.stopFollow();
-              this.camera.scrollX -=
-                (pointer.x - pointer.prevPosition.x) / this.camera.zoom;
-              this.camera.scrollY -=
-                (pointer.y - pointer.prevPosition.y) / this.camera.zoom;
-            }
-          } else {
-            // this.camera?.startFollow(this.player);
-          }
-        });
-
-        console.log(
-          'player starting position: >>>',
-          this.content.startingPoint
-        );
-
-        // Set collision on doors
-        // this.doors = this.physics.add.staticGroup();
-        this.content.doors.forEach((door) => {
-          const doorX = door.col * tileSize;
-          const doorY = door.row * tileSize;
-          const halfHeight = tileSize / 2;
-          // const doorCollide = this.doors
-          //   ?.create(doorX + this.offsetX, doorY + this.offsetY)
-          //   .setScale(1.5);
-          // // Reset position origin
-          // doorCollide.setOrigin(0, 0);
-          this.doorAnchor.push(door.direction);
-          switch (door.direction) {
-            case 'up':
-              {
-                const sensor = this.add.zone(
-                  doorX + this.offsetX,
-                  doorY + this.offsetY + halfHeight,
-                  tileSize,
-                  tileSize
-                );
-                this.doors.push(sensor);
-              }
-              break;
-            case 'right':
-              {
-                const sensor = this.add.zone(
-                  doorX + this.offsetX - halfHeight,
-                  doorY + this.offsetY,
-                  tileSize,
-                  tileSize
-                );
-                this.doors.push(sensor);
-              }
-              break;
-            case 'down':
-              {
-                const sensor = this.add.zone(
-                  doorX + this.offsetX,
-                  doorY + this.offsetY - halfHeight,
-                  tileSize,
-                  tileSize
-                );
-                this.doors.push(sensor);
-              }
-              break;
-            case 'left':
-              {
-                const sensor = this.add.zone(
-                  doorX + this.offsetX + halfHeight,
-                  doorY + this.offsetY,
-                  tileSize,
-                  tileSize
-                );
-                this.doors.push(sensor);
-              }
-              break;
-          }
-
-          // this.groundLayer.setTileIndexCallback(2, this.#doorHit, this);
-        });
-        // Set up player
-        const playerX = this.content.startingPoint[1] * tileSize;
-        const playerY = this.content.startingPoint[0] * tileSize;
-        this.player = this.physics.add.sprite(
-          playerX + this.offsetX,
-          playerY + this.offsetY,
-          'demo-player'
-        );
-
-        this.player.setOrigin(0, 0);
-        // this.player.setCollideWorldBounds(true);
-
-        // Check player position
-        if (
-          this.player.x - this.offsetX !== playerX ||
-          this.player.y - this.offsetY !== playerY
-        ) {
-          this.player.setPosition(
-            playerX + this.offsetX,
-            playerY + this.offsetY
-          );
-        }
-
-        console.log('player :>>>', this.player);
-
-        // Set animation
-        this.anims.create({
-          key: 'player-idel',
-          frames: this.anims.generateFrameNames('demo-player', {
-            start: 0,
-            end: 0,
-          }),
-          frameRate: 5,
-          repeat: 0,
-        });
-
-        this.anims.create({
-          key: 'player-walk-left',
-          frames: this.anims.generateFrameNames('demo-player', {
-            start: 3,
-            end: 5,
-          }),
-          frameRate: 5,
-          repeat: -1,
-        });
-
-        // this.player.on('animationcomplete', (context: any) => {
-        //   // console.log('context :>>>', context);
-        //   // Check animation name
-        //   if (context.key === 'player-idel') {
-        //     this.player?.anims.pause(); // Pause the animation
-        //     this.playerIdelCount += 1;
-        //     // Play the animation back and forth
-        //     if (this.playerIdelCount % 2 === 0) {
-        //       this.player?.anims.play('player-idel', true);
-        //     } else {
-        //       this.player?.anims.playReverse('player-idel');
+        // this.input.on('pointermove', (pointer: any) => {
+        //   if (pointer.isDown) {
+        //     if (this.camera !== null) {
+        //       // this.camera.stopFollow();
+        //       this.camera.scrollX -=
+        //         (pointer.x - pointer.prevPosition.x) / this.camera.zoom;
+        //       this.camera.scrollY -=
+        //         (pointer.y - pointer.prevPosition.y) / this.camera.zoom;
         //     }
+        //   } else {
+        //     // this.camera?.startFollow(this.player);
         //   }
         // });
 
-        // Play animation
-        this.player.anims.play('player-idel', true);
+        // Set collision on doors
+        this.#setDoorZones(tileSize);
 
-        // Set the camera to follow the player
-        this.camera.startFollow(this.player, true);
+        // Set up player
+        this.#setPlayer(tileSize);
+
+        // Set collision on tileMap and enable zones
+        this.#setCollision(room, gameStore);
 
         // Init key events
         this.cursor = this.input.keyboard?.createCursorKeys();
-
-        // Set collision
-        this.groundLayer?.setCollisionBetween(
-          1,
-          room.length * room[0].length,
-          true,
-          false
-        );
-        this.physics.add.collider(this.groundLayer, this.player);
-        this.physics.world.bounds.width = limitWidth + this.offsetX;
-        this.physics.world.bounds.height = limitHeight + this.offsetY;
-        this.player.setCollideWorldBounds(true);
-
-        // Enable zoom
-        this.doors.forEach((door, index) => {
-          door.setOrigin(0, 0);
-          this.physics.add.existing(door, false);
-          if (door.body) door.body.moves = false;
-
-          this.physics.add.overlap(door, this.player, (player, zone) => {
-            console.log('overlap!');
-            gameStore.setTextContent('OPEN (F)');
-            this.doorTouching = index;
-          });
-        });
 
         // Show the collide tiles and none collide tiles for debug
         // const tileColor = new Display.Color(105, 210, 231, 200);
@@ -380,20 +176,22 @@ export default class Dungeon extends Scene {
       } else {
         this.player?.setVelocityX(0);
         this.player?.setVelocityY(0);
-        this.player.anims.play('player-idel', true);
+        this.player?.anims.play('player-idel', true);
       }
 
-      if (this.doorTouching >= 0 && this.doors !== undefined) {
+      if (this.doorTouching >= 0) {
         console.log('checking overlap :>>>');
         if (!this.doors[this.doorTouching].body.embedded) {
           gameStore.setTextContent('');
           this.doorTouching = -1;
         }
 
-        if (this.enteractKey.isDown) {
-          console.log(`Open the door ${this.doorAnchor[this.doorTouching]}`);
+        if (this.fKey && this.fKey.isDown) {
+          console.log(
+            `Open the door ${this.content.doors[this.doorTouching].direction}`
+          );
 
-          switch (this.doorAnchor[this.doorTouching]) {
+          switch (this.content.doors[this.doorTouching].direction) {
             case 'up':
               break;
             case 'right':
@@ -405,6 +203,226 @@ export default class Dungeon extends Scene {
           }
         }
       }
+    }
+  }
+
+  #setTileMap(room: number[][], tileSize: number) {
+    this.map = this.make.tilemap({
+      tileHeight: tileSize, // Need to match the height of the image for each tile
+      tileWidth: tileSize, // Need to match the width of the image for each tile
+      data: room,
+    });
+
+    console.log('map :>>>', this.map);
+
+    const tileset = this.map.addTilesetImage('tiles');
+    this.groundLayer = this.map.createLayer(0, tileset ? tileset : [], 0, 0);
+    // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
+
+    console.log('tileset :>>>', tileset);
+    console.log('groundLayer :>>>', this.groundLayer);
+    // console.log('stuffLayer :>>>', this.stuffLayer);
+  }
+
+  #setCamera(
+    room: number[][],
+    tileSize: number,
+    windowWidth: number,
+    windowHeight: number
+  ) {
+    console.log('windowWidth :>>>', windowWidth);
+    console.log('limitWidth :>>>', this.limitWidth);
+    console.log('windowHeight :>>>', windowHeight);
+    console.log('limitHeight :>>>', this.limitHeight);
+
+    // If the map is smaller then the window, move the layer position
+    if (this.limitWidth < windowWidth || this.limitHeight < windowHeight) {
+      this.offsetX =
+        this.limitWidth < windowWidth
+          ? Math.floor((windowWidth - this.limitWidth) / 2)
+          : Math.floor((this.limitWidth - windowWidth) / 2);
+
+      this.offsetY =
+        this.limitHeight < windowHeight
+          ? Math.floor((windowHeight - this.limitHeight) / 2)
+          : Math.floor((this.limitHeight - windowHeight) / 2);
+
+      this.groundLayer?.setPosition(this.offsetX, this.offsetY);
+
+      console.log('off set x :>>>', this.offsetX);
+      console.log('off set y :>>>', this.offsetY);
+
+      this.camera = this.cameras.main.setBounds(
+        0,
+        0,
+        this.limitWidth + this.offsetX,
+        this.limitHeight + this.offsetY
+      );
+
+      this.camera.scrollX -= this.offsetX;
+      this.camera.scrollY -= this.offsetY;
+    } else {
+      // Limit camera movement based on the size of the tileMap
+      this.camera = this.cameras.main.setBounds(
+        0,
+        0,
+        this.limitWidth,
+        this.limitHeight
+      );
+    }
+  }
+
+  #setDoorZones(tileSize: number) {
+    this.content?.doors.forEach((door) => {
+      const doorX = door.col * tileSize;
+      const doorY = door.row * tileSize;
+      const halfHeight = tileSize / 2;
+
+      switch (door.direction) {
+        case 'up':
+          {
+            const sensor = this.add.zone(
+              doorX + this.offsetX,
+              doorY + this.offsetY + halfHeight,
+              tileSize,
+              tileSize
+            );
+            this.doors.push(sensor);
+          }
+          break;
+        case 'right':
+          {
+            const sensor = this.add.zone(
+              doorX + this.offsetX - halfHeight,
+              doorY + this.offsetY,
+              tileSize,
+              tileSize
+            );
+            this.doors.push(sensor);
+          }
+          break;
+        case 'down':
+          {
+            const sensor = this.add.zone(
+              doorX + this.offsetX,
+              doorY + this.offsetY - halfHeight,
+              tileSize,
+              tileSize
+            );
+            this.doors.push(sensor);
+          }
+          break;
+        case 'left':
+          {
+            const sensor = this.add.zone(
+              doorX + this.offsetX + halfHeight,
+              doorY + this.offsetY,
+              tileSize,
+              tileSize
+            );
+            this.doors.push(sensor);
+          }
+          break;
+      }
+
+      // this.groundLayer.setTileIndexCallback(2, this.#doorHit, this);
+    });
+  }
+
+  #setPlayer(tileSize: number) {
+    if (this.content) {
+      console.log('player starting position: >>>', this.content.startingPoint);
+      const playerX = this.content.startingPoint[1] * tileSize;
+      const playerY = this.content.startingPoint[0] * tileSize;
+      this.player = this.physics.add.sprite(
+        playerX + this.offsetX,
+        playerY + this.offsetY,
+        'demo-player'
+      );
+
+      this.player.setOrigin(0, 0);
+      // this.player.setCollideWorldBounds(true);
+
+      // Check player position
+      if (
+        this.player.x - this.offsetX !== playerX ||
+        this.player.y - this.offsetY !== playerY
+      ) {
+        this.player.setPosition(playerX + this.offsetX, playerY + this.offsetY);
+      }
+
+      console.log('player :>>>', this.player);
+
+      // Set animation
+      this.anims.create({
+        key: 'player-idel',
+        frames: this.anims.generateFrameNames('demo-player', {
+          start: 0,
+          end: 0,
+        }),
+        frameRate: 5,
+        repeat: 0,
+      });
+
+      this.anims.create({
+        key: 'player-walk-left',
+        frames: this.anims.generateFrameNames('demo-player', {
+          start: 3,
+          end: 5,
+        }),
+        frameRate: 5,
+        repeat: -1,
+      });
+
+      // this.player.on('animationcomplete', (context: any) => {
+      //   // console.log('context :>>>', context);
+      //   // Check animation name
+      //   if (context.key === 'player-idel') {
+      //     this.player?.anims.pause(); // Pause the animation
+      //     this.playerIdelCount += 1;
+      //     // Play the animation back and forth
+      //     if (this.playerIdelCount % 2 === 0) {
+      //       this.player?.anims.play('player-idel', true);
+      //     } else {
+      //       this.player?.anims.playReverse('player-idel');
+      //     }
+      //   }
+      // });
+
+      // Play animation
+      this.player.anims.play('player-idel', true);
+
+      // Set the camera to follow the player
+      this.camera?.startFollow(this.player, true);
+    }
+  }
+
+  #setCollision(room: number[][], gameStore: any) {
+    // Set collision
+    if (this.groundLayer && this.player) {
+      this.groundLayer?.setCollisionBetween(
+        1,
+        room.length * room[0].length,
+        true,
+        false
+      );
+      this.physics.add.collider(this.groundLayer, this.player);
+      this.physics.world.bounds.width = this.limitWidth + this.offsetX;
+      this.physics.world.bounds.height = this.limitHeight + this.offsetY;
+      this.player?.setCollideWorldBounds(true);
+
+      // Enable zoom
+      this.doors.forEach((door, index) => {
+        door.setOrigin(0, 0);
+        this.physics.add.existing(door, false);
+        if (door.body) door.body.moves = false;
+
+        this.physics.add.overlap(door, this.player, (player, zone) => {
+          console.log('overlap!');
+          gameStore.setTextContent('[F] OPEN');
+          this.doorTouching = index;
+        });
+      });
     }
   }
 
