@@ -11,6 +11,7 @@ export default class DungeonGenerator {
   doorDirection: string[];
   startingPosition: string;
   startingPoint: number[];
+  clearedRoom: number[];
   roomIndex: number;
   doors: doorPostion[];
 
@@ -33,19 +34,22 @@ export default class DungeonGenerator {
     this.startingPoint = [];
     this.roomIndex = -1;
     this.doors = [];
+    this.clearedRoom = [];
     this.init();
   }
 
   init() {
     console.log('room size :>>>', this.roomSize);
 
-    this.level = Array(9).fill([]);
+    for (let i = 0; i < 9; i++) {
+      this.level.push([]);
+    }
 
     this.setRoom();
   }
 
   async setRoom(index = -1) {
-    this.roomIndex = 0;
+    this.doors.splice(0);
     if (index >= 0) {
       this.roomIndex = index;
     } else {
@@ -56,31 +60,34 @@ export default class DungeonGenerator {
     console.log(`room ${this.roomIndex}`);
     await this.#setDoorDirections();
 
-    // for (let i = 0; i < this.level.length; i++) {
-    // Choose a width and height for the room / block
-    const width =
-      this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
-    const height =
-      this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
+    if (this.clearedRoom.find((r) => r === this.roomIndex)) {
+      // TODO: Check if the room is going to regenerate
+      // TODO: Remove the index from this.clearedRoom
+    } else {
+      const width =
+        this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
+      const height =
+        this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
 
-    this.tunnelSize = width + height;
+      this.tunnelSize = width + height;
 
-    console.log('random width :>>>', width);
-    console.log('random height :>>>', height);
-    console.log('random tunnel :>>>', this.tunnelSize);
+      console.log('random width :>>>', width);
+      console.log('random height :>>>', height);
+      console.log('random tunnel :>>>', this.tunnelSize);
 
-    for (let i = 0; i < height; i++) {
-      // console.log('row :>>>', i);
-      this.level[this.roomIndex][i] = [];
-      for (let j = 0, row = this.level[this.roomIndex][i]; j < width; j++) {
-        // console.log('col :>>>', j);
-        row.push(1);
+      for (let i = 0; i < height; i++) {
+        // console.log('row :>>>', i);
+        this.level[this.roomIndex][i] = [];
+        for (let j = 0, row = this.level[this.roomIndex][i]; j < width; j++) {
+          // console.log('col :>>>', j);
+          row.push(1);
+        }
       }
+
+      console.log('level :>>>', this.level);
+
+      this.#digTunnels(this.level[this.roomIndex], width, height);
     }
-
-    // console.log('map before dig tunnels :>>>', this.level[this.roomIndex]);
-
-    this.#digTunnels(this.level[this.roomIndex], width, height);
   }
 
   async #setDoorDirections() {
@@ -216,13 +223,13 @@ export default class DungeonGenerator {
     }
 
     // Re-fill the wall
-    // room[0] = Array(width).fill(1)
-    // room[height - 1] = Array(width).fill(1)
+    room[0] = Array(width).fill(1);
+    room[height - 1] = Array(width).fill(1);
 
-    // for(let i=0; i < room.length; i++){
-    //   room[i][0] = 1
-    //   room[i][width - 1] = 1
-    // }
+    for (let i = 0; i < room.length; i++) {
+      room[i][0] = 1;
+      room[i][width - 1] = 1;
+    }
 
     // Get all the tiles around the floor
     const unWalkables: mapBorder[] = [];
@@ -370,9 +377,7 @@ export default class DungeonGenerator {
                 console.log('out of range');
                 //Check if the door is facing the floor
                 room[doorRow][0] = 1;
-              }
-
-              if (
+              } else if (
                 room[doorRow - 1][doorCol] !== 1 ||
                 room[doorRow + 1][doorCol] !== 1 ||
                 room[doorRow][doorCol + 1] !== 0
