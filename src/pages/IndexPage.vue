@@ -39,15 +39,15 @@ onMounted(() => {
         debug: true,
       },
     },
-    plugins: {
-      scene: [
-        {
-          key: 'gridEngine',
-          plugin: GridEngine,
-          mapping: 'gridEngine',
-        },
-      ],
-    },
+    // plugins: {
+    //   scene: [
+    //     {
+    //       key: 'gridEngine',
+    //       plugin: GridEngine,
+    //       mapping: 'gridEngine',
+    //     },
+    //   ],
+    // },
   });
 
   console.log('game :>>>', gameStore.game);
