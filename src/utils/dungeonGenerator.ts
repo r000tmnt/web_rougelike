@@ -370,7 +370,9 @@ export default class DungeonGenerator {
                 console.log('out of range');
                 //Check if the door is facing the floor
                 room[doorRow][0] = 1;
-              } else if (
+              }
+
+              if (
                 room[doorRow - 1][doorCol] !== 1 ||
                 room[doorRow + 1][doorCol] !== 1 ||
                 room[doorRow][doorCol + 1] !== 0
