@@ -14,6 +14,7 @@ export default class DungeonGenerator {
   clearedRoom: number[];
   roomIndex: number;
   doors: doorPostion[];
+  ready: boolean;
 
   constructor(scene: Phaser.Scene) {
     // constructor() {
@@ -28,23 +29,18 @@ export default class DungeonGenerator {
       [0, -1],
     ]; // top, right, down, left
     this.lastDirection = [];
-    this.level = [];
+    this.level = [[], [], [], [], [], [], [], [], []];
     this.doorDirection = [];
     this.startingPosition = '';
     this.startingPoint = [];
     this.roomIndex = -1;
     this.doors = [];
     this.clearedRoom = [];
+    this.ready = false;
     this.init();
   }
 
   init() {
-    console.log('room size :>>>', this.roomSize);
-
-    for (let i = 0; i < 9; i++) {
-      this.level.push([]);
-    }
-
     this.setRoom();
   }
 
@@ -376,7 +372,7 @@ export default class DungeonGenerator {
               if (doorRow === 0 || doorRow === height - 1) {
                 console.log('out of range');
                 //Check if the door is facing the floor
-                room[doorRow][0] = 1;
+                room[doorRow][doorCol] = 1;
               } else if (
                 room[doorRow - 1][doorCol] !== 1 ||
                 room[doorRow + 1][doorCol] !== 1 ||
@@ -384,7 +380,7 @@ export default class DungeonGenerator {
               ) {
                 console.log('Not a wall');
                 //Check if the door is facing the floor
-                room[doorRow][0] = 1;
+                room[doorRow][doorCol] = 1;
               } else {
                 this.doors.push({
                   direction: d,
@@ -412,6 +408,8 @@ export default class DungeonGenerator {
     }
 
     console.log(rowString);
+
+    this.ready = true;
   }
 
   #setStartingPosition(walkables: mapBorder[]) {
