@@ -1,4 +1,4 @@
-import { Scene, Display, Input } from 'phaser';
+import { Scene, Display, Input, Physics } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
 // import { Direction, GridEngine } from 'grid-engine';
@@ -21,6 +21,7 @@ export default class Dungeon extends Scene {
   limitHeight: number;
 
   private fKey!: Input.Keyboard.Key | undefined;
+
   // private gridEngine!: GridEngine;
 
   constructor() {
@@ -46,101 +47,100 @@ export default class Dungeon extends Scene {
     this.theme = theme;
   }
 
-  init() {
+  init(data: any | undefined) {
     // Generate a part of dungeon
-    this.content = new DungeonGenerator(this);
+    if (Object.entries(data).length) {
+      // Restart scene with new data
+      const { roomIndex } = data;
+
+      if (this.content?.level[roomIndex].length) {
+        // Load exisiting content
+        this.content.roomIndex = roomIndex;
+      } else {
+        // Create a new map
+        this.content?.setRoom(roomIndex);
+      }
+    } else {
+      this.content = new DungeonGenerator(this);
+    }
   }
 
   preload() {
+    const gameStore = useGameStore();
+    const tileSize = gameStore.getTileSize;
+
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
     this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
-      frameWidth: 48,
-      frameHeight: 48,
+      frameWidth: tileSize,
+      frameHeight: tileSize,
     });
   }
 
   create() {
-    const gameStore = useGameStore();
-    const windowWidth = gameStore.getWindowWidth;
-    const windowHeight = gameStore.getWindowHeight;
-    const tileSize = gameStore.getTileSize;
-
     // Bind keyborad input
     this.fKey = this.input.keyboard?.addKey(Input.Keyboard.KeyCodes.F);
 
     // Generate tileMap
-    if (this.content !== null) {
-      const room = this.content?.level[this.content.roomIndex];
-      console.log('room :>>>', room);
+    if (
+      this.content !== null &&
+      this.content.level[this.content.roomIndex].length
+    ) {
+      this.#setUpDungeon();
+      // Listen to the mouse event
+      // this.input.on('pointermove', (pointer: any) => {
+      //   if (pointer.isDown) {
+      //     if (this.camera !== null) {
+      //       // this.camera.stopFollow();
+      //       this.camera.scrollX -=
+      //         (pointer.x - pointer.prevPosition.x) / this.camera.zoom;
+      //       this.camera.scrollY -=
+      //         (pointer.y - pointer.prevPosition.y) / this.camera.zoom;
+      //     }
+      //   } else {
+      //     // this.camera?.startFollow(this.player);
+      //   }
+      // });
 
-      this.limitWidth = room[0].length * tileSize;
-      this.limitHeight = room.length * tileSize;
+      // Init key events
+      this.cursor = this.input.keyboard?.createCursorKeys();
 
-      if (room) {
-        this.#setTileMap(room, tileSize);
+      // Show the collide tiles and none collide tiles for debug
+      // const tileColor = new Display.Color(105, 210, 231, 200);
+      // const colldingTileColor = new Display.Color(243, 134, 48, 200);
+      // const faceColor = new Display.Color(40, 39, 37, 255);
+      // this.map.renderDebug(this.add.graphics(), {
+      //   tileColor: tileColor, // Non-colliding tiles
+      //   collidingTileColor: colldingTileColor, // Colliding tiles
+      //   faceColor: faceColor, // Interesting faces, i.e. colliding edges
+      // });
 
-        console.log('map :>>>', this.map);
-
-        // Initialize the camera and limit the movement based on the size of the tileMap
-        this.#setCamera(room, tileSize, windowWidth, windowHeight);
-
-        // Listen to the mouse event
-        // this.input.on('pointermove', (pointer: any) => {
-        //   if (pointer.isDown) {
-        //     if (this.camera !== null) {
-        //       // this.camera.stopFollow();
-        //       this.camera.scrollX -=
-        //         (pointer.x - pointer.prevPosition.x) / this.camera.zoom;
-        //       this.camera.scrollY -=
-        //         (pointer.y - pointer.prevPosition.y) / this.camera.zoom;
-        //     }
-        //   } else {
-        //     // this.camera?.startFollow(this.player);
-        //   }
-        // });
-
-        // Set collision on doors
-        this.#setDoorZones(tileSize);
-
-        // Set up player
-        this.#setPlayer(tileSize);
-
-        // Set collision on tileMap and enable zones
-        this.#setCollision(room, gameStore);
-
-        // Init key events
-        this.cursor = this.input.keyboard?.createCursorKeys();
-
-        // Show the collide tiles and none collide tiles for debug
-        // const tileColor = new Display.Color(105, 210, 231, 200);
-        // const colldingTileColor = new Display.Color(243, 134, 48, 200);
-        // const faceColor = new Display.Color(40, 39, 37, 255);
-        // this.map.renderDebug(this.add.graphics(), {
-        //   tileColor: tileColor, // Non-colliding tiles
-        //   collidingTileColor: colldingTileColor, // Colliding tiles
-        //   faceColor: faceColor, // Interesting faces, i.e. colliding edges
-        // });
-
-        // Config grid movement & player
-        // try {
-        //   this.gridEngine.create(this.map, {
-        //     characters: [
-        //       {
-        //         id: 'player',
-        //         sprite: this.player,
-        //         walkingAnimationMapping: 0,
-        //         startPosition: {
-        //           x: playerX + this.offsetX,
-        //           y: playerY + this.offsetY,
-        //         },
-        //       },
-        //     ],
-        //   });
-        // } catch (error) {
-        //   console.log('failed to use grid-engine :>>>', error);
-        // }
-      }
+      // Config grid movement & player
+      // try {
+      //   this.gridEngine.create(this.map, {
+      //     characters: [
+      //       {
+      //         id: 'player',
+      //         sprite: this.player,
+      //         walkingAnimationMapping: 0,
+      //         startPosition: {
+      //           x: playerX + this.offsetX,
+      //           y: playerY + this.offsetY,
+      //         },
+      //       },
+      //     ],
+      //   });
+      // } catch (error) {
+      //   console.log('failed to use grid-engine :>>>', error);
+      // }
+    } else {
+      // Wait for dungeon generator
+      const dungeonGeneratorWatcher = setInterval(() => {
+        if (this.content?.ready) {
+          clearInterval(dungeonGeneratorWatcher);
+          this.create();
+        }
+      }, 100);
     }
   }
 
@@ -148,44 +148,43 @@ export default class Dungeon extends Scene {
     const gameStore = useGameStore();
     const tileSize = gameStore.getTileSize;
 
-    // let walkingDistance = 0
-
-    if (this.content) {
+    if (this.content && this.cursor && this.player) {
       // const room = this.content.roomIndex;
       // Listen to key press
-      if (this.cursor?.left.isDown) {
-        this.player?.setVelocityX(-tileSize * 2.5);
-        this.player?.setFlipX(false);
-        this.player?.anims.play('player-walk-left', true);
-        // this.#watchAnimation('left', tileSize, room);
+      if (this.cursor.left.isDown) {
+        this.player.setVelocityX(-tileSize * 2.5);
+        this.player.setFlipX(false);
+        this.player.anims.play('player-walk-left', true);
         // this.gridEngine.move('player', Direction.LEFT);
       } else if (this.cursor?.right.isDown) {
-        this.player?.setVelocityX(tileSize * 2.5);
-        this.player?.setFlipX(true);
-        this.player?.anims.play('player-walk-left', true);
-        // this.#watchAnimation('right', tileSize, room);
+        this.player.setVelocityX(tileSize * 2.5);
+        this.player.setFlipX(true);
+        this.player.anims.play('player-walk-left', true);
         // this.gridEngine.move('player', Direction.RIGHT);
       } else if (this.cursor?.up.isDown) {
-        this.player?.setVelocityY(-tileSize * 2.5);
-        // this.#watchAnimation('up', tileSize, room);
+        this.player.setVelocityY(-tileSize * 2.5);
         // this.gridEngine.move('player', Direction.UP);
       } else if (this.cursor?.down.isDown) {
-        this.player?.setVelocityY(tileSize * 2.5);
-        // this.#watchAnimation('down', tileSize, room);
+        this.player.setVelocityY(tileSize * 2.5);
         // this.gridEngine.move('player', Direction.DOWN);
       } else {
-        this.player?.setVelocityX(0);
-        this.player?.setVelocityY(0);
-        this.player?.anims.play('player-idel', true);
+        if (this.player.body) {
+          this.player.setVelocityX(0);
+          this.player.setVelocityY(0);
+          this.player.anims.play('player-idel', true);
+        }
       }
 
-      if (this.doorTouching >= 0) {
-        console.log('checking overlap :>>>');
+      if (this.doorTouching >= 0 && this.doorTouching < this.doors.length) {
+        console.log('checking overlap :>>>', this.doorTouching);
         if (!this.doors[this.doorTouching].body.embedded) {
+          console.log('Not overlapping');
           gameStore.setTextContent('');
           this.doorTouching = -1;
+          return;
         }
 
+        // If F key press detected
         if (this.fKey && this.fKey.isDown) {
           console.log(
             `Open the door ${this.content.doors[this.doorTouching].direction}`
@@ -193,16 +192,60 @@ export default class Dungeon extends Scene {
 
           switch (this.content.doors[this.doorTouching].direction) {
             case 'up':
+              this.#updateContent(this.content.roomIndex - 3);
               break;
             case 'right':
+              this.#updateContent(this.content.roomIndex + 1);
               break;
             case 'down':
+              this.#updateContent(this.content.roomIndex + 3);
               break;
             case 'left':
+              this.#updateContent(this.content.roomIndex - 1);
               break;
           }
         }
       }
+    }
+  }
+
+  /**
+   * Render the dungeon based from the two-dimentional array from the generator and setting up playerm, camera, collision...etc
+   */
+  #setUpDungeon() {
+    const gameStore = useGameStore();
+    const windowWidth = gameStore.getWindowWidth;
+    const windowHeight = gameStore.getWindowHeight;
+    const tileSize = gameStore.getTileSize;
+
+    const room = this.#getRoom(tileSize);
+    console.log('room :>>>', room);
+
+    this.#setTileMap(room, tileSize);
+    console.log('map :>>>', this.map);
+
+    this.#setCamera(windowWidth, windowHeight);
+
+    // Set collision on doors
+    this.#setDoorZones(tileSize);
+
+    // Set up player
+    this.#setPlayer(tileSize);
+
+    // Set collision on tileMap and enable zones
+    this.#setCollision(room, gameStore);
+  }
+
+  #getRoom(tileSize: number) {
+    const room = this.content?.level[this.content.roomIndex];
+
+    if (room) {
+      this.limitWidth = room[0].length * tileSize;
+      this.limitHeight = room.length * tileSize;
+
+      return room;
+    } else {
+      return [];
     }
   }
 
@@ -216,20 +259,18 @@ export default class Dungeon extends Scene {
     console.log('map :>>>', this.map);
 
     const tileset = this.map.addTilesetImage('tiles');
+
+    // Create a new layer
     this.groundLayer = this.map.createLayer(0, tileset ? tileset : [], 0, 0);
     // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
 
     console.log('tileset :>>>', tileset);
     console.log('groundLayer :>>>', this.groundLayer);
+    console.log('groundLayer tileset :>>>', this.groundLayer?.tileset);
     // console.log('stuffLayer :>>>', this.stuffLayer);
   }
 
-  #setCamera(
-    room: number[][],
-    tileSize: number,
-    windowWidth: number,
-    windowHeight: number
-  ) {
+  #setCamera(windowWidth: number, windowHeight: number) {
     console.log('windowWidth :>>>', windowWidth);
     console.log('limitWidth :>>>', this.limitWidth);
     console.log('windowHeight :>>>', windowHeight);
@@ -251,25 +292,18 @@ export default class Dungeon extends Scene {
 
       console.log('off set x :>>>', this.offsetX);
       console.log('off set y :>>>', this.offsetY);
-
-      this.camera = this.cameras.main.setBounds(
-        0,
-        0,
-        this.limitWidth + this.offsetX,
-        this.limitHeight + this.offsetY
-      );
-
-      this.camera.scrollX -= this.offsetX;
-      this.camera.scrollY -= this.offsetY;
-    } else {
-      // Limit camera movement based on the size of the tileMap
-      this.camera = this.cameras.main.setBounds(
-        0,
-        0,
-        this.limitWidth,
-        this.limitHeight
-      );
     }
+
+    // Initialize camera
+    this.camera = this.cameras.main.setBounds(
+      0,
+      0,
+      this.limitWidth + this.offsetX,
+      this.limitHeight + this.offsetY
+    );
+
+    this.camera.scrollX -= this.offsetX;
+    this.camera.scrollY -= this.offsetY;
   }
 
   #setDoorZones(tileSize: number) {
@@ -280,48 +314,44 @@ export default class Dungeon extends Scene {
 
       switch (door.direction) {
         case 'up':
-          {
-            const sensor = this.add.zone(
+          this.doors.push(
+            this.add.zone(
               doorX + this.offsetX,
               doorY + this.offsetY + halfHeight,
               tileSize,
               tileSize
-            );
-            this.doors.push(sensor);
-          }
+            )
+          );
           break;
         case 'right':
-          {
-            const sensor = this.add.zone(
+          this.doors.push(
+            this.add.zone(
               doorX + this.offsetX - halfHeight,
               doorY + this.offsetY,
               tileSize,
               tileSize
-            );
-            this.doors.push(sensor);
-          }
+            )
+          );
           break;
         case 'down':
-          {
-            const sensor = this.add.zone(
+          this.doors.push(
+            this.add.zone(
               doorX + this.offsetX,
               doorY + this.offsetY - halfHeight,
               tileSize,
               tileSize
-            );
-            this.doors.push(sensor);
-          }
+            )
+          );
           break;
         case 'left':
-          {
-            const sensor = this.add.zone(
+          this.doors.push(
+            this.add.zone(
               doorX + this.offsetX + halfHeight,
               doorY + this.offsetY,
               tileSize,
               tileSize
-            );
-            this.doors.push(sensor);
-          }
+            )
+          );
           break;
       }
 
@@ -334,6 +364,8 @@ export default class Dungeon extends Scene {
       console.log('player starting position: >>>', this.content.startingPoint);
       const playerX = this.content.startingPoint[1] * tileSize;
       const playerY = this.content.startingPoint[0] * tileSize;
+
+      // Initialize player
       this.player = this.physics.add.sprite(
         playerX + this.offsetX,
         playerY + this.offsetY,
@@ -344,14 +376,15 @@ export default class Dungeon extends Scene {
       // this.player.setCollideWorldBounds(true);
 
       // Check player position
-      if (
-        this.player.x - this.offsetX !== playerX ||
-        this.player.y - this.offsetY !== playerY
-      ) {
-        this.player.setPosition(playerX + this.offsetX, playerY + this.offsetY);
-      }
-
-      console.log('player :>>>', this.player);
+      // if (
+      //   this.player.x - this.offsetX !== playerX ||
+      //   this.player.y - this.offsetY !== playerY
+      // ) {
+      //   this.player.setPosition(
+      //     playerX + this.offsetX,
+      //     playerY + this.offsetY
+      //   );
+      // }
 
       // Set animation
       this.anims.create({
@@ -389,29 +422,35 @@ export default class Dungeon extends Scene {
       //   }
       // });
 
-      // Play animation
-      this.player.anims.play('player-idel', true);
+      console.log('player :>>>', this.player);
 
       // Set the camera to follow the player
       this.camera?.startFollow(this.player, true);
+
+      // Play animation
+      this.player.anims.play('player-idel', true);
     }
   }
 
   #setCollision(room: number[][], gameStore: any) {
     // Set collision
-    if (this.groundLayer && this.player) {
+    if (this.groundLayer && this.player && this.content) {
       this.groundLayer?.setCollisionBetween(
         1,
         room.length * room[0].length,
         true,
         false
       );
+
+      // Create collider
       this.physics.add.collider(this.groundLayer, this.player);
+
       this.physics.world.bounds.width = this.limitWidth + this.offsetX;
       this.physics.world.bounds.height = this.limitHeight + this.offsetY;
       this.player?.setCollideWorldBounds(true);
 
-      // Enable zoom
+      // Enable zone
+      // create overlap
       this.doors.forEach((door, index) => {
         door.setOrigin(0, 0);
         this.physics.add.existing(door, false);
@@ -422,6 +461,22 @@ export default class Dungeon extends Scene {
           gameStore.setTextContent('[F] OPEN');
           this.doorTouching = index;
         });
+      });
+    }
+  }
+
+  #updateContent(roomIndex: number) {
+    if (this.content) {
+      // Clear zones
+      this.doors.splice(0);
+      // Remove collider
+      this.physics.world.colliders.destroy();
+      // Remove layer
+      this.groundLayer?.destroy();
+
+      this.scene.restart({
+        roomIndex: roomIndex,
+        // And more...
       });
     }
   }
