@@ -251,26 +251,36 @@ export default class Dungeon extends Scene {
           key: 'player-idel',
           frames: this.anims.generateFrameNames('demo-player', {
             start: 0,
-            end: 2,
+            end: 0,
           }),
           frameRate: 5,
           repeat: 0,
         });
 
-        this.player.on('animationcomplete', (context: any) => {
-          // console.log('context :>>>', context);
-          // Check animation name
-          if (context.key === 'player-idel') {
-            this.player?.anims.pause(); // Pause the animation
-            this.playerIdelCount += 1;
-            // Play the animation back and forth
-            if (this.playerIdelCount % 2 === 0) {
-              this.player?.anims.play('player-idel', true);
-            } else {
-              this.player?.anims.playReverse('player-idel');
-            }
-          }
+        this.anims.create({
+          key: 'player-walk-left',
+          frames: this.anims.generateFrameNames('demo-player', {
+            start: 3,
+            end: 5,
+          }),
+          frameRate: 5,
+          repeat: -1,
         });
+
+        // this.player.on('animationcomplete', (context: any) => {
+        //   // console.log('context :>>>', context);
+        //   // Check animation name
+        //   if (context.key === 'player-idel') {
+        //     this.player?.anims.pause(); // Pause the animation
+        //     this.playerIdelCount += 1;
+        //     // Play the animation back and forth
+        //     if (this.playerIdelCount % 2 === 0) {
+        //       this.player?.anims.play('player-idel', true);
+        //     } else {
+        //       this.player?.anims.playReverse('player-idel');
+        //     }
+        //   }
+        // });
 
         // Play animation
         this.player.anims.play('player-idel', true);
@@ -349,10 +359,14 @@ export default class Dungeon extends Scene {
       // Listen to key press
       if (this.cursor?.left.isDown) {
         this.player?.setVelocityX(-tileSize * 2.5);
+        this.player?.setFlipX(false);
+        this.player?.anims.play('player-walk-left', true);
         // this.#watchAnimation('left', tileSize, room);
         // this.gridEngine.move('player', Direction.LEFT);
       } else if (this.cursor?.right.isDown) {
         this.player?.setVelocityX(tileSize * 2.5);
+        this.player?.setFlipX(true);
+        this.player?.anims.play('player-walk-left', true);
         // this.#watchAnimation('right', tileSize, room);
         // this.gridEngine.move('player', Direction.RIGHT);
       } else if (this.cursor?.up.isDown) {
@@ -366,6 +380,7 @@ export default class Dungeon extends Scene {
       } else {
         this.player?.setVelocityX(0);
         this.player?.setVelocityY(0);
+        this.player.anims.play('player-idel', true);
       }
 
       if (this.doorTouching >= 0 && this.doors !== undefined) {
