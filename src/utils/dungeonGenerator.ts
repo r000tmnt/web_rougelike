@@ -63,8 +63,8 @@ export default class DungeonGenerator {
     console.log(`room ${this.roomIndex}`);
     await this.#setDoorDirections();
 
-    // If the room have been visted before
-    if (this.clearedRoom.find((r) => r === this.roomIndex)) {
+    // If the room have been visited before
+    if (this.clearedRoom.find((r) => r === this.roomIndex) !== undefined) {
       // TODO: Check if the room is going to regenerate?
       // TODO: Remove the index from this.clearedRoom?
 
@@ -140,6 +140,7 @@ export default class DungeonGenerator {
       const over = this.level[this.roomIndex].length - height;
 
       if (over > 0) {
+        console.log(`map over grow ${over} rows.`)
         // Remove unwanted rows
         this.level[this.roomIndex].splice(height - 1, over);
       }
@@ -159,7 +160,8 @@ export default class DungeonGenerator {
   }
 
   markRoomCleared(index: number) {
-    if (!this.clearedRoom.find((cr) => cr === index)) {
+    if (this.clearedRoom.find((cr) => cr === index) === undefined) {
+      console.log(`mark room ${index} cleared`)
       this.clearedRoom.push(index);
     }
   }
@@ -521,6 +523,7 @@ export default class DungeonGenerator {
           }
           break;
       }
+      this.ready = true
     } else {
       const lastRow = walkables.length - 1;
 
@@ -595,6 +598,7 @@ export default class DungeonGenerator {
   }
 
   #setEnemyPosition(walkables: mapBorder[]) {
+    console.log('Find tiles to place enemy')
     this.enemyPositions[this.roomIndex] = [];
 
     const distant = 4;
@@ -612,6 +616,8 @@ export default class DungeonGenerator {
       }
     }
 
+    console.log('walkable tile altered :>>>', walkables)
+
     // Set enemy position
     for (let i = 0; i < this.enemies[this.roomIndex]; i++) {
       let eRow = 0;
@@ -624,6 +630,8 @@ export default class DungeonGenerator {
           walkables[tempRow].cols[
             Math.floor(Math.random() * walkables[tempRow].cols.length)
           ];
+
+        console.log(`Possible position row ${eRow} col ${eCol}`)
 
         const exist = this.enemyPositions[this.roomIndex].findIndex(
           (ep) => ep.x === eCol && ep.y === eRow
