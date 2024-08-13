@@ -19,8 +19,10 @@ export default class Dungeon extends Scene {
   doorTouching: number;
   limitWidth: number;
   limitHeight: number;
+  enemies: Phaser.Physics.Arcade.Group | null;
 
   private fKey!: Input.Keyboard.Key | undefined;
+
   // private gridEngine!: GridEngine;
 
   constructor() {
@@ -33,6 +35,7 @@ export default class Dungeon extends Scene {
     this.camera = null;
     this.player = null;
     this.playerIdelCount = 0;
+    this.enemies = null;
     this.offsetX = 0;
     this.offsetY = 0;
     this.cursor = undefined;
@@ -52,7 +55,6 @@ export default class Dungeon extends Scene {
     // Generate a part of dungeon
     if (Object.entries(data).length) {
       // Restart scene with new data
-
       console.log('init with new data :>>>', data);
 
       const { roomIndex, direction } = data;
@@ -107,6 +109,7 @@ export default class Dungeon extends Scene {
       // });
 
       // Init key events
+      if (this.input.keyboard) this.input.keyboard.enabled = true;
       this.cursor = this.input.keyboard?.createCursorKeys();
 
       // Show the collide tiles and none collide tiles for debug
@@ -135,7 +138,12 @@ export default class Dungeon extends Scene {
     const gameStore = useGameStore();
     const tileSize = gameStore.getTileSize;
 
-    if (this.content && this.cursor && this.player) {
+    if (
+      this.content &&
+      this.cursor &&
+      this.player &&
+      this.input.keyboard?.enabled
+    ) {
       // const room = this.content.roomIndex;
       // Listen to key press
       if (this.cursor.left.isDown) {
@@ -155,10 +163,8 @@ export default class Dungeon extends Scene {
         this.player.setVelocityY(tileSize * 2.5);
         // this.gridEngine.move('player', Direction.DOWN);
       } else {
-        if (this.player.body) {
-          this.player.body.setVelocity(0);
-          this.player.anims.play('player-idel', true);
-        }
+        this.player.body.setVelocity(0);
+        this.player.anims.play('player-idel', true);
       }
 
       if (this.doorTouching >= 0 && this.doorTouching < this.doors.length) {
@@ -409,6 +415,15 @@ export default class Dungeon extends Scene {
       // Play animation
       this.player.anims.play('player-idel', true);
 
+      // Set enemies
+      // this.enemies = this.physics.add.group()
+
+      // const enemyPosition = this.content.enemyPositions[this.content.roomIndex]
+
+      // for(let i=0; i < enemyPosition.length; i++){
+      //   const enemy = this.enemies.create(enemyPosition[i].x * tileSize, enemyPosition[i].y * tileSize)
+      //   enemy.setCollideWorldBounds(true)
+      // }
       // Config grid movement & player
       // try {
       //   this.gridEngine.create(this.map, {
@@ -477,6 +492,8 @@ export default class Dungeon extends Scene {
       // Reset offset
       this.offsetX = 0;
       this.offsetY = 0;
+      // Disable key input event
+      if (this.input.keyboard) this.input.keyboard.enabled = false;
 
       this.scene.restart({
         roomIndex: roomIndex,
