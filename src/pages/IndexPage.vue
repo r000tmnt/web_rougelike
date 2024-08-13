@@ -54,6 +54,8 @@ onMounted(() => {
 
   console.log('game :>>>', gameStore.game);
 
+  gameStore.setPlayerStatus();
+
   // Set text layer position
   if (textLayer.value) {
     textLayer.value.style.transform = `translateY(${
