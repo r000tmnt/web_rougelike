@@ -153,13 +153,13 @@ export default class DungeonGenerator {
           randomDirection[1] === this.lastDirection[1])
       );
 
-      console.log('direction :>>>', randomDirection);
+      // console.log('direction :>>>', randomDirection);
 
       randomLength = Math.floor(Math.random() * this.tunnelSize);
       radomWidth =
         this.tunnelWidth[Math.floor(Math.random() * this.tunnelWidth.length)];
-      console.log('randomLength :>>>', randomLength);
-      console.log('radomWidth :>>>', radomWidth);
+      // console.log('randomLength :>>>', randomLength);
+      // console.log('radomWidth :>>>', radomWidth);
 
       while (randomLength > 0) {
         // Check if the random direction will be outside of the map
@@ -201,7 +201,7 @@ export default class DungeonGenerator {
             row += randomDirection[0];
             col += randomDirection[1];
 
-            console.log(`Next position row: ${row} col: ${col}`);
+            // console.log(`Next position row: ${row} col: ${col}`);
 
             randomLength--;
           } else {
@@ -212,7 +212,7 @@ export default class DungeonGenerator {
 
       if (this.tunnelSize > 0) {
         // Keep the last direction
-        console.log('Before the next loop start');
+        // console.log('Before the next loop start');
         this.lastDirection = randomDirection;
         this.tunnelSize--;
       }
@@ -281,7 +281,7 @@ export default class DungeonGenerator {
           // Find the nearist tiles on the up direction
           for (let i = 0; i < unWalkables.length; i++) {
             const row = unWalkables[i];
-            console.log('row :>>>', row.row);
+            // console.log('row :>>>', row.row);
             const col = row.cols[Math.floor(row.cols.length / 2)];
             console.log('set door up');
             room[row.row][col] = 2;
@@ -336,7 +336,7 @@ export default class DungeonGenerator {
           // Find the nearist tiles on the down direction
           for (let i = unWalkables.length - 1; i >= 0; i--) {
             const row = unWalkables[i];
-            console.log('row :>>>', row.row);
+            // console.log('row :>>>', row.row);
             const col = row.cols[Math.floor(row.cols.length / 2)];
             console.log('set door down');
             room[row.row][col] = 2;
