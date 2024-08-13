@@ -67,7 +67,6 @@ export default class DungeonGenerator {
 
       const room = this.level[this.roomIndex];
 
-      this.#setDoorDirections();
       console.log(
         'Starting postion in visted room :>>>',
         this.startingPosition
@@ -83,6 +82,8 @@ export default class DungeonGenerator {
           }
         }
       }
+
+      console.log('All doors in the visted room :>>>', allDoors);
 
       this.doorDirection.forEach((d) => {
         let door: number[] = [];
@@ -126,7 +127,7 @@ export default class DungeonGenerator {
 
       for (let i = 0; i < height; i++) {
         // console.log('row :>>>', i);
-        this.level[this.roomIndex][i] = [];
+        this.level[this.roomIndex].push([]);
         for (let j = 0, row = this.level[this.roomIndex][i]; j < width; j++) {
           // console.log('col :>>>', j);
           row.push(1);
@@ -134,6 +135,16 @@ export default class DungeonGenerator {
       }
 
       console.log('level :>>>', this.level);
+
+      // Check if the width and height of the room
+      const over = this.level[this.roomIndex].length - height;
+
+      if (over > 0) {
+        // Remove unwanted rows
+        this.level[this.roomIndex].splice(height - 1, over);
+      }
+
+      // if(this.level[this.roomIndex][0].length !== height){}
 
       this.#digTunnels(this.level[this.roomIndex], width, height);
     }
