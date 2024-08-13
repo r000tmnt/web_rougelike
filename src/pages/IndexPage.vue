@@ -6,9 +6,11 @@
 import { onMounted, ref, computed } from 'vue';
 import { useGameStore } from 'src/stores/game';
 import * as Phaser from 'phaser';
-import { GridEngine } from 'grid-engine';
+// import { GridEngine } from 'grid-engine';
 
 import Dungeon from '../scene/dungeon';
+
+// window.Phaser = Phaser;
 
 const gameStore = useGameStore();
 
