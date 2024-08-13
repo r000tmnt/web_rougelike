@@ -21,7 +21,6 @@ export default class Dungeon extends Scene {
   limitHeight: number;
 
   private fKey!: Input.Keyboard.Key | undefined;
-
   // private gridEngine!: GridEngine;
 
   constructor() {
@@ -48,9 +47,14 @@ export default class Dungeon extends Scene {
   }
 
   init(data: any | undefined) {
+    console.log('scene init');
+
     // Generate a part of dungeon
     if (Object.entries(data).length) {
       // Restart scene with new data
+
+      console.log('init with new data :>>>', data);
+
       const { roomIndex } = data;
 
       if (this.content?.level[roomIndex].length) {
@@ -66,6 +70,8 @@ export default class Dungeon extends Scene {
   }
 
   preload() {
+    console.log('scene preload');
+
     const gameStore = useGameStore();
     const tileSize = gameStore.getTileSize;
 
@@ -78,6 +84,8 @@ export default class Dungeon extends Scene {
   }
 
   create() {
+    console.log('scene create');
+
     // Bind keyborad input
     this.fKey = this.input.keyboard?.addKey(Input.Keyboard.KeyCodes.F);
 
@@ -114,25 +122,6 @@ export default class Dungeon extends Scene {
       //   collidingTileColor: colldingTileColor, // Colliding tiles
       //   faceColor: faceColor, // Interesting faces, i.e. colliding edges
       // });
-
-      // Config grid movement & player
-      // try {
-      //   this.gridEngine.create(this.map, {
-      //     characters: [
-      //       {
-      //         id: 'player',
-      //         sprite: this.player,
-      //         walkingAnimationMapping: 0,
-      //         startPosition: {
-      //           x: playerX + this.offsetX,
-      //           y: playerY + this.offsetY,
-      //         },
-      //       },
-      //     ],
-      //   });
-      // } catch (error) {
-      //   console.log('failed to use grid-engine :>>>', error);
-      // }
     } else {
       // Wait for dungeon generator
       const dungeonGeneratorWatcher = setInterval(() => {
@@ -145,6 +134,8 @@ export default class Dungeon extends Scene {
   }
 
   update() {
+    console.log('scene update');
+
     const gameStore = useGameStore();
     const tileSize = gameStore.getTileSize;
 
@@ -169,8 +160,7 @@ export default class Dungeon extends Scene {
         // this.gridEngine.move('player', Direction.DOWN);
       } else {
         if (this.player.body) {
-          this.player.setVelocityX(0);
-          this.player.setVelocityY(0);
+          this.player.body.setVelocity(0);
           this.player.anims.play('player-idel', true);
         }
       }
@@ -360,7 +350,7 @@ export default class Dungeon extends Scene {
   }
 
   #setPlayer(tileSize: number) {
-    if (this.content) {
+    if (this.content && this.map) {
       console.log('player starting position: >>>', this.content.startingPoint);
       const playerX = this.content.startingPoint[1] * tileSize;
       const playerY = this.content.startingPoint[0] * tileSize;
@@ -371,20 +361,10 @@ export default class Dungeon extends Scene {
         playerY + this.offsetY,
         'demo-player'
       );
+      // this.player = this.physics.add.sprite(0, 0, 'demo-player');
 
       this.player.setOrigin(0, 0);
       // this.player.setCollideWorldBounds(true);
-
-      // Check player position
-      // if (
-      //   this.player.x - this.offsetX !== playerX ||
-      //   this.player.y - this.offsetY !== playerY
-      // ) {
-      //   this.player.setPosition(
-      //     playerX + this.offsetX,
-      //     playerY + this.offsetY
-      //   );
-      // }
 
       // Set animation
       this.anims.create({
@@ -429,6 +409,28 @@ export default class Dungeon extends Scene {
 
       // Play animation
       this.player.anims.play('player-idel', true);
+
+      // Config grid movement & player
+      // try {
+      //   this.gridEngine.create(this.map, {
+      //     characters: [
+      //       {
+      //         id: 'player',
+      //         sprite: this.player,
+      //         walkingAnimationMapping: 0,
+      //         startPosition: {
+      //           x: this.content.startingPoint[1] + this.offsetX / tileSize,
+      //           y: this.content.startingPoint[0] + this.offsetY / tileSize,
+      //         },
+      //       },
+      //     ],
+      //   });
+      // } catch (error) {
+      //   console.log('failed to use grid-engine :>>>', error);
+      // }
+
+      // Check player position
+      // this.player.setPosition(playerX + this.offsetX, playerY + this.offsetY);
     }
   }
 
