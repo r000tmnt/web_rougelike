@@ -57,13 +57,8 @@ export default class Dungeon extends Scene {
 
       const { roomIndex, direction } = data;
 
-      if (this.content?.level[roomIndex].length) {
-        // Load exisiting content
-        this.content.roomIndex = roomIndex;
-      } else {
-        // Create a new map
-        this.content?.setRoom(roomIndex, direction);
-      }
+      // Create a new map or load existing content
+      this.content?.setRoom(roomIndex, direction);
     } else {
       this.content = new DungeonGenerator(this);
     }
@@ -92,6 +87,7 @@ export default class Dungeon extends Scene {
     // Generate tileMap
     if (
       this.content !== null &&
+      this.content.ready &&
       this.content.level[this.content.roomIndex].length
     ) {
       this.#setUpDungeon();
@@ -478,6 +474,9 @@ export default class Dungeon extends Scene {
       this.physics.world.colliders.destroy();
       // Remove layer
       this.groundLayer?.destroy();
+      // Reset offset
+      this.offsetX = 0;
+      this.offsetY = 0;
 
       this.scene.restart({
         roomIndex: roomIndex,
