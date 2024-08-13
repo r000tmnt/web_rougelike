@@ -11,7 +11,7 @@ export default class Dungeon extends Scene {
   stuffLayer: Phaser.Tilemaps.TilemapLayer | null;
   camera: Phaser.Cameras.Scene2D.Camera | null;
   player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | null;
-  playerIdelCount: number;
+  playerIdleCount: number;
   offsetX: number;
   offsetY: number;
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
@@ -36,7 +36,7 @@ export default class Dungeon extends Scene {
     this.stuffLayer = null;
     this.camera = null;
     this.player = null;
-    this.playerIdelCount = 0;
+    this.playerIdleCount = 0;
     this.enemies = null;
     this.offsetX = 0;
     this.offsetY = 0;
@@ -166,13 +166,13 @@ export default class Dungeon extends Scene {
         // this.gridEngine.move('player', Direction.DOWN);
       } else {
         this.player.body.setVelocity(0);
-        this.player.anims.play('player-idel', true);
+        this.player.anims.play('player-idle', true);
       }
 
       if (this.doorTouching >= 0 && this.doorTouching < this.doors.length) {
-        console.log('checking overlap :>>>', this.doorTouching);
+        // console.log('checking overlap :>>>', this.doorTouching);
         if (!this.doors[this.doorTouching].body.embedded) {
-          console.log('Not overlapping');
+          // console.log('Not overlapping');
           gameStore.setTextContent('');
           this.doorTouching = -1;
           return;
@@ -375,7 +375,7 @@ export default class Dungeon extends Scene {
 
       // Set animation
       this.anims.create({
-        key: 'player-idel',
+        key: 'player-idle',
         frames: this.anims.generateFrameNames('demo-player', {
           start: 0,
           end: 0,
@@ -397,14 +397,14 @@ export default class Dungeon extends Scene {
       // this.player.on('animationcomplete', (context: any) => {
       //   // console.log('context :>>>', context);
       //   // Check animation name
-      //   if (context.key === 'player-idel') {
+      //   if (context.key === 'player-idle') {
       //     this.player?.anims.pause(); // Pause the animation
-      //     this.playerIdelCount += 1;
+      //     this.playerIdleCount += 1;
       //     // Play the animation back and forth
-      //     if (this.playerIdelCount % 2 === 0) {
-      //       this.player?.anims.play('player-idel', true);
+      //     if (this.playerIdleCount % 2 === 0) {
+      //       this.player?.anims.play('player-idle', true);
       //     } else {
-      //       this.player?.anims.playReverse('player-idel');
+      //       this.player?.anims.playReverse('player-idle');
       //     }
       //   }
       // });
@@ -415,7 +415,7 @@ export default class Dungeon extends Scene {
       this.camera?.startFollow(this.player, true);
 
       // Play animation
-      this.player.anims.play('player-idel', true);
+      this.player.anims.play('player-idle', true);
 
       // Set enemies
       // this.enemies = this.physics.add.group()
@@ -475,7 +475,7 @@ export default class Dungeon extends Scene {
         if (door.body) door.body.moves = false;
 
         this.physics.add.overlap(door, this.player, (player, zone) => {
-          console.log('overlap!');
+          // console.log('overlap!');
           gameStore.setTextContent('[F] OPEN');
           this.doorTouching = index;
         });
