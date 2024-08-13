@@ -51,6 +51,7 @@ export default class DungeonGenerator {
     if (index >= 0) {
       this.roomIndex = index;
       this.enterDirection = direction;
+      this.ready = false;
     } else {
       // Set the room as the starting point
       this.roomIndex = Math.floor(Math.random() * this.level.length);
@@ -59,9 +60,58 @@ export default class DungeonGenerator {
     console.log(`room ${this.roomIndex}`);
     await this.#setDoorDirections();
 
+    // If the room have been visted before
     if (this.clearedRoom.find((r) => r === this.roomIndex)) {
-      // TODO: Check if the room is going to regenerate
-      // TODO: Remove the index from this.clearedRoom
+      // TODO: Check if the room is going to regenerate?
+      // TODO: Remove the index from this.clearedRoom?
+
+      const room = this.level[this.roomIndex];
+
+      this.#setDoorDirections();
+      console.log(
+        'Starting postion in visted room :>>>',
+        this.startingPosition
+      );
+
+      const allDoors: number[][] = [];
+      // Get all doors
+      for (let i = 0; i < room.length; i++) {
+        if (allDoors.length === this.doorDirection.length) break;
+        for (let j = 0; j < room[i].length; j++) {
+          if (room[i][j] === 2) {
+            allDoors.push([i, j]);
+          }
+        }
+      }
+
+      this.doorDirection.forEach((d) => {
+        let door: number[] = [];
+        switch (d) {
+          case 'up':
+            door = allDoors.reduce((a, b) => (a[0] < b[0] ? a : b));
+            break;
+          case 'right':
+            door = allDoors.reduce((a, b) => (a[1] > b[1] ? a : b));
+            break;
+          case 'down':
+            door = allDoors.reduce((a, b) => (a[0] > b[0] ? a : b));
+            break;
+          case 'left':
+            door = allDoors.reduce((a, b) => (a[1] < b[1] ? a : b));
+            break;
+        }
+
+        this.doors.push({
+          direction: d,
+          row: door[0],
+          col: door[1],
+        });
+      });
+
+      // Set player starting position on the map
+      this.#setStartingPosition([]);
+
+      this.ready = true;
     } else {
       const width =
         this.roomSize[Math.floor(Math.random() * this.roomSize.length)];
@@ -308,7 +358,7 @@ export default class DungeonGenerator {
             const row = unWalkables[i];
             // console.log('row :>>>', row.row);
             const col = row.cols[Math.floor(row.cols.length / 2)];
-            console.log('set door up');
+            console.log(`set door up on row ${row.row} & col ${col}`);
             room[row.row][col] = 2;
             this.doors.push({
               direction: d,
@@ -331,7 +381,7 @@ export default class DungeonGenerator {
               doorCol =
                 unWalkables[tempRow].cols[unWalkables[tempRow].cols.length - 1];
               // Check if is in a corner or a corridor
-              console.log('set door right');
+              console.log(`set door right on row ${doorRow} & col ${doorCol}`);
               room[doorRow][doorCol] = 2;
             };
 
@@ -363,7 +413,7 @@ export default class DungeonGenerator {
             const row = unWalkables[i];
             // console.log('row :>>>', row.row);
             const col = row.cols[Math.floor(row.cols.length / 2)];
-            console.log('set door down');
+            console.log(`set door down on row ${row.row} & col ${col}`);
             room[row.row][col] = 2;
             this.doors.push({
               direction: d,
