@@ -1,13 +1,18 @@
-interface base_attribute {
+export interface position {
+  y: number;
+  x: number;
+}
+
+export interface base_attribute {
   hp: number;
   mp: number;
   str: number;
   def: number;
   int: number;
   spd: number;
-  ap: number;
+  //ap: number;
   luck: number;
-  ms: number; // move speed
+  //ms: number; // move speed
   //vd: number // view distant
 }
 
@@ -17,11 +22,11 @@ interface unit {
   name: string;
   status: string;
   base_attribute: base_attribute;
-  total_attribute: base_attribute;
+  add_attribute: base_attribute;
   attribute_limit: {
     hp: number;
-    ap: number;
-    ms: number; // move speed
+    mp: number;
+    //ms: number; // move speed
     //vd: number // view distant
   };
 }
@@ -30,6 +35,7 @@ export type player = unit & {
   equip: {
     head: object;
     body: object;
+    hand: object;
     feet: object;
     accasory: object;
   };
