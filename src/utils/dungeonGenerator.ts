@@ -15,6 +15,7 @@ export default class DungeonGenerator {
   roomIndex: number;
   doors: doorPostion[];
   ready: boolean;
+  enterDirection: string;
 
   constructor(scene: Phaser.Scene) {
     // constructor() {
@@ -37,6 +38,7 @@ export default class DungeonGenerator {
     this.doors = [];
     this.clearedRoom = [];
     this.ready = false;
+    this.enterDirection = '';
     this.init();
   }
 
@@ -44,10 +46,11 @@ export default class DungeonGenerator {
     this.setRoom();
   }
 
-  async setRoom(index = -1) {
+  async setRoom(index = -1, direction = '') {
     this.doors.splice(0);
     if (index >= 0) {
       this.roomIndex = index;
+      this.enterDirection = direction;
     } else {
       // Set the room as the starting point
       this.roomIndex = Math.floor(Math.random() * this.level.length);
@@ -86,43 +89,67 @@ export default class DungeonGenerator {
     }
   }
 
+  markRoomCleared(index: number) {
+    if (!this.clearedRoom.find((cr) => cr === index)) {
+      this.clearedRoom.push(index);
+    }
+  }
+
   async #setDoorDirections() {
     switch (this.roomIndex) {
       case 0:
         this.doorDirection = ['right', 'down'];
-        this.startingPosition = 'up-left';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'up-left';
         break;
       case 1:
         this.doorDirection = ['left', 'down', 'right'];
-        this.startingPosition = 'up-center';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'up-center';
         break;
       case 2:
         this.doorDirection = ['left', 'down'];
-        this.startingPosition = 'up-right';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'up-right';
         break;
       case 3:
         this.doorDirection = ['up', 'right', 'down'];
-        this.startingPosition = 'left-center';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'left-center';
         break;
       case 4:
         this.doorDirection = ['up', 'right', 'down', 'left'];
-        this.startingPosition = 'center';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'center';
         break;
       case 5:
         this.doorDirection = ['up', 'down', 'left'];
-        this.startingPosition = 'right-center';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'right-center';
         break;
       case 6:
         this.doorDirection = ['up', 'right'];
-        this.startingPosition = 'down-left';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'down-left';
         break;
       case 7:
         this.doorDirection = ['up', 'right', 'left'];
-        this.startingPosition = 'down-center';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'down-center';
         break;
       case 8:
         this.doorDirection = ['up', 'left'];
-        this.startingPosition = 'down-right';
+        this.startingPosition = this.enterDirection.length
+          ? this.enterDirection
+          : 'down-right';
         break;
     }
   }
@@ -270,8 +297,6 @@ export default class DungeonGenerator {
       }
     }
 
-    this.#setStartingPosition(walkables);
-
     console.log('unWalkables :>>>', unWalkables);
 
     // Place door
@@ -394,7 +419,6 @@ export default class DungeonGenerator {
           break;
       }
     });
-    // }
 
     // console.log('map :>>>', this.level);
     let rowString = '';
@@ -409,6 +433,9 @@ export default class DungeonGenerator {
 
     console.log(rowString);
 
+    // Set player starting position on the map
+    this.#setStartingPosition(walkables);
+
     this.ready = true;
   }
 
@@ -419,22 +446,6 @@ export default class DungeonGenerator {
     const lastRow = walkables.length - 1;
 
     switch (this.startingPosition) {
-      case 'up':
-        // Find the door on the up direction
-        console.log('up');
-        break;
-      case 'right':
-        // Find the door on the right direction
-        console.log('right');
-        break;
-      case 'down':
-        // Find the door on the down direction
-        console.log('down');
-        break;
-      case 'left':
-        // Find the door on the left direction
-        console.log('left');
-        break;
       case 'up-left':
         this.startingPoint = [walkables[0].row, walkables[0].cols[0]];
         break;
@@ -458,10 +469,6 @@ export default class DungeonGenerator {
             walkables[center].cols[0],
           ];
         }
-        // for(let i=0; i < walkables.length; i++){
-        //   const tempRow = Math.floor(Math.random() * walkables.length);
-        //   const tempCol = Math.floor(Math.random() * walkables.length);
-        // }
         break;
       case 'center':
         const rowCenter = Math.floor(walkables.length / 2);
@@ -502,8 +509,46 @@ export default class DungeonGenerator {
           walkables[lastRow].cols[walkables[lastRow].cols.length - 1],
         ];
         break;
-    }
+      default: // Up, right, down, left
+        let door: doorPostion | undefined = { direction: '', row: 0, col: 0 };
 
-    console.log('startingPoint set :>>>', this.startingPoint);
+        // Find the door on the opposite direction
+        switch (this.startingPosition) {
+          case 'up':
+            door = this.doors.find((door) => door.direction === 'down');
+
+            if (door) {
+              this.startingPoint = [door.row - 1, door.col];
+            } else {
+              throw new Error('Door on direction down not found');
+            }
+            break;
+          case 'right':
+            door = this.doors.find((door) => door.direction === 'left');
+            if (door) {
+              this.startingPoint = [door.row, door.col + 1];
+            } else {
+              throw new Error('Door on direction left not found');
+            }
+            break;
+          case 'down':
+            door = this.doors.find((door) => door.direction === 'up');
+            if (door) {
+              this.startingPoint = [door.row + 1, door.col];
+            } else {
+              throw new Error('Door on direction up not found');
+            }
+            break;
+          case 'left':
+            door = this.doors.find((door) => door.direction === 'right');
+            if (door) {
+              this.startingPoint = [door.row, door.col - 1];
+            } else {
+              throw new Error('Door on direction right not found');
+            }
+            break;
+        }
+        break;
+    }
   }
 }
