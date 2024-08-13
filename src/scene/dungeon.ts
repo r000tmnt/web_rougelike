@@ -180,6 +180,9 @@ export default class Dungeon extends Scene {
             `Open the door ${this.content.doors[this.doorTouching].direction}`
           );
 
+          // Mark the room cleared?
+          this.content.markRoomCleared(this.content.roomIndex);
+
           switch (this.content.doors[this.doorTouching].direction) {
             case 'up':
               this.#updateContent(this.content.roomIndex - 3);
