@@ -22,6 +22,8 @@ export default class Dungeon extends Scene {
   enemies: Phaser.Physics.Arcade.Group | null;
 
   private fKey!: Input.Keyboard.Key | undefined;
+  private iKey!: Input.Keyboard.Key | undefined;
+  private cKey!: Input.Keyboard.Key | undefined;
 
   // private gridEngine!: GridEngine;
 
