@@ -55,14 +55,14 @@ export default class Dungeon extends Scene {
 
       console.log('init with new data :>>>', data);
 
-      const { roomIndex } = data;
+      const { roomIndex, direction } = data;
 
       if (this.content?.level[roomIndex].length) {
         // Load exisiting content
         this.content.roomIndex = roomIndex;
       } else {
         // Create a new map
-        this.content?.setRoom(roomIndex);
+        this.content?.setRoom(roomIndex, direction);
       }
     } else {
       this.content = new DungeonGenerator(this);
@@ -478,6 +478,7 @@ export default class Dungeon extends Scene {
 
       this.scene.restart({
         roomIndex: roomIndex,
+        direction: this.content.doors[this.doorTouching].direction,
         // And more...
       });
     }
