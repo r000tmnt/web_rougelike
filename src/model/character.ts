@@ -49,9 +49,22 @@ export type player = unit & {
 };
 
 export type enemy = unit & {
-  theme: string;
+  // theme: string;
   elite: boolean;
   boss: boolean;
   drop: Array<object>;
   pattern: string;
+  base_attribute: {
+    vd: number; // view distant
+  };
+  add_attribute: {
+    vd: number; // view distant
+  };
+  attribute_limit: {
+    vd: number; // view distant
+  };
+  position: {
+    x: number;
+    y: number;
+  };
 };
