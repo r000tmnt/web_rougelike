@@ -3,6 +3,8 @@ import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
 import skeleton from 'src/data/skeleton';
 import { levelUp, setInitialStatus } from 'src/utils/battle';
+import Skeleton from 'src/entity/skeleton';
+import { enemy } from 'src/model/character';
 // import { Direction, GridEngine } from 'grid-engine';
 
 export default class Dungeon extends Scene {
@@ -19,9 +21,10 @@ export default class Dungeon extends Scene {
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   doors: Phaser.GameObjects.Zone[];
   doorTouching: number;
+  enemies: Skeleton[];
+  enemyContact: number;
   limitWidth: number;
   limitHeight: number;
-  enemies: Phaser.Physics.Arcade.Group | null;
 
   private fKey!: Input.Keyboard.Key | undefined;
   private iKey!: Input.Keyboard.Key | undefined;
@@ -39,12 +42,13 @@ export default class Dungeon extends Scene {
     this.camera = null;
     this.player = null;
     this.playerIdleCount = 0;
-    this.enemies = null;
+    this.enemies = [];
     this.offsetX = 0;
     this.offsetY = 0;
     this.cursor = undefined;
     this.doors = [];
     this.doorTouching = -1;
+    this.enemyContact = -1;
     this.limitWidth = 0;
     this.limitHeight = 0;
   }
@@ -140,7 +144,7 @@ export default class Dungeon extends Scene {
   }
 
   update() {
-    console.log('scene update');
+    // console.log('scene update');
 
     const gameStore = useGameStore();
     const tileSize = gameStore.getTileSize;
@@ -208,7 +212,11 @@ export default class Dungeon extends Scene {
           }
         }
       }
+
+      this.enemies.forEach((enemy) => enemy.checkDistance(this.player));
     }
+
+    // Check the distance between the player and enemies
   }
 
   /**
@@ -379,7 +387,7 @@ export default class Dungeon extends Scene {
       // this.player = this.physics.add.sprite(0, 0, 'demo-player');
 
       this.player.setOrigin(0, 0);
-
+      this.player.setPushable(false);
       // Set animation
       this.anims.create({
         key: 'player-idle',
@@ -450,11 +458,7 @@ export default class Dungeon extends Scene {
 
   #setEnemy(tileSize: number, gameStore: any) {
     // Set enemies
-    if (this.content) {
-      this.enemies = this.physics.add.group({
-        immovable: true,
-      });
-
+    if (this.content && this.player && this.groundLayer) {
       const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
 
       const levelRange = [
@@ -466,14 +470,18 @@ export default class Dungeon extends Scene {
       console.log('levelRange :>>>', levelRange);
 
       for (let i = 0; i < enemyPosition.length; i++) {
-        const enemy = this.enemies.create(
+        const enemy = new Skeleton(
+          this,
           enemyPosition[i].x * tileSize + this.offsetX,
           enemyPosition[i].y * tileSize + this.offsetY,
-          'demo-enemy'
+          'demo-enemy',
+          skeleton,
+          i,
+          this.player,
+          this.groundLayer,
+          this.content.level[this.content.roomIndex],
+          tileSize
         );
-        enemy.setCollideWorldBounds(true);
-        enemy.setBounce(0);
-        enemy.setOrigin(0, 0);
 
         const randomLv =
           levelRange[Math.floor(Math.random() * levelRange.length)];
@@ -482,16 +490,19 @@ export default class Dungeon extends Scene {
 
         newEnemyData = setInitialStatus(newEnemyData, randomLv);
 
-        console.log('new enemy :>>>', newEnemyData);
+        // console.log('new enemy entity :>>>', enemy);
+        console.log('new enemy data :>>>', newEnemyData);
 
-        gameStore.createEnemy(newEnemyData);
+        enemy.updateData(newEnemyData);
+
+        this.enemies.push(enemy);
       }
     }
   }
 
   #setCollision(room: number[][], gameStore: any) {
     // Set collision
-    if (this.groundLayer && this.player && this.content && this.enemies) {
+    if (this.groundLayer && this.player && this.content) {
       this.groundLayer?.setCollisionBetween(
         1,
         room.length * room[0].length,
@@ -501,17 +512,17 @@ export default class Dungeon extends Scene {
 
       // Create collider
       this.physics.add.collider(this.groundLayer, this.player);
-      this.physics.add.collider(this.groundLayer, this.enemies);
-      this.physics.add.collider(
-        this.enemies,
-        this.player,
-        this.#contactWithPlayer,
-        null,
-        this
-      );
       this.physics.world.bounds.width = this.limitWidth + this.offsetX;
       this.physics.world.bounds.height = this.limitHeight + this.offsetY;
       this.player?.setCollideWorldBounds(true);
+
+      // Add collision to each other
+      this.enemies.forEach((enemy, i) => {
+        enemy.sprite?.setCollideWorldBounds(true);
+        const others = this.enemies.filter((e, n) => n !== i);
+
+        others.forEach((o) => enemy.addCollision(o.sprite));
+      });
 
       // Enable zone
       // create overlap
@@ -529,7 +540,7 @@ export default class Dungeon extends Scene {
     }
   }
 
-  #updateContent(roomIndex: number) {
+  #updateContent(roomIndex: number, gameStore: any) {
     if (this.content) {
       // Clear zones
       this.doors.splice(0);
@@ -540,6 +551,22 @@ export default class Dungeon extends Scene {
       // Reset offset
       this.offsetX = 0;
       this.offsetY = 0;
+      // Keep enemies if any
+      if (this.enemies.length) {
+        const copy = this.enemies.map((e) => {
+          if (e.sprite)
+            // Update position
+            e.data.position = {
+              x: e.sprite.x,
+              y: e.sprite.y,
+            };
+
+          return e.data;
+        });
+        gameStore.storeEnemyIntheRoom(copy);
+      }
+      // Clear enemy array
+      this.enemies.splice(0);
       // Disable key input event
       if (this.input.keyboard) this.input.keyboard.enabled = false;
 
@@ -549,10 +576,6 @@ export default class Dungeon extends Scene {
         // And more...
       });
     }
-  }
-
-  #contactWithPlayer(enemy: any, player: any) {
-    console.log('contact');
   }
 
   #getPosition(target: any, tileSize: number) {
