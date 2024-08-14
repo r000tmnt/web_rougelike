@@ -5,7 +5,7 @@ export const useGameStore = defineStore('game', {
   state: () => ({
     game: {},
     player: {} as player,
-    enemy: [] as Array<enemy>,
+    enemy: [[], [], [], [], [], [], [], [], []] as enemy[][],
     windowWidth: 0,
     windowHeight: 0,
     tileSize: 48,
@@ -21,7 +21,6 @@ export const useGameStore = defineStore('game', {
     getTextContent: (state) => state.textContent,
     getTextIcon: (state) => state.textIcon,
     getPlayer: (state) => state.player,
-    getEnemy: (state) => state.enemy,
   },
 
   actions: {
@@ -82,12 +81,16 @@ export const useGameStore = defineStore('game', {
       // }
     },
 
-    createEnemy(enemy: enemy) {
+    storeEnemyIntheRoom(enemy: enemy[]) {
       this.enemy.push(enemy);
     },
 
-    clearEnemy() {
-      this.enemy.splice(0);
+    getEnemyIntheRoom(index: number) {
+      return this.enemy[index];
+    },
+
+    clearEnemyIntheRoom(index: number) {
+      this.enemy[index].splice(0);
     },
   },
 });
