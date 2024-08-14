@@ -627,6 +627,7 @@ export default class DungeonGenerator {
 
       const setPosition = () => {
         const tempRow = Math.floor(Math.random() * walkables.length);
+        console.log('tempRow :>>>', walkables[tempRow]);
         eRow = walkables[tempRow].row;
         eCol =
           walkables[tempRow].cols[
