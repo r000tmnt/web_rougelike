@@ -41,6 +41,7 @@ export type player = unit & {
   };
   bag: Array<object>;
   exp: number;
+  pt: number;
   attribute_limit: {
     exp: number; // How much exp need to level up
     bag: number; // How many items the bag can carry
