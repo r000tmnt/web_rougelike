@@ -62,7 +62,6 @@ export default class Dungeon extends Scene {
       console.log('init with new data :>>>', data);
 
       const { roomIndex, direction } = data;
-
       // Create a new map or load existing content
       this.content?.setRoom(roomIndex, direction);
     } else {
@@ -380,7 +379,6 @@ export default class Dungeon extends Scene {
       // this.player = this.physics.add.sprite(0, 0, 'demo-player');
 
       this.player.setOrigin(0, 0);
-      // this.player.setCollideWorldBounds(true);
 
       // Set animation
       this.anims.create({
@@ -453,7 +451,9 @@ export default class Dungeon extends Scene {
   #setEnemy(tileSize: number, gameStore: any) {
     // Set enemies
     if (this.content) {
-      this.enemies = this.physics.add.group();
+      this.enemies = this.physics.add.group({
+        immovable: true,
+      });
 
       const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
 
@@ -467,11 +467,13 @@ export default class Dungeon extends Scene {
 
       for (let i = 0; i < enemyPosition.length; i++) {
         const enemy = this.enemies.create(
-          enemyPosition[i].x * tileSize,
-          enemyPosition[i].y * tileSize,
+          enemyPosition[i].x * tileSize + this.offsetX,
+          enemyPosition[i].y * tileSize + this.offsetY,
           'demo-enemy'
         );
         enemy.setCollideWorldBounds(true);
+        enemy.setBounce(0);
+        enemy.setOrigin(0, 0);
 
         const randomLv =
           levelRange[Math.floor(Math.random() * levelRange.length)];
@@ -489,7 +491,7 @@ export default class Dungeon extends Scene {
 
   #setCollision(room: number[][], gameStore: any) {
     // Set collision
-    if (this.groundLayer && this.player && this.content) {
+    if (this.groundLayer && this.player && this.content && this.enemies) {
       this.groundLayer?.setCollisionBetween(
         1,
         room.length * room[0].length,
@@ -499,7 +501,14 @@ export default class Dungeon extends Scene {
 
       // Create collider
       this.physics.add.collider(this.groundLayer, this.player);
-
+      this.physics.add.collider(this.groundLayer, this.enemies);
+      this.physics.add.collider(
+        this.enemies,
+        this.player,
+        this.#contactWithPlayer,
+        null,
+        this
+      );
       this.physics.world.bounds.width = this.limitWidth + this.offsetX;
       this.physics.world.bounds.height = this.limitHeight + this.offsetY;
       this.player?.setCollideWorldBounds(true);
@@ -540,6 +549,10 @@ export default class Dungeon extends Scene {
         // And more...
       });
     }
+  }
+
+  #contactWithPlayer(enemy: any, player: any) {
+    console.log('contact');
   }
 
   #getPosition(target: any, tileSize: number) {
