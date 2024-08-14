@@ -1,4 +1,4 @@
-import { mapBorder, doorPostion } from 'src/model/dungeon';
+import { mapBorder, doorPosition } from 'src/model/dungeon';
 import { position } from 'src/model/character';
 
 export default class DungeonGenerator {
@@ -15,7 +15,7 @@ export default class DungeonGenerator {
   enemies: number[];
   enemyPositions: Array<position>[];
   roomIndex: number;
-  doors: doorPostion[];
+  doors: doorPosition[];
   ready: boolean;
   enterDirection: string;
 
@@ -485,7 +485,7 @@ export default class DungeonGenerator {
     console.log('walkables :>>>', walkables);
 
     if (this.enterDirection.length) {
-      let door: doorPostion | undefined = { direction: '', row: 0, col: 0 };
+      let door: doorPosition | undefined = { direction: '', row: 0, col: 0 };
 
       // Find the door on the opposite direction
       switch (this.enterDirection) {

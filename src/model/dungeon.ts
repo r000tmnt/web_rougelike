@@ -3,7 +3,7 @@ export interface mapBorder {
   cols: number[];
 }
 
-export interface doorPostion {
+export interface doorPosition {
   direction: string;
   row: number;
   col: number;
