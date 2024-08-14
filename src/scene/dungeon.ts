@@ -1,6 +1,8 @@
-import { Scene, Display, Input, Physics } from 'phaser';
+import { Scene, Display, Input } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
+import skeleton from 'src/data/skeleton';
+import { levelUp, setInitialStatus } from 'src/utils/battle';
 // import { Direction, GridEngine } from 'grid-engine';
 
 export default class Dungeon extends Scene {
@@ -77,6 +79,10 @@ export default class Dungeon extends Scene {
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
     this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
+      frameWidth: tileSize,
+      frameHeight: tileSize,
+    });
+    this.load.spritesheet('demo-enemy', '/assets/demo_enemy_idle.png', {
       frameWidth: tileSize,
       frameHeight: tileSize,
     });
@@ -228,6 +234,9 @@ export default class Dungeon extends Scene {
 
     // Set up player
     this.#setPlayer(tileSize);
+
+    // Set up enemy
+    this.#setEnemy(tileSize, gameStore);
 
     // Set collision on tileMap and enable zones
     this.#setCollision(room, gameStore);
@@ -417,15 +426,6 @@ export default class Dungeon extends Scene {
       // Play animation
       this.player.anims.play('player-idle', true);
 
-      // Set enemies
-      // this.enemies = this.physics.add.group()
-
-      // const enemyPosition = this.content.enemyPositions[this.content.roomIndex]
-
-      // for(let i=0; i < enemyPosition.length; i++){
-      //   const enemy = this.enemies.create(enemyPosition[i].x * tileSize, enemyPosition[i].y * tileSize)
-      //   enemy.setCollideWorldBounds(true)
-      // }
       // Config grid movement & player
       // try {
       //   this.gridEngine.create(this.map, {
@@ -447,6 +447,43 @@ export default class Dungeon extends Scene {
 
       // Check player position
       // this.player.setPosition(playerX + this.offsetX, playerY + this.offsetY);
+    }
+  }
+
+  #setEnemy(tileSize: number, gameStore: any) {
+    // Set enemies
+    if (this.content) {
+      this.enemies = this.physics.add.group();
+
+      const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
+
+      const levelRange = [
+        gameStore.player.lv,
+        gameStore.player.lv + 1,
+        gameStore.player.lv + 2,
+      ];
+
+      console.log('levelRange :>>>', levelRange);
+
+      for (let i = 0; i < enemyPosition.length; i++) {
+        const enemy = this.enemies.create(
+          enemyPosition[i].x * tileSize,
+          enemyPosition[i].y * tileSize,
+          'demo-enemy'
+        );
+        enemy.setCollideWorldBounds(true);
+
+        const randomLv =
+          levelRange[Math.floor(Math.random() * levelRange.length)];
+
+        let newEnemyData = JSON.parse(JSON.stringify(skeleton));
+
+        newEnemyData = setInitialStatus(newEnemyData, randomLv);
+
+        console.log('new enemy :>>>', newEnemyData);
+
+        gameStore.createEnemy(newEnemyData);
+      }
     }
   }
 
