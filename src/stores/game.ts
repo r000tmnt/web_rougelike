@@ -20,6 +20,8 @@ export const useGameStore = defineStore('game', {
     getTileSize: (state) => state.tileSize,
     getTextContent: (state) => state.textContent,
     getTextIcon: (state) => state.textIcon,
+    getPlayer: (state) => state.player,
+    getEnemy: (state) => state.enemy,
   },
 
   actions: {
@@ -69,6 +71,7 @@ export const useGameStore = defineStore('game', {
           accasory: {},
         },
         exp: 0,
+        pt: 0,
         bag: [],
       };
 
@@ -77,6 +80,14 @@ export const useGameStore = defineStore('game', {
       //     this.player.add_attribute[key as keyof base_attribute] +
       //     this.player.base_attribute[key as keyof base_attribute];
       // }
+    },
+
+    createEnemy(enemy: enemy) {
+      this.enemy.push(enemy);
+    },
+
+    clearEnemy() {
+      this.enemy.splice(0);
     },
   },
 });
