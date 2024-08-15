@@ -1,8 +1,8 @@
 import { mapBorder, doorPostion } from 'src/model/dungeon';
 import { position } from 'src/model/character';
+import { useGameStore } from 'src/stores/game';
 
 export default class DungeonGenerator {
-  scene: Phaser.Scene;
   roomSize: number[]; // Possible numbers for size
   level: number[][][];
   tunnelSize: number;
@@ -18,10 +18,10 @@ export default class DungeonGenerator {
   doors: doorPostion[];
   ready: boolean;
   enterDirection: string;
+  tileSize: number;
 
-  constructor(scene: Phaser.Scene) {
-    // constructor() {
-    this.scene = scene;
+  constructor(tileSize: number) {
+    this.tileSize = tileSize;
     this.roomSize = [9, 12, 16, 18, 25, 32];
     this.tunnelSize = 0;
     this.tunnelWidth = [2, 3];
@@ -601,63 +601,82 @@ export default class DungeonGenerator {
 
   #setEnemyPosition(walkables: mapBorder[]) {
     console.log('Find tiles to place enemy');
+
     this.enemyPositions[this.roomIndex] = [];
 
-    const distant = 4;
+    // Check if enter the visited room
+    if (!walkables.length) {
+      const distance = 4;
 
-    // Remove a certain number of tiles around the player
-    for (let i = 0; i < walkables.length; i++) {
-      if (Math.abs(walkables[i].row - this.startingPoint[0]) < distant) {
-        for (let j = 0; j < walkables[i].cols.length; j++) {
-          if (
-            Math.abs(walkables[i].cols[j] - this.startingPoint[1]) < distant
-          ) {
-            walkables[i].cols.splice(j, 1);
+      // Remove a certain number of tiles around the player
+      for (let i = 0; i < walkables.length; i++) {
+        if (Math.abs(walkables[i].row - this.startingPoint[0]) < distance) {
+          for (let j = 0; j < walkables[i].cols.length; j++) {
+            if (
+              Math.abs(walkables[i].cols[j] - this.startingPoint[1]) < distance
+            ) {
+              walkables[i].cols.splice(j, 1);
+            }
           }
         }
       }
-    }
 
-    console.log('walkable tile altered :>>>', walkables);
+      console.log('walkable tile altered :>>>', walkables);
 
-    // Set enemy position
-    for (let i = 0; i < this.enemies[this.roomIndex]; i++) {
-      let eRow = 0;
-      let eCol = 0;
+      // Set enemy position
+      for (let i = 0; i < this.enemies[this.roomIndex]; i++) {
+        let eRow = 0;
+        let eCol = 0;
 
-      const setPosition = () => {
-        const tempRow = Math.floor(Math.random() * walkables.length);
-        console.log('tempRow :>>>', walkables[tempRow]);
-        eRow = walkables[tempRow].row;
-        eCol =
-          walkables[tempRow].cols[
-            Math.floor(Math.random() * walkables[tempRow].cols.length)
-          ];
+        const setPosition = () => {
+          const tempRow = Math.floor(Math.random() * walkables.length);
+          console.log('tempRow :>>>', walkables[tempRow]);
+          eRow = walkables[tempRow].row;
+          eCol =
+            walkables[tempRow].cols[
+              Math.floor(Math.random() * walkables[tempRow].cols.length)
+            ];
 
-        console.log(`Possible position row ${eRow} col ${eCol}`);
+          console.log(`Possible position row ${eRow} col ${eCol}`);
 
-        const exist = this.enemyPositions[this.roomIndex].findIndex(
-          (ep) => ep.x === eCol && ep.y === eRow
+          const exist = this.enemyPositions[this.roomIndex].findIndex(
+            (ep) => ep.x === eCol && ep.y === eRow
+          );
+          if (exist === -1) {
+            console.log('mark enemy position');
+            this.enemyPositions[this.roomIndex].push({
+              y: eRow,
+              x: eCol,
+            });
+          }
+        };
+
+        //Check distant
+        do {
+          setPosition();
+        } while (this.enemyPositions[this.roomIndex].length !== i + 1);
+      }
+
+      console.log(
+        'enemies position in the room :>>>',
+        this.enemyPositions[this.roomIndex]
+      );
+    } else {
+      // Get the stored enemyData
+      const gameStore = useGameStore();
+
+      const storedEnemy = gameStore.getEnemyIntheRoom(this.roomIndex);
+
+      storedEnemy.forEach((e) => {
+        console.log(
+          `mark enemy position in the visited room ${this.roomIndex}`
         );
-        if (exist === -1) {
-          console.log('mark enemy position');
-          this.enemyPositions[this.roomIndex].push({
-            y: eRow,
-            x: eCol,
-          });
-        }
-      };
-
-      //Check distant
-      do {
-        setPosition();
-      } while (this.enemyPositions[this.roomIndex].length !== i + 1);
+        this.enemyPositions[this.roomIndex].push({
+          y: Math.floor(e.position.y / this.tileSize),
+          x: Math.floor(e.position.x / this.tileSize),
+        });
+      });
     }
-
-    console.log(
-      'enemies position in the room :>>>',
-      this.enemyPositions[this.roomIndex]
-    );
 
     this.ready = true;
   }
