@@ -326,19 +326,36 @@ export default class Dungeon extends Scene {
       console.log('player starting position: >>>', this.content.startingPoint);
       const playerX = this.content.startingPoint[1] * tileSize;
       const playerY = this.content.startingPoint[0] * tileSize;
+      const gameStore = useGameStore();
+      const playerData = gameStore.getPlayer;
 
-      // Initialize player
-      this.player = new Player(
-        this,
-        playerX + this.offsetX,
-        playerY + this.offsetY,
-        'demo-player',
-        swordsman,
-        this.groundLayer,
-        this.content.level[this.content.roomIndex],
-        tileSize,
-        this.eventEmitter
-      );
+      if (Object.entries(playerData).length) {
+        // Create player from stored data
+        this.player = new Player(
+          this,
+          playerX + this.offsetX,
+          playerY + this.offsetY,
+          'demo-player',
+          playerData,
+          this.groundLayer,
+          this.content.level[this.content.roomIndex],
+          tileSize,
+          this.eventEmitter
+        );
+      } else {
+        // Initialize player
+        this.player = new Player(
+          this,
+          playerX + this.offsetX,
+          playerY + this.offsetY,
+          'demo-player',
+          swordsman,
+          this.groundLayer,
+          this.content.level[this.content.roomIndex],
+          tileSize,
+          this.eventEmitter
+        );
+      }
 
       // this.player.on('animationcomplete', (context: any) => {
       //   // console.log('context :>>>', context);
@@ -507,6 +524,8 @@ export default class Dungeon extends Scene {
       this.physics.world.colliders.destroy();
       // Remove layer
       this.groundLayer?.destroy();
+      // Store player data
+      gameStore.setPlayerStatus = this.player?.data;
       // Keep enemies if any
       if (this.enemies.length) {
         const copy = this.enemies.map((e) => {
