@@ -74,7 +74,7 @@ export default class Skeleton {
       console.log('setting enemy collision');
 
       this.scene.physics.add.collider(groundLayer, this.sprite);
-      this.addCollision(this.sprite, player);
+      this.addCollision(player);
       this.ready = true;
 
       console.log('enemy? ', this.sprite);
