@@ -11,6 +11,7 @@ export default class Player {
   map: number[][];
   ready: boolean;
 
+  private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
   private fKey!: Input.Keyboard.Key | undefined;
   private iKey!: Input.Keyboard.Key | undefined;
@@ -30,10 +31,9 @@ export default class Player {
     this.scene = scene;
     this.sprite = undefined;
     this.data = data;
-    // this.index = index;
+    this.tileSize = tileSize;
     this.init(x, y, texture, groundLayer);
     this.map = map;
-    this.tileSize = tileSize;
     this.ready = false;
     this.eventEmitter = eventEmitter;
   }
@@ -71,13 +71,14 @@ export default class Player {
 
     this.#setCollision(groundLayer);
     this.#addContorl();
+    this.#setZone();
   }
 
   #setCollision(groundLayer: Phaser.Tilemaps.TilemapLayer) {
     if (this.sprite) {
       console.log('setting player collision');
 
-      this.scene.physics.add.collider(groundLayer, this.sprite);
+      this.scene.physics.add.collider(this.sprite, groundLayer);
       this.ready = true;
 
       console.log('player? ', this.sprite);
@@ -91,6 +92,27 @@ export default class Player {
 
       // Bind key events
       this.scene.events.on('update', this.#update, this);
+    }
+  }
+
+  #setZone() {
+    if (this.sprite) {
+      this.zone = this.scene.add.zone(
+        this.sprite.x - this.tileSize / 2,
+        this.sprite.y,
+        this.tileSize / 2,
+        this.tileSize
+      );
+      this.zone.setOrigin(0, 0);
+      this.scene.physics.add.existing(this.zone, false);
+    }
+  }
+
+  addOverlap(target: any) {
+    if (this.sprite) {
+      this.scene.physics.add.overlap(this.sprite, target, () => {
+        // console.log('overlap!');
+      });
     }
   }
 
@@ -108,25 +130,37 @@ export default class Player {
   //   }
 
   #update() {
-    console.log('listen to scene update');
+    // console.log('listen to scene update');
     // Listen to key press
     if (this.sprite?.body) {
       if (this.cursor?.left.isDown) {
         this.sprite.setVelocityX(-this.tileSize * 2.5);
         this.sprite.setFlipX(false);
         this.sprite.anims.play('player-walking', true);
-        // this.gridEngine.move('player', Direction.LEFT);
+        // Update zone
+        this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
+        // this.zone.setSize(this.tileSize / 2, this.tileSize);
+        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
       } else if (this.cursor?.right.isDown) {
         this.sprite.setVelocityX(this.tileSize * 2.5);
         this.sprite.setFlipX(true);
         this.sprite.anims.play('player-walking', true);
-        // this.gridEngine.move('player', Direction.RIGHT);
+        // Update zone
+        this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
+        // this.zone.setSize(this.tileSize / 2, this.tileSize);
+        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
       } else if (this.cursor?.up.isDown) {
         this.sprite.setVelocityY(-this.tileSize * 2.5);
-        // this.gridEngine.move('player', Direction.UP);
+        // Update zone
+        this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
+        // this.zone.setSize(this.tileSize, this.tileSize / 2);
+        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
       } else if (this.cursor?.down.isDown) {
         this.sprite.setVelocityY(this.tileSize * 2.5);
-        // this.gridEngine.move('player', Direction.DOWN);
+        // Update zone
+        this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
+        // this.zone.setSize(this.tileSize, this.tileSize / 2);
+        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
       } else {
         this.sprite.body.setVelocity(0);
         this.sprite.anims.play('player-idle', true);
