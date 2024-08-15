@@ -1,20 +1,22 @@
-import { Scene, Display, Input } from 'phaser';
+import { Scene, Display, Events } from 'phaser';
 import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
 import skeleton from 'src/data/skeleton';
+import swordsman from 'src/data/swordsman';
 import { levelUp, setInitialStatus } from 'src/utils/battle';
 import Skeleton from 'src/entity/skeleton';
-import { enemy } from 'src/model/character';
+import Player from 'src/entity/player';
 // import { Direction, GridEngine } from 'grid-engine';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
+  eventEmitter: Phaser.Events.EventEmitter | undefined;
   theme: string;
   map: Phaser.Tilemaps.Tilemap | null;
   groundLayer: Phaser.Tilemaps.TilemapLayer | null;
   stuffLayer: Phaser.Tilemaps.TilemapLayer | null;
   camera: Phaser.Cameras.Scene2D.Camera | null;
-  player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | null;
+  player: Player | null;
   playerIdleCount: number;
   offsetX: number;
   offsetY: number;
@@ -26,15 +28,12 @@ export default class Dungeon extends Scene {
   limitWidth: number;
   limitHeight: number;
 
-  private fKey!: Input.Keyboard.Key | undefined;
-  private iKey!: Input.Keyboard.Key | undefined;
-  private cKey!: Input.Keyboard.Key | undefined;
-
   // private gridEngine!: GridEngine;
 
   constructor() {
     super('Dungeon');
     this.content = null;
+    this.eventEmitter = undefined;
     this.theme = 'demo';
     this.map = null;
     this.groundLayer = null;
@@ -96,10 +95,6 @@ export default class Dungeon extends Scene {
 
   create() {
     console.log('scene create');
-
-    // Bind keyborad input
-    this.fKey = this.input.keyboard?.addKey(Input.Keyboard.KeyCodes.F);
-
     // Generate tileMap
     if (
       this.content !== null &&
@@ -124,7 +119,6 @@ export default class Dungeon extends Scene {
 
       // Init key events
       if (this.input.keyboard) this.input.keyboard.enabled = true;
-      this.cursor = this.input.keyboard?.createCursorKeys();
 
       // Show the collide tiles and none collide tiles for debug
       // const tileColor = new Display.Color(105, 210, 231, 200);
@@ -150,73 +144,23 @@ export default class Dungeon extends Scene {
     // console.log('scene update');
 
     const gameStore = useGameStore();
-    const tileSize = gameStore.getTileSize;
 
-    if (
-      this.content &&
-      this.cursor &&
-      this.player &&
-      this.input.keyboard?.enabled
-    ) {
+    if (this.content && this.player && this.input.keyboard?.enabled) {
       // const room = this.content.roomIndex;
       // Listen to key press
-      if (this.cursor.left.isDown) {
-        this.player.setVelocityX(-tileSize * 2.5);
-        this.player.setFlipX(false);
-        this.player.anims.play('player-walk-left', true);
-        // this.gridEngine.move('player', Direction.LEFT);
-      } else if (this.cursor?.right.isDown) {
-        this.player.setVelocityX(tileSize * 2.5);
-        this.player.setFlipX(true);
-        this.player.anims.play('player-walk-left', true);
-        // this.gridEngine.move('player', Direction.RIGHT);
-      } else if (this.cursor?.up.isDown) {
-        this.player.setVelocityY(-tileSize * 2.5);
-        // this.gridEngine.move('player', Direction.UP);
-      } else if (this.cursor?.down.isDown) {
-        this.player.setVelocityY(tileSize * 2.5);
-        // this.gridEngine.move('player', Direction.DOWN);
-      } else {
-        this.player.body.setVelocity(0);
-        this.player.anims.play('player-idle', true);
-      }
+      const doorIndex = gameStore.getDoorIndex;
 
-      if (this.doorTouching >= 0 && this.doorTouching < this.doors.length) {
-        // console.log('checking overlap :>>>', this.doorTouching);
-        if (!this.doors[this.doorTouching].body.embedded) {
+      if (doorIndex >= 0 && doorIndex < this.doors.length) {
+        // console.log('checking overlap :>>>', doorIndex);
+        if (!this.doors[doorIndex].body.embedded) {
           // console.log('Not overlapping');
           gameStore.setTextContent('');
-          this.doorTouching = -1;
+          gameStore.setDoorIndex(-1);
           return;
-        }
-
-        // If F key press detected
-        if (this.fKey && this.fKey.isDown) {
-          console.log(
-            `Open the door ${this.content.doors[this.doorTouching].direction}`
-          );
-
-          // Mark the room cleared?
-          this.content.markRoomCleared(this.content.roomIndex);
-
-          switch (this.content.doors[this.doorTouching].direction) {
-            case 'up':
-              this.#updateContent(this.content.roomIndex - 3, gameStore);
-              break;
-            case 'right':
-              this.#updateContent(this.content.roomIndex + 1, gameStore);
-              break;
-            case 'down':
-              this.#updateContent(this.content.roomIndex + 3, gameStore);
-              break;
-            case 'left':
-              this.#updateContent(this.content.roomIndex - 1, gameStore);
-              break;
-          }
         }
       }
 
-      this.enemies.forEach((enemy) => enemy.checkDistance(this.player));
+      this.enemies.forEach((enemy) => enemy.checkDistance(this.player?.sprite));
     }
 
     // Check the distance between the player and enemies
@@ -233,6 +177,8 @@ export default class Dungeon extends Scene {
 
     const room = this.#getRoom(tileSize);
     console.log('room :>>>', room);
+
+    this.#setEventEmitter();
 
     this.#setTileMap(room, tileSize);
     console.log('map :>>>', this.map);
@@ -376,41 +322,23 @@ export default class Dungeon extends Scene {
   }
 
   #setPlayer(tileSize: number) {
-    if (this.content && this.map) {
+    if (this.content && this.map && this.groundLayer && this.eventEmitter) {
       console.log('player starting position: >>>', this.content.startingPoint);
       const playerX = this.content.startingPoint[1] * tileSize;
       const playerY = this.content.startingPoint[0] * tileSize;
 
       // Initialize player
-      this.player = this.physics.add.sprite(
+      this.player = new Player(
+        this,
         playerX + this.offsetX,
         playerY + this.offsetY,
-        'demo-player'
+        'demo-player',
+        swordsman,
+        this.groundLayer,
+        this.content.level[this.content.roomIndex],
+        tileSize,
+        this.eventEmitter
       );
-      // this.player = this.physics.add.sprite(0, 0, 'demo-player');
-
-      this.player.setOrigin(0, 0);
-      this.player.setPushable(false);
-      // Set animation
-      this.anims.create({
-        key: 'player-idle',
-        frames: this.anims.generateFrameNames('demo-player', {
-          start: 0,
-          end: 0,
-        }),
-        frameRate: 5,
-        repeat: 0,
-      });
-
-      this.anims.create({
-        key: 'player-walk-left',
-        frames: this.anims.generateFrameNames('demo-player', {
-          start: 3,
-          end: 5,
-        }),
-        frameRate: 5,
-        repeat: -1,
-      });
 
       // this.player.on('animationcomplete', (context: any) => {
       //   // console.log('context :>>>', context);
@@ -430,10 +358,8 @@ export default class Dungeon extends Scene {
       console.log('player :>>>', this.player);
 
       // Set the camera to follow the player
-      this.camera?.startFollow(this.player, true);
-
-      // Play animation
-      this.player.anims.play('player-idle', true);
+      if (this.player.sprite)
+        this.camera?.startFollow(this.player.sprite, true);
 
       // Config grid movement & player
       // try {
@@ -453,15 +379,12 @@ export default class Dungeon extends Scene {
       // } catch (error) {
       //   console.log('failed to use grid-engine :>>>', error);
       // }
-
-      // Check player position
-      // this.player.setPosition(playerX + this.offsetX, playerY + this.offsetY);
     }
   }
 
   #setEnemy(tileSize: number, gameStore: any) {
     // Set enemies
-    if (this.content && this.player && this.groundLayer) {
+    if (this.content && this.player?.sprite && this.groundLayer) {
       const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
 
       const storedEnemy = gameStore.getEnemyIntheRoom(this.content.roomIndex);
@@ -470,9 +393,9 @@ export default class Dungeon extends Scene {
       if (!storedEnemy.length) {
         // Create new enemy
         const levelRange = [
-          gameStore.player.lv,
-          gameStore.player.lv + 1,
-          gameStore.player.lv + 2,
+          this.player.data.lv,
+          this.player.data.lv + 1,
+          this.player.data.lv + 2,
         ];
 
         console.log('levelRange :>>>', levelRange);
@@ -485,7 +408,7 @@ export default class Dungeon extends Scene {
             'demo-enemy',
             skeleton,
             i,
-            this.player,
+            this.player.sprite,
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize
@@ -515,7 +438,7 @@ export default class Dungeon extends Scene {
             'demo-enemy',
             storedEnemy[i],
             i,
-            this.player,
+            this.player.sprite,
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize
@@ -529,6 +452,14 @@ export default class Dungeon extends Scene {
     }
   }
 
+  #setEventEmitter() {
+    const gameStore = useGameStore();
+    this.eventEmitter = new Events.EventEmitter();
+    this.eventEmitter.on('open-door', () => {
+      this.#updateContent(gameStore);
+    });
+  }
+
   #setCollision(room: number[][], gameStore: any) {
     // Set collision
     if (this.groundLayer && this.player && this.content) {
@@ -539,15 +470,9 @@ export default class Dungeon extends Scene {
         false
       );
 
-      // Create collider
-      this.physics.add.collider(this.groundLayer, this.player);
-      this.physics.world.bounds.width = this.limitWidth + this.offsetX;
-      this.physics.world.bounds.height = this.limitHeight + this.offsetY;
-      this.player?.setCollideWorldBounds(true);
-
       // Add collision to each other
       this.enemies.forEach((enemy, i) => {
-        enemy.sprite?.setCollideWorldBounds(true);
+        // enemy.sprite?.setCollideWorldBounds(true);
         const others = this.enemies.filter((e, n) => n !== i);
 
         others.forEach((o) => enemy.addCollision(o.sprite));
@@ -560,17 +485,22 @@ export default class Dungeon extends Scene {
         this.physics.add.existing(door, false);
         if (door.body) door.body.moves = false;
 
-        this.physics.add.overlap(door, this.player, (player, zone) => {
-          // console.log('overlap!');
-          gameStore.setTextContent('[F] OPEN');
-          this.doorTouching = index;
-        });
+        if (this.player?.sprite)
+          this.physics.add.overlap(door, this.player?.sprite, () => {
+            // console.log('overlap!');
+            gameStore.setTextContent('[F] OPEN');
+            gameStore.setDoorIndex(index);
+          });
       });
     }
   }
 
-  #updateContent(roomIndex: number, gameStore: any) {
+  #updateContent(gameStore: any) {
     if (this.content) {
+      const direction = this.content.doors[gameStore.doorIndex].direction;
+      console.log(`Open the door ${direction}`);
+      // Mark the room visited
+      this.content.markRoomVisited(this.content.roomIndex);
       // Clear zones
       this.doors.splice(0);
       // Remove collider
@@ -599,19 +529,28 @@ export default class Dungeon extends Scene {
       // Disable key input event
       if (this.input.keyboard) this.input.keyboard.enabled = false;
 
+      let roomIndex = -1;
+
+      switch (direction) {
+        case 'up':
+          roomIndex = this.content.roomIndex - 3;
+          break;
+        case 'right':
+          roomIndex = this.content.roomIndex + 1;
+          break;
+        case 'down':
+          roomIndex = this.content.roomIndex + 3;
+          break;
+        case 'left':
+          roomIndex = this.content.roomIndex - 1;
+          break;
+      }
+
       this.scene.restart({
         roomIndex: roomIndex,
-        direction: this.content.doors[this.doorTouching].direction,
+        direction: direction,
         // And more...
       });
     }
-  }
-
-  #getPosition(target: any, tileSize: number) {
-    const { x, y } = target;
-    const row = Math.floor((y - this.offsetY) / tileSize);
-    const col = Math.floor((x - this.offsetX) / tileSize);
-
-    return { row, col };
   }
 }
