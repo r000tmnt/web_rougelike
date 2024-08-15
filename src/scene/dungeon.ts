@@ -69,7 +69,10 @@ export default class Dungeon extends Scene {
       // Create a new map or load existing content
       this.content?.setRoom(roomIndex, direction);
     } else {
-      this.content = new DungeonGenerator(this);
+      const gameStore = useGameStore();
+      const tileSize = gameStore.getTileSize;
+
+      this.content = new DungeonGenerator(tileSize);
     }
   }
 
@@ -548,23 +551,23 @@ export default class Dungeon extends Scene {
       this.physics.world.colliders.destroy();
       // Remove layer
       this.groundLayer?.destroy();
-      // Reset offset
-      this.offsetX = 0;
-      this.offsetY = 0;
       // Keep enemies if any
       if (this.enemies.length) {
         const copy = this.enemies.map((e) => {
           if (e.sprite)
             // Update position
             e.data.position = {
-              x: e.sprite.x,
-              y: e.sprite.y,
+              x: e.sprite.x - this.offsetX,
+              y: e.sprite.y - this.offsetY,
             };
 
           return e.data;
         });
         gameStore.storeEnemyIntheRoom(copy);
       }
+      // Reset offset
+      this.offsetX = 0;
+      this.offsetY = 0;
       // Clear enemy array
       this.enemies.splice(0);
       // Disable key input event
