@@ -81,8 +81,8 @@ export const useGameStore = defineStore('game', {
       // }
     },
 
-    storeEnemyIntheRoom(enemy: enemy[]) {
-      this.enemy.push(enemy);
+    storeEnemyIntheRoom(enemy: enemy[], index: number) {
+      this.enemy[index] = enemy;
     },
 
     getEnemyIntheRoom(index: number) {
