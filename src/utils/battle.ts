@@ -1,3 +1,4 @@
+import { base_attribute } from './../model/character';
 import { player, enemy, base_attribute } from 'src/model/character';
 
 const grows = [0, 1, 3];
@@ -41,4 +42,23 @@ export const becomeElite = (data: enemy) => {
   }
 
   return data;
+};
+
+export const calculateDamage = (attacker: any, defender: any) => {
+  let baseDMG = attacker.base_attribute.str + attacker.add_attribute.str;
+  const baseDEF = defender.base_attribute.def + defender.add_attribute.def;
+
+  if (Object.entries(attacker.equip.hand).length) {
+    // Alter baseDMG
+  }
+
+  // Alter baseDEF if needed
+
+  if (baseDEF > baseDMG) {
+    baseDMG = 1; // Minimun damage
+  } else {
+    baseDMG -= baseDEF;
+  }
+
+  return baseDMG;
 };
