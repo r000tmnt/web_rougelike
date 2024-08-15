@@ -489,7 +489,7 @@ export default class Dungeon extends Scene {
 
       // Add collision to each other
       this.enemies.forEach((enemy, i) => {
-        // enemy.sprite?.setCollideWorldBounds(true);
+        this.player?.addOverlap(enemy);
         const others = this.enemies.filter((e, n) => n !== i);
 
         others.forEach((o) => enemy.addCollision(o.sprite));
