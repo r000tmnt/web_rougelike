@@ -159,7 +159,7 @@ export default class DungeonGenerator {
     }
   }
 
-  markRoomCleared(index: number) {
+  markRoomVisited(index: number) {
     if (this.clearedRoom.find((cr) => cr === index) === undefined) {
       console.log(`mark room ${index} cleared`);
       this.clearedRoom.push(index);
