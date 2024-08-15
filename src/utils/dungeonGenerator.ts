@@ -605,7 +605,7 @@ export default class DungeonGenerator {
     this.enemyPositions[this.roomIndex] = [];
 
     // Check if enter the visited room
-    if (!walkables.length) {
+    if (walkables.length) {
       const distance = 4;
 
       // Remove a certain number of tiles around the player
