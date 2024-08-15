@@ -464,41 +464,67 @@ export default class Dungeon extends Scene {
     if (this.content && this.player && this.groundLayer) {
       const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
 
-      const levelRange = [
-        gameStore.player.lv,
-        gameStore.player.lv + 1,
-        gameStore.player.lv + 2,
-      ];
+      const storedEnemy = gameStore.getEnemyIntheRoom(this.content.roomIndex);
 
-      console.log('levelRange :>>>', levelRange);
+      // If there's no enemy in the gameStore
+      if (!storedEnemy.length) {
+        // Create new enemy
+        const levelRange = [
+          gameStore.player.lv,
+          gameStore.player.lv + 1,
+          gameStore.player.lv + 2,
+        ];
 
-      for (let i = 0; i < enemyPosition.length; i++) {
-        const enemy = new Skeleton(
-          this,
-          enemyPosition[i].x * tileSize + this.offsetX,
-          enemyPosition[i].y * tileSize + this.offsetY,
-          'demo-enemy',
-          skeleton,
-          i,
-          this.player,
-          this.groundLayer,
-          this.content.level[this.content.roomIndex],
-          tileSize
-        );
+        console.log('levelRange :>>>', levelRange);
 
-        const randomLv =
-          levelRange[Math.floor(Math.random() * levelRange.length)];
+        for (let i = 0; i < enemyPosition.length; i++) {
+          const enemy = new Skeleton(
+            this,
+            enemyPosition[i].x * tileSize + this.offsetX,
+            enemyPosition[i].y * tileSize + this.offsetY,
+            'demo-enemy',
+            skeleton,
+            i,
+            this.player,
+            this.groundLayer,
+            this.content.level[this.content.roomIndex],
+            tileSize
+          );
 
-        let newEnemyData = JSON.parse(JSON.stringify(skeleton));
+          const randomLv =
+            levelRange[Math.floor(Math.random() * levelRange.length)];
 
-        newEnemyData = setInitialStatus(newEnemyData, randomLv);
+          let newEnemyData = JSON.parse(JSON.stringify(skeleton));
 
-        // console.log('new enemy entity :>>>', enemy);
-        console.log('new enemy data :>>>', newEnemyData);
+          newEnemyData = setInitialStatus(newEnemyData, randomLv);
 
-        enemy.updateData(newEnemyData);
+          // console.log('new enemy entity :>>>', enemy);
+          console.log('new enemy data :>>>', newEnemyData);
 
-        this.enemies.push(enemy);
+          enemy.updateData(newEnemyData);
+
+          this.enemies.push(enemy);
+        }
+      } else {
+        // Create enemy from stored data
+        for (let i = 0; i < enemyPosition.length; i++) {
+          const enemy = new Skeleton(
+            this,
+            enemyPosition[i].x * tileSize + this.offsetX,
+            enemyPosition[i].y * tileSize + this.offsetY,
+            'demo-enemy',
+            storedEnemy[i],
+            i,
+            this.player,
+            this.groundLayer,
+            this.content.level[this.content.roomIndex],
+            tileSize
+          );
+
+          console.log('stored enemy data :>>>', storedEnemy[i]);
+
+          this.enemies.push(enemy);
+        }
       }
     }
   }
@@ -563,7 +589,7 @@ export default class Dungeon extends Scene {
 
           return e.data;
         });
-        gameStore.storeEnemyIntheRoom(copy);
+        gameStore.storeEnemyIntheRoom(copy, this.content.roomIndex);
       }
       // Reset offset
       this.offsetX = 0;
