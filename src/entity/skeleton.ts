@@ -83,7 +83,7 @@ export default class Skeleton {
 
   addCollision(target: any) {
     if (this.sprite) {
-      console.log('target :>>>', target);
+      // console.log('target :>>>', target);
       this.scene.physics.add.collider(
         target,
         this.sprite,
