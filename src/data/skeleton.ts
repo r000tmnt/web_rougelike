@@ -1,4 +1,3 @@
-import { position } from 'src/model/character';
 export default {
   lv: 1,
   // theme: 'demo'

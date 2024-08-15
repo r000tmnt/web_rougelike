@@ -201,16 +201,16 @@ export default class Dungeon extends Scene {
 
           switch (this.content.doors[this.doorTouching].direction) {
             case 'up':
-              this.#updateContent(this.content.roomIndex - 3);
+              this.#updateContent(this.content.roomIndex - 3, gameStore);
               break;
             case 'right':
-              this.#updateContent(this.content.roomIndex + 1);
+              this.#updateContent(this.content.roomIndex + 1, gameStore);
               break;
             case 'down':
-              this.#updateContent(this.content.roomIndex + 3);
+              this.#updateContent(this.content.roomIndex + 3, gameStore);
               break;
             case 'left':
-              this.#updateContent(this.content.roomIndex - 1);
+              this.#updateContent(this.content.roomIndex - 1, gameStore);
               break;
           }
         }
