@@ -44,6 +44,7 @@ export default class Skeleton {
     groundLayer: Phaser.Tilemaps.TilemapLayer
   ) {
     this.sprite = this.scene.physics.add.sprite(x, y, texture);
+    this.sprite.name = `enemy${this.index}`;
     this.sprite.setOrigin(0, 0);
     this.sprite.setPushable(false);
 
