@@ -44,11 +44,15 @@ export const becomeElite = (data: enemy) => {
   return data;
 };
 
-export const calculateDamage = (attacker: any, defender: any) => {
+export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
   let baseDMG = attacker.base_attribute.str + attacker.add_attribute.str;
   const baseDEF = defender.base_attribute.def + defender.add_attribute.def;
 
   if (Object.entries(attacker.equip.hand).length) {
+    // Alter baseDMG
+  }
+
+  if (Object.entries(skill).length) {
     // Alter baseDMG
   }
 
