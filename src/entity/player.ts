@@ -143,19 +143,11 @@ export default class Player {
       this
     );
 
-    this.sprite.on('animationcomplete', (context: any) => {
-      console.log('context :>>>', context);
-      // Check if the attack animation finished
-      if (context.key.includes('attack')) {
-        this.sprite.setSize(this.tileSize, this.tileSize);
-        this.sprite.setPosition(
-          this.sprite.x,
-          this.sprite.y + (context.frames[0].frame.height - this.tileSize)
-        );
-        this.sprite.setOffset(0, 0);
-        this.sprite.anims.play('player-idle');
-      }
-    });
+    // Animation event listener
+    this.sprite.on(
+      Animations.Events.ANIMATION_COMPLETE,
+      this.#animationComplete,
+      this);
 
     this.#setCollision(groundLayer);
     this.#addContorl();
@@ -234,7 +226,7 @@ export default class Player {
 
       if (this.dKey && this.dKey.isDown) {
         this.sprite?.anims.play('player-attack', true);
-      }
+      }else
 
       if (this.cursor?.left.isDown) {
         this.sprite.setVelocityX(-this.tileSize * 2.5);
@@ -288,11 +280,15 @@ export default class Player {
   #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
     console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack')) {
-      console.log('change sprite position');
+      // console.log('change sprite position');
+      // Stop moving if needed
+      this.sprite.body.setVelocity(0);
+      // Temporary disable key captures
+
       this.sprite.setSize(sprite.width, sprite.height);
-      this.sprite.setPosition(
-        this.sprite.x,
-        this.sprite.y - (sprite.height - this.tileSize)
+      this.sprite.setDisplayOrigin(
+        sprite.width - this.tileSize,
+        sprite.height - this.tileSize
       );
     }
   }
@@ -314,6 +310,21 @@ export default class Player {
       //   //   -(sprite.height - this.tileSize)
       //   // );
       // }
+    }
+  }
+
+  #animationComplete(context: any){
+    console.log('context :>>>', context);
+    // Check if the attack animation finished
+    if (context.key.includes('attack')) {
+      this.sprite.setSize(this.tileSize, this.tileSize);
+      this.sprite.setDisplayOrigin(
+        // context.frames[0].frame.width - this.tileSize,
+        // context.frames[0].frame.height - this.tileSize
+        0.5, 0.5
+      );
+      this.sprite.setOffset(0, 0);
+      this.sprite.anims.play('player-idle');
     }
   }
 
