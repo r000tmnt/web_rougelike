@@ -1,10 +1,10 @@
 import { player } from 'src/model/character';
-import { Input, Events } from 'phaser';
+import { Input, Events, Animations } from 'phaser';
 import { useGameStore } from 'src/stores/game';
 
 export default class Player {
   scene: Phaser.Scene;
-  sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | undefined;
+  sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   eventEmitter: Phaser.Events.EventEmitter | undefined;
   data: player;
   tileSize: number;
@@ -16,6 +16,7 @@ export default class Player {
   private fKey!: Input.Keyboard.Key | undefined;
   private iKey!: Input.Keyboard.Key | undefined;
   private cKey!: Input.Keyboard.Key | undefined;
+  private dKey!: Input.Keyboard.Key | undefined;
 
   constructor(
     scene: Phaser.Scene,
@@ -29,7 +30,7 @@ export default class Player {
     eventEmitter: Events.EventEmitter
   ) {
     this.scene = scene;
-    this.sprite = undefined;
+    this.sprite = this.scene.physics.add.sprite(x, y);
     this.data = data;
     this.tileSize = tileSize;
     this.init(x, y, texture, groundLayer);
@@ -44,29 +45,116 @@ export default class Player {
     texture: string,
     groundLayer: Phaser.Tilemaps.TilemapLayer
   ) {
-    this.sprite = this.scene.physics.add.sprite(x, y, texture);
+    this.sprite.name = 'player';
+    this.sprite.setSize(this.tileSize, this.tileSize);
     this.sprite.setOrigin(0, 0);
+    this.sprite.setOffset(0, 0); // Adjust rendering position
     this.sprite.setPushable(false);
+
+    //Prepare textures
+    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_idle`, {
+      atlas: texture,
+      frame: `${texture}_idle`,
+      frameWidth: this.tileSize,
+      frameHeight: this.tileSize,
+      endFrame: 1,
+    });
+
+    // demo_player_idle?.setOrigin(0, 0)
+
+    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_walking`, {
+      atlas: texture,
+      frame: `${texture}_idle`,
+      frameWidth: this.tileSize,
+      frameHeight: this.tileSize,
+      startFrame: 3, // Need to state the starting index if the sprite is in a group
+      endFrame: 5, // The destination
+    });
+
+    // console.log('demo_player_walking', demo_player_walking);
+
+    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_attack`, {
+      atlas: texture,
+      frame: `${texture}_attack`,
+      frameWidth: 56,
+      frameHeight: 64,
+    });
 
     // Set animation
     this.scene.anims.create({
       key: 'player-idle',
-      frames: this.scene.anims.generateFrameNames(texture, {
+      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
         start: 0,
         end: 0,
       }),
-      frameRate: 5,
+      frameRate: 0,
       repeat: 0,
     });
 
+    // this.scene.anims.create({
+    //   key: 'player-walking',
+    //   frames: this.scene.anims.generateFrameNames(texture, {
+    //     start: 3,
+    //     end: 5,
+    //   }),
+    //   frameRate: 5,
+    //   repeat: -1,
+    // });
+
     this.scene.anims.create({
       key: 'player-walking',
-      frames: this.scene.anims.generateFrameNames(texture, {
-        start: 3,
-        end: 5,
+      frames: this.scene.anims.generateFrameNames(`${texture}_walking`, {
+        start: 0,
+        end: 2,
       }),
       frameRate: 5,
       repeat: -1,
+    });
+
+    // this.scene.anims.create({
+    //   key: 'player-attack',
+    //   frames: this.scene.anims.generateFrameNames(`${texture}-attack`, {
+    //     start: 0,
+    //     end: 2,
+    //   }),
+    //   frameRate: 10,
+    // });
+
+    this.scene.anims.create({
+      key: 'player-attack',
+      frames: this.scene.anims.generateFrameNames(`${texture}_attack`, {
+        start: 0,
+        end: 2,
+      }),
+      frameRate: 10,
+    });
+
+    // Animation event listener
+    this.sprite.on(
+      Animations.Events.ANIMATION_START,
+      this.#animationStart,
+      this
+    );
+
+    // Animation event listener
+    this.sprite.on(
+      Animations.Events.ANIMATION_UPDATE,
+      this.#animationUpdate,
+      this
+    );
+
+    this.sprite.on('animationcomplete', (context: any) => {
+      console.log('context :>>>', context);
+      // Check if the attack animation finished
+      if (context.key.includes('attack')) {
+        this.sprite.setSize(this.tileSize, this.tileSize);
+        this.sprite.setPosition(
+          this.sprite.x,
+          this.sprite.y + (context.frames[0].frame.height - this.tileSize)
+        );
+        this.sprite.setOffset(0, 0);
+        this.sprite.anims.play('player-idle');
+      }
     });
 
     this.#setCollision(groundLayer);
@@ -88,7 +176,8 @@ export default class Player {
   #addContorl() {
     if (this.scene.input.keyboard) {
       this.cursor = this.scene.input.keyboard.createCursorKeys();
-      this.fKey = this.scene.input.keyboard?.addKey(Input.Keyboard.KeyCodes.F);
+      this.fKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F);
+      this.dKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.D);
 
       // Bind key events
       this.scene.events.on('update', this.#update, this);
@@ -98,12 +187,13 @@ export default class Player {
   #setZone() {
     if (this.sprite) {
       this.zone = this.scene.add.zone(
-        this.sprite.x - this.tileSize / 2,
-        this.sprite.y,
+        this.sprite.x - this.tileSize / 4,
+        this.sprite.y + this.tileSize / 2,
         this.tileSize / 2,
         this.tileSize
       );
-      this.zone.setOrigin(0, 0);
+      // this.zone.setOrigin(0.5, 0.5);
+      console.log('zone ', this.zone);
       this.scene.physics.add.existing(this.zone, false);
     }
   }
@@ -111,7 +201,7 @@ export default class Player {
   addOverlap(target: any) {
     if (this.sprite) {
       this.scene.physics.add.overlap(this.sprite, target, () => {
-        // console.log('overlap!');
+        console.log('overlap with ', target);
       });
     }
   }
@@ -133,39 +223,6 @@ export default class Player {
     // console.log('listen to scene update');
     // Listen to key press
     if (this.sprite?.body) {
-      if (this.cursor?.left.isDown) {
-        this.sprite.setVelocityX(-this.tileSize * 2.5);
-        this.sprite.setFlipX(false);
-        this.sprite.anims.play('player-walking', true);
-        // Update zone
-        this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
-        // this.zone.setSize(this.tileSize / 2, this.tileSize);
-        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-      } else if (this.cursor?.right.isDown) {
-        this.sprite.setVelocityX(this.tileSize * 2.5);
-        this.sprite.setFlipX(true);
-        this.sprite.anims.play('player-walking', true);
-        // Update zone
-        this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
-        // this.zone.setSize(this.tileSize / 2, this.tileSize);
-        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-      } else if (this.cursor?.up.isDown) {
-        this.sprite.setVelocityY(-this.tileSize * 2.5);
-        // Update zone
-        this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
-        // this.zone.setSize(this.tileSize, this.tileSize / 2);
-        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-      } else if (this.cursor?.down.isDown) {
-        this.sprite.setVelocityY(this.tileSize * 2.5);
-        // Update zone
-        this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
-        // this.zone.setSize(this.tileSize, this.tileSize / 2);
-        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-      } else {
-        this.sprite.body.setVelocity(0);
-        this.sprite.anims.play('player-idle', true);
-      }
-
       if (this.fKey && this.eventEmitter) {
         if (this.fKey.isDown) {
           const gameStore = useGameStore();
@@ -174,6 +231,89 @@ export default class Player {
           if (doorIndex >= 0) this.eventEmitter.emit('open-door');
         }
       }
+
+      if (this.dKey && this.dKey.isDown) {
+        this.sprite?.anims.play('player-attack', true);
+      }
+
+      if (this.cursor?.left.isDown) {
+        this.sprite.setVelocityX(-this.tileSize * 2.5);
+        this.sprite.setFlipX(false);
+        this.sprite.anims.play('player-walking', true);
+        // Update zone
+        this.zone.setPosition(
+          this.sprite.x - this.tileSize / 4,
+          this.sprite.y + this.tileSize / 2
+        );
+        // this.zone.setSize(this.tileSize / 2, this.tileSize);
+        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+      } else if (this.cursor?.right.isDown) {
+        this.sprite.setVelocityX(this.tileSize * 2.5);
+        this.sprite.setFlipX(true);
+        this.sprite.anims.play('player-walking', true);
+        // Update zone
+        this.zone.setPosition(
+          this.sprite.x + this.tileSize + this.tileSize / 3,
+          this.sprite.y + this.tileSize / 2
+        );
+        // this.zone.setSize(this.tileSize / 2, this.tileSize);
+        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+      } else if (this.cursor?.up.isDown) {
+        this.sprite.setVelocityY(-this.tileSize * 2.5);
+        // Update zone
+        this.zone.setPosition(
+          this.sprite.x + this.tileSize / 2,
+          this.sprite.y - this.tileSize / 4
+        );
+        // this.zone.setSize(this.tileSize, this.tileSize / 2);
+        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+      } else if (this.cursor?.down.isDown) {
+        this.sprite.setVelocityY(this.tileSize * 2.5);
+        // Update zone
+        this.zone.setPosition(
+          this.sprite.x + this.tileSize / 2,
+          this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
+        );
+        // this.zone.setSize(this.tileSize, this.tileSize / 2);
+        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+      } else {
+        this.sprite.body.setVelocity(0);
+        if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
+          this.sprite.anims.play('player-idle', true);
+        }
+      }
+    }
+  }
+
+  #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
+    console.log('frameKey :>>>', frameKey);
+    if (anim.key.includes('attack')) {
+      console.log('change sprite position');
+      this.sprite.setSize(sprite.width, sprite.height);
+      this.sprite.setPosition(
+        this.sprite.x,
+        this.sprite.y - (sprite.height - this.tileSize)
+      );
+    }
+  }
+
+  #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
+    console.log('frameKey :>>>', frameKey);
+    if (anim.key.includes('attack')) {
+      console.log('inspecting animation');
+      // Check overlap
+      // if (frameKey === '0') {
+      //   console.log('change sprite position');
+      //   this.sprite.setSize(sprite.width, sprite.height);
+      //   this.sprite.setPosition(
+      //     this.sprite.x - (sprite.width - this.tileSize),
+      //     this.sprite.y - (sprite.height - this.tileSize)
+      //   );
+      //   // this.sprite.setOffset(
+      //   //   -(sprite.width - this.tileSize),
+      //   //   -(sprite.height - this.tileSize)
+      //   // );
+      // }
     }
   }
 
