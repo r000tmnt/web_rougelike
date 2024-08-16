@@ -3,7 +3,7 @@ import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
 import skeleton from 'src/data/skeleton';
 import swordsman from 'src/data/swordsman';
-import { levelUp, setInitialStatus } from 'src/utils/battle';
+import { calculateDamage, levelUp, setInitialStatus } from 'src/utils/battle';
 import Skeleton from 'src/entity/skeleton';
 import Player from 'src/entity/player';
 // import { Direction, GridEngine } from 'grid-engine';
@@ -83,10 +83,24 @@ export default class Dungeon extends Scene {
 
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
-    this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
-      frameWidth: tileSize,
-      frameHeight: tileSize,
-    });
+    // Load sprite sheet atlas
+    this.load.atlas(
+      'demo_player',
+      '/assets/atlas/demo_player_spritesheet.png',
+      '/assets/atlas/demo_player_sprites.json'
+    );
+    // this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
+    //   frameWidth: tileSize,
+    //   frameHeight: tileSize,
+    // });
+    // this.load.spritesheet(
+    //   'demo-player-attack',
+    //   '/assets/demo_player_attack.png',
+    //   {
+    //     frameWidth: tileSize + tileSize / 6,
+    //     frameHeight: tileSize + tileSize / 3,
+    //   }
+    // );
     this.load.spritesheet('demo-enemy', '/assets/demo_enemy_idle.png', {
       frameWidth: tileSize,
       frameHeight: tileSize,
@@ -335,7 +349,7 @@ export default class Dungeon extends Scene {
           this,
           playerX + this.offsetX,
           playerY + this.offsetY,
-          'demo-player',
+          'demo_player',
           playerData,
           this.groundLayer,
           this.content.level[this.content.roomIndex],
@@ -348,7 +362,7 @@ export default class Dungeon extends Scene {
           this,
           playerX + this.offsetX,
           playerY + this.offsetY,
-          'demo-player',
+          'demo_player',
           swordsman,
           this.groundLayer,
           this.content.level[this.content.roomIndex],
@@ -475,6 +489,9 @@ export default class Dungeon extends Scene {
     this.eventEmitter.on('open-door', () => {
       this.#updateContent(gameStore);
     });
+    // this.eventEmitter.on('attack', (attacker: any, defender: any, skill?) => {
+    //   const dmg = calculateDamage(attacker, defender)
+    // })
   }
 
   #setCollision(room: number[][], gameStore: any) {
@@ -489,7 +506,7 @@ export default class Dungeon extends Scene {
 
       // Add collision to each other
       this.enemies.forEach((enemy, i) => {
-        this.player?.addOverlap(enemy);
+        this.player?.addOverlap(enemy.sprite);
         const others = this.enemies.filter((e, n) => n !== i);
 
         others.forEach((o) => enemy.addCollision(o.sprite));
