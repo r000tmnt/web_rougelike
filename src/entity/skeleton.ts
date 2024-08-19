@@ -3,7 +3,7 @@ import { Animations } from 'phaser';
 
 export default class Skeleton {
   scene: Phaser.Scene;
-  sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | undefined;
+  sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   data: enemy;
   index: number;
   tileSize: number;
@@ -26,7 +26,7 @@ export default class Skeleton {
     tileSize: number
   ) {
     this.scene = scene;
-    this.sprite = undefined;
+    this.sprite = this.scene.physics.add.sprite(x, y);
     this.data = data;
     this.index = index;
     this.tileSize = tileSize;
@@ -43,25 +43,34 @@ export default class Skeleton {
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
     groundLayer: Phaser.Tilemaps.TilemapLayer
   ) {
-    this.sprite = this.scene.physics.add.sprite(x, y, texture);
-    this.sprite.name = `enemy${this.index}`;
+    this.sprite.name = `enemy_${this.index}`;
+    this.sprite.setSize(this.tileSize, this.tileSize);
     this.sprite.setOrigin(0, 0);
+    this.sprite.setOffset(0, 0); // Adjust rendering position
     this.sprite.setPushable(false);
+
+    //Prepare textures
+    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_idle`, {
+      atlas: texture,
+      frame: `${texture}_idle`,
+      frameWidth: this.tileSize,
+      frameHeight: this.tileSize,
+    });
 
     // Set animation
     this.scene.anims.create({
-      key: `enemy${this.index}-idle`,
-      frames: this.scene.anims.generateFrameNames(texture, {
+      key: 'enemy_idle',
+      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
         start: 0,
         end: 0,
       }),
-      frameRate: 5,
+      frameRate: 0,
       repeat: 0,
     });
 
     this.scene.anims.create({
-      key: `enemy${this.index}-walking`,
-      frames: this.scene.anims.generateFrameNames(texture, {
+      key: 'enemy_walking',
+      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
         start: 0,
         end: 2,
       }),
@@ -70,35 +79,27 @@ export default class Skeleton {
     });
 
     this.scene.anims.create({
-      key: `enemy${this.index}-attack`,
-      frames: this.scene.anims.generateFrameNames(texture, {
+      key: 'enemy_attack',
+      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
         start: 3,
         end: 7,
       }),
       frameRate: 10,
     });
 
+    // Animation listener
     this.sprite.on(
       Animations.Events.ANIMATION_UPDATE,
-      (anim: any, frame: any, sprite: any, frameKey: any) => {
-        //  We can run our effect when we get frame0004:
-        // console.log('anim :>>>', anim);
-        // console.log('frame :>>>', frame);
-        // console.log('frameKey :>>>', frameKey);
-        if (anim.key === `enemy${this.index}-attack` && frameKey === 6) {
-          // Check demage
-        }
-      },
+      this.#animationUpdate,
       this
     );
 
-    this.sprite.on('animationcomplete', (context: any) => {
-      // console.log('context :>>>', context);
-      // Check if the attack animation finished
-      if (context.key.includes('attack')) {
-        this.sprite?.anims.play(`enemy${this.index}-idle`);
-      }
-    });
+    // Animation listener
+    this.sprite.on(
+      Animations.Events.ANIMATION_COMPLETE,
+      this.#animationComplete,
+      this
+    );
 
     console.log('setting enemy collision');
 
@@ -118,8 +119,19 @@ export default class Skeleton {
     this.scene.physics.add.overlap(this.zone, player, () => {
       // console.log('overlap with player');
       this.overlap = true;
-      this.sprite?.body.setVelocity(0);
-      this.sprite?.anims.play(`enemy${this.index}-attack`, true);
+
+      // Check distance
+      if (this.sprite) {
+        if (
+          this.sprite.x - player.x === 1 ||
+          player.x - this.sprite.x === 1 ||
+          this.sprite.y - player.y === 1 ||
+          player.y - this.sprite.y === 1
+        ) {
+          this.sprite?.body.setVelocity(0);
+          this.sprite?.anims.play('enemy_attack', true);
+        }
+      }
     });
 
     console.log('enemy? ', this.sprite);
@@ -179,13 +191,6 @@ export default class Skeleton {
             if (player.x < this.sprite.x) {
               // console.log('follow player');
               this.sprite.setFlipX(false);
-              this.sprite.anims.play(`enemy${this.index}-walking`, true);
-              // Follow player
-              this.scene.physics.moveToObject(
-                this.sprite,
-                player,
-                this.tileSize
-              );
               // Update zone
               this.zone.setPosition(
                 this.sprite.x - this.tileSize / 2,
@@ -195,13 +200,6 @@ export default class Skeleton {
             } else if (player.x > this.sprite.x) {
               // console.log('follow player');
               this.sprite.setFlipX(true);
-              this.sprite.anims.play(`enemy${this.index}-walking`, true);
-              // Follow player
-              this.scene.physics.moveToObject(
-                this.sprite,
-                player,
-                this.tileSize
-              );
               // Update zone
               this.zone.setPosition(
                 this.sprite.x + this.tileSize,
@@ -209,12 +207,6 @@ export default class Skeleton {
               );
               this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
             } else if (player.y < this.sprite.y) {
-              // Follow player
-              this.scene.physics.moveToObject(
-                this.sprite,
-                player,
-                this.tileSize
-              );
               // Update zone
               this.zone.setPosition(
                 this.sprite.x,
@@ -222,12 +214,6 @@ export default class Skeleton {
               );
               this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
             } else if (player.y > this.sprite.y) {
-              // Follow player
-              this.scene.physics.moveToObject(
-                this.sprite,
-                player,
-                this.tileSize
-              );
               // Update zone
               this.zone.setPosition(
                 this.sprite.x,
@@ -235,14 +221,18 @@ export default class Skeleton {
               );
               this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
             }
+
+            this.sprite.anims.play('enemy_walking', true);
+            // Follow player
+            this.scene.physics.moveToObject(this.sprite, player, this.tileSize);
           } else {
             //   console.log('stop follow player');
-            this.sprite.anims.play(`enemy${this.index}-idle`, true);
+            this.sprite.anims.play('enemy_idle', true);
             this.sprite.body.setVelocity(0);
           }
         } else {
           // console.log('stop follow player');
-          // this.sprite.anims.play(`enemy${this.index}-idle`, true);
+          this.sprite.anims.play('enemy_idle', true);
           this.sprite.body.setVelocity(0);
         }
       }
@@ -258,6 +248,24 @@ export default class Skeleton {
     // console.log('target', target);
     if (target.body) {
       target.body.setVelocity(0);
+    }
+  }
+
+  #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
+    console.log('frameKey :>>>', frameKey);
+    if (anim.key.includes('attack') && frameKey === '3') {
+      // Check overlap
+      if (this.overlap) {
+        // Check demage
+      }
+    }
+  }
+
+  #animationComplete(context: any) {
+    // console.log('context :>>>', context);
+    // Check if the attack animation finished
+    if (context.key.includes('attack')) {
+      this.sprite?.anims.play('enemy_idle');
     }
   }
 }
