@@ -194,10 +194,20 @@ export default class Skeleton {
           ) {
             const radain = Math.Angle.BetweenPoints(this.sprite, player);
             const angle = Math.RadToDeg(radain);
+            let playerHide = false;
 
             console.log('angle ', angle);
 
             if (angle <= -45 && angle >= -135) {
+              // Check if the sight hits the wall
+              playerHide = this.#ifPlayerOutofSight(
+                Math.RoundTo(viewAxisYTop / this.tileSize, 0),
+                Math.RoundTo(viewAxisXleft / this.tileSize, 0),
+                Math.RoundTo(viewAxisXRight / this.tileSize, 0),
+                'up',
+                player
+              );
+
               console.log('enemy go up');
               // Update zone
               this.zone.setPosition(
@@ -206,6 +216,15 @@ export default class Skeleton {
               );
               this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
             } else if (angle <= 45 && angle >= -45) {
+              // Check if the sight hits the wall
+              playerHide = this.#ifPlayerOutofSight(
+                Math.RoundTo(viewAxisYTop / this.tileSize, 0),
+                Math.RoundTo(this.sprite.x / this.tileSize, 0),
+                Math.RoundTo(viewAxisXRight / this.tileSize, 0),
+                'right',
+                player
+              );
+
               console.log('enemy go right');
               this.sprite.setFlipX(true);
               // Update zone
@@ -215,6 +234,15 @@ export default class Skeleton {
               );
               this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
             } else if (angle <= 135 && angle >= 45) {
+              // Check if the sight hits the wall
+              playerHide = this.#ifPlayerOutofSight(
+                Math.RoundTo(this.sprite.y / this.tileSize, 0),
+                Math.RoundTo(viewAxisXleft / this.tileSize, 0),
+                Math.RoundTo(viewAxisXRight / this.tileSize, 0),
+                'down',
+                player
+              );
+
               console.log('enemy go down');
               // Update zone
               this.zone.setPosition(
@@ -223,6 +251,15 @@ export default class Skeleton {
               );
               this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
             } else if (angle <= 255 && angle >= 135) {
+              // Check if the sight hits the wall
+              playerHide = this.#ifPlayerOutofSight(
+                Math.RoundTo(viewAxisYTop / this.tileSize, 0),
+                Math.RoundTo(viewAxisXleft / this.tileSize, 0),
+                Math.RoundTo(this.sprite.x / this.tileSize, 0),
+                'left',
+                player
+              );
+
               console.log('enemy go left');
               this.sprite.setFlipX(false);
               // Update zone
@@ -236,6 +273,14 @@ export default class Skeleton {
             this.sprite.anims.play('enemy_walking', true);
             // Follow player
             this.scene.physics.moveToObject(this.sprite, player, this.tileSize);
+
+            if (playerHide) {
+              // Keep chasing for one second
+              setTimeout(() => {
+                this.sprite.anims.play('enemy_idle', true);
+                this.sprite.body.setVelocity(0);
+              }, 1000);
+            }
           } else {
             // console.log('stop follow player');
             this.sprite.anims.play('enemy_idle', true);
@@ -256,6 +301,83 @@ export default class Skeleton {
     if (target.body) {
       target.body.setVelocity(0);
     }
+  }
+
+  /**
+   * Check if the player is hide behind the wall
+   * @param viewTop - The starting row to check
+   * @param viewLeft - The starting col to check
+   * @param viewRight - The last col to check
+   * @param direction - The direction this entity is facing
+   * @param player - The target
+   * @returns
+   */
+  #ifPlayerOutofSight(
+    viewTop: number,
+    viewLeft: number,
+    viewRight: number,
+    direction: string,
+    player: any
+  ) {
+    const wall: number[][] = [];
+    let hitWall = false;
+
+    // In case if stepping out of map
+    if (viewRight > this.map[0].length - 1) {
+      viewRight = this.map[0].length - 1;
+    }
+    // In case if stepping out of map
+    if (this.map[viewTop] === undefined) {
+      viewTop = 0;
+    }
+    // In case if stepping out of map
+    const viewDown =
+      viewTop + 4 > this.map.length - 1 ? this.map.length - 1 : viewTop + 4;
+
+    for (let i = viewTop; i <= viewDown; i++) {
+      for (let j = viewLeft; j <= viewRight; j++) {
+        if (this.map[i][j] === 1) {
+          wall.push([i, j]);
+        }
+      }
+    }
+
+    switch (direction) {
+      case 'up':
+        for (let i = 0; i < wall.length; i++) {
+          if (player.y < wall[i][0] && player.x === wall[i][1]) {
+            hitWall = true;
+            break;
+          }
+        }
+        break;
+      case 'right':
+        for (let i = 0; i < wall.length; i++) {
+          if (player.y === wall[i][0] && player.x > wall[i][1]) {
+            hitWall = true;
+            break;
+          }
+        }
+        break;
+      case 'down':
+        for (let i = 0; i < wall.length; i++) {
+          if (player.y > wall[i][0] && player.x === wall[i][1]) {
+            hitWall = true;
+            break;
+          }
+        }
+        break;
+      case 'left':
+        for (let i = 0; i < wall.length; i++) {
+          if (player.y === wall[i][0] && player.x < wall[i][1]) {
+            hitWall = true;
+            break;
+          }
+        }
+        break;
+    }
+
+    return hitWall;
   }
 
   #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
