@@ -1,0 +1,19 @@
+{
+  "frames": [
+    {
+      "filename": "demo_enemy_idle",
+      "frame": { "x": 0, "y": 0, "w": 144, "h": 144 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 144 },
+      "sourceSize": { "w": 144, "h": 144 }
+    }
+  ],
+  "meta": {
+    "app": "https://www.leshylabs.com/apps/sstool/",
+    "version": "Leshy SpriteSheet Tool v0.8.4",
+    "image": "demo_enemy_spritesheet.png",
+    "size": { "w": 144, "h": 144 },
+    "scale": 1
+  }
+}
