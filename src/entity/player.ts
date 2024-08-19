@@ -10,6 +10,7 @@ export default class Player {
   tileSize: number;
   map: number[][];
   ready: boolean;
+  overlap: boolean;
 
   private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -36,6 +37,7 @@ export default class Player {
     this.init(x, y, texture, groundLayer);
     this.map = map;
     this.ready = false;
+    this.overlap = false;
     this.eventEmitter = eventEmitter;
   }
 
@@ -158,11 +160,10 @@ export default class Player {
   }
 
   addOverlap(target: any) {
-    if (this.sprite) {
-      this.scene.physics.add.overlap(this.sprite, target, () => {
-        console.log('overlap with ', target);
-      });
-    }
+    this.scene.physics.add.overlap(this.zone, target, () => {
+      console.log('overlap with ', target);
+      this.overlap = true;
+    });
   }
 
   //   addCollision(target: any) {
@@ -182,6 +183,10 @@ export default class Player {
     // console.log('listen to scene update');
     // Listen to key press
     if (this.sprite?.body) {
+      if (!this.zone.body.embedded) {
+        this.overlap = false;
+      }
+
       if (this.fKey && this.eventEmitter) {
         if (this.fKey.isDown) {
           const gameStore = useGameStore();
@@ -260,21 +265,11 @@ export default class Player {
 
   #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
     console.log('frameKey :>>>', frameKey);
-    if (anim.key.includes('attack')) {
-      console.log('inspecting animation');
+    if (anim.key.includes('attack') && frameKey === '1') {
       // Check overlap
-      // if (frameKey === '0') {
-      //   console.log('change sprite position');
-      //   this.sprite.setSize(sprite.width, sprite.height);
-      //   this.sprite.setPosition(
-      //     this.sprite.x - (sprite.width - this.tileSize),
-      //     this.sprite.y - (sprite.height - this.tileSize)
-      //   );
-      //   // this.sprite.setOffset(
-      //   //   -(sprite.width - this.tileSize),
-      //   //   -(sprite.height - this.tileSize)
-      //   // );
-      // }
+      if (this.overlap) {
+        console.log('PLAYER HIT!');
+      }
     }
   }
 
