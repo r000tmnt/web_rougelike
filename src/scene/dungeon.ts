@@ -10,7 +10,7 @@ import Player from 'src/entity/player';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
-  eventEmitter: Phaser.Events.EventEmitter | undefined;
+  eventEmitter: Phaser.Events.EventEmitter | null;
   theme: string;
   map: Phaser.Tilemaps.Tilemap | null;
   groundLayer: Phaser.Tilemaps.TilemapLayer | null;
@@ -20,7 +20,7 @@ export default class Dungeon extends Scene {
   playerIdleCount: number;
   offsetX: number;
   offsetY: number;
-  cursor: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
+  cursor: Phaser.Types.Input.Keyboard.CursorKeys | null;
   doors: Phaser.GameObjects.Zone[];
   doorTouching: number;
   enemies: Skeleton[];
