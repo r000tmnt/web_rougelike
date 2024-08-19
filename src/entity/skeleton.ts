@@ -1,5 +1,5 @@
 import { enemy } from 'src/model/character';
-import { Animations } from 'phaser';
+import { Animations, Math } from 'phaser';
 
 export default class Skeleton {
   scene: Phaser.Scene;
@@ -33,12 +33,10 @@ export default class Skeleton {
     this.map = map;
     this.ready = false;
     this.overlap = false;
-    this.init(x, y, texture, player, groundLayer);
+    this.init(texture, player, groundLayer);
   }
 
   init(
-    x: number,
-    y: number,
     texture: string,
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
     groundLayer: Phaser.Tilemaps.TilemapLayer
@@ -122,11 +120,17 @@ export default class Skeleton {
 
       // Check distance
       if (this.sprite) {
+        const pointerX = this.sprite.flipX
+          ? this.sprite.x + this.tileSize
+          : this.sprite.x;
+        const pointerY =
+          this.sprite.y < player.y
+            ? this.sprite.y + this.tileSize
+            : this.sprite.y;
+
         if (
-          this.sprite.x - player.x === 1 ||
-          player.x - this.sprite.x === 1 ||
-          this.sprite.y - player.y === 1 ||
-          player.y - this.sprite.y === 1
+          (player.x - pointerX <= 5 && player.x - pointerX >= 0) ||
+          (player.y - pointerY <= 5 && player.y - pointerY >= 0)
         ) {
           this.sprite?.body.setVelocity(0);
           this.sprite?.anims.play('enemy_attack', true);
@@ -180,25 +184,29 @@ export default class Skeleton {
         const viewAxisXleft = this.sprite.x - distance;
         const viewAxisXRight = this.sprite.x + distance;
 
-        // Check y axis
-        if (
-          player.y >= viewAxisYTop &&
-          player.y <= viewAxisYBottom &&
-          !this.overlap
-        ) {
-          // Check x axis
-          if (player.x >= viewAxisXleft && player.x <= viewAxisXRight) {
-            if (player.x < this.sprite.x) {
-              // console.log('follow player');
-              this.sprite.setFlipX(false);
+        if (!this.overlap) {
+          // Check y axis & x axis
+          if (
+            player.y >= viewAxisYTop &&
+            player.y <= viewAxisYBottom &&
+            player.x >= viewAxisXleft &&
+            player.x <= viewAxisXRight
+          ) {
+            const radain = Math.Angle.BetweenPoints(this.sprite, player);
+            const angle = Math.RadToDeg(radain);
+
+            console.log('angle ', angle);
+
+            if (angle <= -45 && angle >= -135) {
+              console.log('enemy go up');
               // Update zone
               this.zone.setPosition(
-                this.sprite.x - this.tileSize / 2,
-                this.sprite.y
+                this.sprite.x,
+                this.sprite.y - this.tileSize / 2
               );
-              this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-            } else if (player.x > this.sprite.x) {
-              // console.log('follow player');
+              this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+            } else if (angle <= 45 && angle >= -45) {
+              console.log('enemy go right');
               this.sprite.setFlipX(true);
               // Update zone
               this.zone.setPosition(
@@ -206,34 +214,33 @@ export default class Skeleton {
                 this.sprite.y
               );
               this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-            } else if (player.y < this.sprite.y) {
-              // Update zone
-              this.zone.setPosition(
-                this.sprite.x,
-                this.sprite.y - this.tileSize / 2
-              );
-              this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-            } else if (player.y > this.sprite.y) {
+            } else if (angle <= 135 && angle >= 45) {
+              console.log('enemy go down');
               // Update zone
               this.zone.setPosition(
                 this.sprite.x,
                 this.sprite.y + this.tileSize
               );
               this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+            } else if (angle <= 255 && angle >= 135) {
+              console.log('enemy go left');
+              this.sprite.setFlipX(false);
+              // Update zone
+              this.zone.setPosition(
+                this.sprite.x - this.tileSize / 2,
+                this.sprite.y
+              );
+              this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
             }
 
             this.sprite.anims.play('enemy_walking', true);
             // Follow player
             this.scene.physics.moveToObject(this.sprite, player, this.tileSize);
           } else {
-            //   console.log('stop follow player');
+            // console.log('stop follow player');
             this.sprite.anims.play('enemy_idle', true);
             this.sprite.body.setVelocity(0);
           }
-        } else {
-          // console.log('stop follow player');
-          this.sprite.anims.play('enemy_idle', true);
-          this.sprite.body.setVelocity(0);
         }
       }
     }
@@ -253,10 +260,11 @@ export default class Skeleton {
 
   #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
     console.log('frameKey :>>>', frameKey);
-    if (anim.key.includes('attack') && frameKey === '3') {
+    if (anim.key.includes('attack') && frameKey === '4') {
       // Check overlap
       if (this.overlap) {
         // Check demage
+        console.log('ENEMY HIT!');
       }
     }
   }
