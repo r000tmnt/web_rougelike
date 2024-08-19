@@ -89,22 +89,12 @@ export default class Dungeon extends Scene {
       '/assets/atlas/demo_player_spritesheet.png',
       '/assets/atlas/demo_player_sprites.json'
     );
-    // this.load.spritesheet('demo-player', '/assets/demo_player_idle.png', {
-    //   frameWidth: tileSize,
-    //   frameHeight: tileSize,
-    // });
-    // this.load.spritesheet(
-    //   'demo-player-attack',
-    //   '/assets/demo_player_attack.png',
-    //   {
-    //     frameWidth: tileSize + tileSize / 6,
-    //     frameHeight: tileSize + tileSize / 3,
-    //   }
-    // );
-    this.load.spritesheet('demo-enemy', '/assets/demo_enemy_idle.png', {
-      frameWidth: tileSize,
-      frameHeight: tileSize,
-    });
+
+    this.load.atlas(
+      'demo_enemy',
+      '/assets/atlas/demo_enemy_spritesheet.png',
+      '/assets/atlas/demo_enemy_sprites.json'
+    );
   }
 
   create() {
@@ -160,8 +150,8 @@ export default class Dungeon extends Scene {
     const gameStore = useGameStore();
 
     if (this.content && this.player && this.input.keyboard?.enabled) {
-      // const room = this.content.roomIndex;
-      // Listen to key press
+      this.enemies.forEach((enemy) => enemy.checkDistance(this.player?.sprite));
+
       const doorIndex = gameStore.getDoorIndex;
 
       if (doorIndex >= 0 && doorIndex < this.doors.length) {
@@ -173,8 +163,6 @@ export default class Dungeon extends Scene {
           return;
         }
       }
-
-      this.enemies.forEach((enemy) => enemy.checkDistance(this.player?.sprite));
     }
 
     // Check the distance between the player and enemies
@@ -436,7 +424,7 @@ export default class Dungeon extends Scene {
             this,
             enemyPosition[i].x * tileSize + this.offsetX,
             enemyPosition[i].y * tileSize + this.offsetY,
-            'demo-enemy',
+            'demo_enemy',
             skeleton,
             i,
             this.player.sprite,
@@ -466,7 +454,7 @@ export default class Dungeon extends Scene {
             this,
             enemyPosition[i].x * tileSize + this.offsetX,
             enemyPosition[i].y * tileSize + this.offsetY,
-            'demo-enemy',
+            'demo_enemy',
             storedEnemy[i],
             i,
             this.player.sprite,
