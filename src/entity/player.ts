@@ -5,7 +5,7 @@ import { useGameStore } from 'src/stores/game';
 export default class Player {
   scene: Phaser.Scene;
   sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-  eventEmitter: Phaser.Events.EventEmitter | undefined;
+  eventEmitter: Phaser.Events.EventEmitter | null;
   data: player;
   tileSize: number;
   map: number[][];
@@ -57,21 +57,7 @@ export default class Player {
       frame: `${texture}_idle`,
       frameWidth: this.tileSize,
       frameHeight: this.tileSize,
-      endFrame: 1,
     });
-
-    // demo_player_idle?.setOrigin(0, 0)
-
-    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_walking`, {
-      atlas: texture,
-      frame: `${texture}_idle`,
-      frameWidth: this.tileSize,
-      frameHeight: this.tileSize,
-      startFrame: 3, // Need to state the starting index if the sprite is in a group
-      endFrame: 5, // The destination
-    });
-
-    // console.log('demo_player_walking', demo_player_walking);
 
     this.scene.textures.addSpriteSheetFromAtlas(`${texture}_attack`, {
       atlas: texture,
@@ -91,34 +77,15 @@ export default class Player {
       repeat: 0,
     });
 
-    // this.scene.anims.create({
-    //   key: 'player-walking',
-    //   frames: this.scene.anims.generateFrameNames(texture, {
-    //     start: 3,
-    //     end: 5,
-    //   }),
-    //   frameRate: 5,
-    //   repeat: -1,
-    // });
-
     this.scene.anims.create({
       key: 'player-walking',
-      frames: this.scene.anims.generateFrameNames(`${texture}_walking`, {
-        start: 0,
-        end: 2,
+      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
+        start: 3,
+        end: 5,
       }),
       frameRate: 5,
       repeat: -1,
     });
-
-    // this.scene.anims.create({
-    //   key: 'player-attack',
-    //   frames: this.scene.anims.generateFrameNames(`${texture}-attack`, {
-    //     start: 0,
-    //     end: 2,
-    //   }),
-    //   frameRate: 10,
-    // });
 
     this.scene.anims.create({
       key: 'player-attack',
@@ -147,7 +114,8 @@ export default class Player {
     this.sprite.on(
       Animations.Events.ANIMATION_COMPLETE,
       this.#animationComplete,
-      this);
+      this
+    );
 
     this.#setCollision(groundLayer);
     this.#addContorl();
@@ -166,14 +134,13 @@ export default class Player {
   }
 
   #addContorl() {
+    // Bind key events
     if (this.scene.input.keyboard) {
       this.cursor = this.scene.input.keyboard.createCursorKeys();
       this.fKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F);
       this.dKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.D);
-
-      // Bind key events
-      this.scene.events.on('update', this.#update, this);
     }
+    this.scene.events.on('update', this.#update, this);
   }
 
   #setZone() {
@@ -226,9 +193,7 @@ export default class Player {
 
       if (this.dKey && this.dKey.isDown) {
         this.sprite?.anims.play('player-attack', true);
-      }else
-
-      if (this.cursor?.left.isDown) {
+      } else if (this.cursor?.left.isDown) {
         this.sprite.setVelocityX(-this.tileSize * 2.5);
         this.sprite.setFlipX(false);
         this.sprite.anims.play('player-walking', true);
@@ -313,7 +278,7 @@ export default class Player {
     }
   }
 
-  #animationComplete(context: any){
+  #animationComplete(context: any) {
     console.log('context :>>>', context);
     // Check if the attack animation finished
     if (context.key.includes('attack')) {
@@ -321,7 +286,8 @@ export default class Player {
       this.sprite.setDisplayOrigin(
         // context.frames[0].frame.width - this.tileSize,
         // context.frames[0].frame.height - this.tileSize
-        0.5, 0.5
+        0.5,
+        0.5
       );
       this.sprite.setOffset(0, 0);
       this.sprite.anims.play('player-idle');
