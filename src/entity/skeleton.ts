@@ -1,5 +1,6 @@
 import { enemy } from 'src/model/character';
 import { Animations, Math } from 'phaser';
+import { getPosition } from 'src/utils/path';
 
 export default class Skeleton {
   scene: Phaser.Scene;
@@ -322,6 +323,8 @@ export default class Skeleton {
     const wall: number[][] = [];
     let hitWall = false;
 
+    const { x, y } = getPosition(player, this.tileSize);
+
     // In case if stepping out of map
     if (viewRight > this.map[0].length - 1) {
       viewRight = this.map[0].length - 1;
@@ -345,7 +348,7 @@ export default class Skeleton {
     switch (direction) {
       case 'up':
         for (let i = 0; i < wall.length; i++) {
-          if (player.y < wall[i][0] && player.x === wall[i][1]) {
+          if (y < wall[i][0] && x === wall[i][1]) {
             hitWall = true;
             break;
           }
@@ -353,7 +356,7 @@ export default class Skeleton {
         break;
       case 'right':
         for (let i = 0; i < wall.length; i++) {
-          if (player.y === wall[i][0] && player.x > wall[i][1]) {
+          if (y === wall[i][0] && x > wall[i][1]) {
             hitWall = true;
             break;
           }
@@ -361,7 +364,7 @@ export default class Skeleton {
         break;
       case 'down':
         for (let i = 0; i < wall.length; i++) {
-          if (player.y > wall[i][0] && player.x === wall[i][1]) {
+          if (y > wall[i][0] && x === wall[i][1]) {
             hitWall = true;
             break;
           }
@@ -369,7 +372,7 @@ export default class Skeleton {
         break;
       case 'left':
         for (let i = 0; i < wall.length; i++) {
-          if (player.y === wall[i][0] && player.x < wall[i][1]) {
+          if (y === wall[i][0] && x < wall[i][1]) {
             hitWall = true;
             break;
           }
