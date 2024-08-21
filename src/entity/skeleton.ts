@@ -9,11 +9,14 @@ export default class Skeleton {
   index: number;
   facingAngle: number;
   tileSize: number;
+  offsetX: number;
+  offsetY: number;
   map: number[][];
   angle: number[];
   ready: boolean;
   overlap: boolean;
   inSight: boolean;
+  looking: boolean;
   target: any;
   ray: Raycaster.Ray | null;
 
@@ -30,7 +33,9 @@ export default class Skeleton {
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     map: number[][],
     tileSize: number,
-    raycaster: Raycaster
+    raycaster: Raycaster,
+    offsetX: number,
+    offsetY: number
   ) {
     this.scene = scene;
     this.sprite = this.scene.physics.add.sprite(x, y);
@@ -41,9 +46,12 @@ export default class Skeleton {
     this.ready = false;
     this.overlap = false;
     this.inSight = false;
+    this.looking = false;
     this.target = null;
     this.ray = null;
-    this.angle = [0, 45, 90, 135, -135, -90, -45];
+    this.offsetX = offsetX;
+    this.offsetY = offsetY;
+    this.angle = [0, 45, 90, 135, 180, 255, -135, -90, -45];
     this.facingAngle = 0;
     this.init(x, y, texture, player, groundLayer, raycaster);
   }
@@ -172,7 +180,10 @@ export default class Skeleton {
     //set collision (field of view) range
     this.ray.setCollisionRange(this.tileSize * this.data.base_attribute.vd);
     //cast ray
-    this.ray.castCircle();
+    // this.ray.castCircle();
+    // this.ray.cast();
+    this.ray.setConeDeg(this.tileSize);
+    this.ray.castCone();
 
     //get all game objects in field of view (which bodies overlap ray's field of view)
     let visibleObjects = this.ray.overlap();
@@ -194,6 +205,7 @@ export default class Skeleton {
         console.log('rayFoVCircle :>>>', rayFoVCircle);
         console.log('target :>>>', target);
         this.inSight = true;
+        this.looking = false;
         this.target = target;
       },
       this.ray.processOverlap.bind(this.ray)
@@ -226,94 +238,201 @@ export default class Skeleton {
       if (!this.ray?.body.embedded && this.inSight) {
         this.inSight = false;
         // Keep chasing for one second
-        setTimeout(() => {
-          this.#stopMoving();
-        }, 1000);
+        // setTimeout(() => {
+        //   this.#stopMoving();
+        // }, 1000);
       }
 
       if (!this.zone.body.embedded && this.overlap) {
         this.overlap = false;
       }
 
-      this.#startChasing();
-    }
-  }
-
-  #getRandomDirection() {
-    const woundering = setInterval(() => {
-      if (!this.inSight) {
-        const randomNumber = Math.FloatBetween(0, 1);
-
-        this.facingAngle =
-          this.angle[Math.RoundTo(this.angle.length * randomNumber, 0)];
-        this.ray?.setAngleDeg(this.facingAngle);
-
-        this.ray?.castCircle();
-      } else {
-        clearInterval(woundering);
+      if (!this.looking) {
+        this.#startChasing();
       }
-    }, 5000);
+    }
   }
 
-  #startChasing(player?: any) {
-    if (player) {
-      const radain = Math.Angle.BetweenPoints(this.sprite, player);
-      this.facingAngle = Math.RadToDeg(radain);
-    }
+  #getRandomDirection(limiter?: any) {
+    if (!this.inSight) {
+      let randomNumber = -1;
 
-    // let playerHide = false;、
-    console.log('this.facingAngle ', this.facingAngle);
-    if (this.facingAngle <= -45 && this.facingAngle >= -135) {
-      console.log('enemy go up');
-      // Update zone
-      this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
-      this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-      if (!this.inSight) this.sprite.setVelocityY(-this.tileSize);
-    } else if (this.facingAngle <= 45 && this.facingAngle >= -45) {
-      console.log('enemy go right');
-      this.sprite.setFlipX(true);
-      // Update zone
-      this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
-      this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-      if (!this.inSight) this.sprite.setVelocityX(this.tileSize);
-    } else if (this.facingAngle <= 135 && this.facingAngle >= 45) {
-      console.log('enemy go down');
-      // Update zone
-      this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
-      this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-      if (!this.inSight) this.sprite.setVelocityY(this.tileSize);
-    } else if (this.facingAngle <= 255 && this.facingAngle >= 135) {
-      console.log('enemy go left');
-      this.sprite.setFlipX(false);
-      // Update zone
-      this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
-      this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-      if (!this.inSight) this.sprite.setVelocityX(-this.tileSize);
-    }
-    this.sprite.anims.play('enemy_walking', true);
+      if (limiter) {
+        const limitAngle = this.angle.filter(
+          (a) => a < limiter.min || a > limiter.max
+        );
 
-    if (this.inSight) {
+        randomNumber = Math.Between(0, limitAngle.length - 1);
+        this.facingAngle = limitAngle[randomNumber];
+      } else {
+        randomNumber = Math.Between(0, this.angle.length - 1);
+        this.facingAngle = this.angle[randomNumber];
+      }
+
+      this.ray?.setAngleDeg(this.facingAngle);
+
+      // this.ray?.castCircle();
+    }
+  }
+
+  #startChasing() {
+    if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
+      if (this.target) {
+        const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
+        this.facingAngle = Math.RadToDeg(radain);
+        this.ray?.setAngleDeg(this.facingAngle);
+      }
+
+      const { x, y } = getPosition(
+        this.sprite,
+        this.offsetX,
+        this.offsetY,
+        this.tileSize
+      );
+      console.log(`${this.sprite.name} on position x:${x} y:${y}`);
+
+      // let playerHide = false;、
+      console.log('this.facingAngle ', this.facingAngle);
+      if (this.facingAngle <= -45 && this.facingAngle >= -135) {
+        // If player not in sight
+        if (!this.inSight) {
+          // If is going to hit the wall
+          if (y - 1 >= 1 && this.map[y - 1][x] == 0) {
+            this.#goUp(false);
+          } else {
+            this.#getRandomDirection({ min: -135, max: -45 });
+          }
+        } else {
+          this.#goUp(true);
+        }
+      } else if (this.facingAngle <= 45 && this.facingAngle >= -45) {
+        // If player not in sight
+        if (!this.inSight) {
+          // If is going to hit the wall
+          if (x + 1 < this.map[y].length - 1 && this.map[y][x + 1] == 0) {
+            this.#goRight(false);
+          } else {
+            this.#getRandomDirection({ min: -45, max: 45 });
+          }
+        } else {
+          this.#goRight(true);
+        }
+      } else if (this.facingAngle <= 135 && this.facingAngle >= 45) {
+        if (!this.inSight) {
+          // If is going to hit the wall
+          if (y + 1 <= this.map.length - 1 && this.map[y + 1][x] == 0) {
+            this.#goDown(false);
+          } else {
+            this.#getRandomDirection({ min: 45, max: 135 });
+          }
+        } else {
+          this.#goDown(true);
+        }
+      } else if (this.facingAngle <= 255 && this.facingAngle >= 135) {
+        // If player not in sight
+        if (!this.inSight) {
+          // If is going to hit the wall
+          if (x - 1 >= 1 && this.map[y][x - 1] == 0) {
+            this.#goLeft(false);
+          } else {
+            // Go to the other direction
+            // this.ray?.setAngleDeg(Math.Between(-45, 45));
+            // this.#goRight();
+            this.#getRandomDirection({ min: 135, max: 255 });
+          }
+        } else {
+          this.#goLeft(true);
+        }
+      }
+      this.sprite.anims.play('enemy_walking', true);
+
+      this.ray?.setOrigin(
+        this.sprite.x + this.tileSize / 2,
+        this.sprite.y + this.tileSize / 2
+      );
+
+      // this.ray?.castCircle();
+      // this.ray?.cast();
+      this.ray?.castCone();
+
+      // setTimeout(() => {
+      //   this.#stopMoving();
+      // }, Math.Between(1000, 3000));
+    }
+  }
+
+  #goUp(follow: boolean) {
+    console.log(`${this.sprite.name} go up`);
+    // Update zone
+    this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
+    this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+
+    if (follow) {
       // Follow player
       this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+    } else {
+      this.sprite.setVelocityY(-this.tileSize);
     }
+  }
 
+  #goRight(follow: boolean) {
+    console.log(`${this.sprite.name} go right`);
+    this.sprite.setFlipX(true);
+    // Update zone
+    this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
+    this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+
+    if (follow) {
+      // Follow player
+      this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+    } else {
+      this.sprite.setVelocityX(this.tileSize);
+    }
+  }
+
+  #goDown(follow: boolean) {
+    console.log(`${this.sprite.name} go down`);
+    // Update zone
+    this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
+    this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+
+    if (follow) {
+      // Follow player
+      this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+    } else {
+      this.sprite.setVelocityY(this.tileSize);
+    }
+  }
+
+  #goLeft(follow: boolean) {
+    console.log(`${this.sprite.name} go left`);
+    this.sprite.setFlipX(false);
+    // Update zone
+    this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
+    this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+
+    if (follow) {
+      // Follow player
+      this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+    } else {
+      this.sprite.setVelocityX(-this.tileSize);
+    }
+  }
+
+  #stopMoving() {
+    this.looking = true;
+    this.sprite.anims.play('enemy_idle', true);
+    this.sprite.body.setVelocity(0);
     this.ray?.setOrigin(
       this.sprite.x + this.tileSize / 2,
       this.sprite.y + this.tileSize / 2
     );
 
-    this.ray?.castCircle();
-  }
-
-  #stopMoving() {
-    this.sprite.anims.play('enemy_idle', true);
-    this.sprite.body.setVelocity(0);
-    this.ray?.setOrigin(this.sprite.x, this.sprite.y);
-
     // Starting moving again
     setTimeout(() => {
+      this.looking = false;
       this.#getRandomDirection();
-    }, 500);
+    }, 2000);
   }
 
   #onCollide(self: any, target: any) {
