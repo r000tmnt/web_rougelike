@@ -151,8 +151,6 @@ export default class Dungeon extends Scene {
     const gameStore = useGameStore();
 
     if (this.content && this.player && this.input.keyboard?.enabled) {
-      this.enemies.forEach((enemy) => enemy.checkDistance(this.player?.sprite));
-
       const doorIndex = gameStore.getDoorIndex;
 
       if (doorIndex >= 0 && doorIndex < this.doors.length) {
@@ -187,6 +185,8 @@ export default class Dungeon extends Scene {
     console.log('map :>>>', this.map);
 
     this.#setCamera(windowWidth, windowHeight);
+
+    this.#setRayCaster();
 
     // Set collision on doors
     this.#setDoorZones(tileSize);
@@ -233,14 +233,6 @@ export default class Dungeon extends Scene {
     console.log('groundLayer :>>>', this.groundLayer);
     console.log('groundLayer tileset :>>>', this.groundLayer?.tileset);
     // console.log('stuffLayer :>>>', this.stuffLayer);
-
-    // Init raycaster
-    this.raycaster = this.raycasterPlugin.createRaycaster();
-
-    // Set raycaster to collide with the tileMap
-    this.raycaster.mapGameObjects(this.groundLayer, false, {
-      collisionTiles: [1, 2],
-    });
   }
 
   #setCamera(windowWidth: number, windowHeight: number) {
@@ -277,6 +269,32 @@ export default class Dungeon extends Scene {
 
     this.camera.scrollX -= this.offsetX;
     this.camera.scrollY -= this.offsetY;
+  }
+
+  #setRayCaster() {
+    const bounds = this.groundLayer?.getBounds();
+
+    // Init raycaster
+    this.raycaster = this.raycasterPlugin.createRaycaster({
+      boundingBox: bounds,
+      debug: {
+        enabled: true, //enable debug mode
+        maps: true, //enable maps debug
+        rays: true, //enable rays debug
+        graphics: {
+          ray: 0x00ff00, //debug ray color; set false to disable
+          rayPoint: 0xff00ff, //debug ray point color; set false to disable
+          mapPoint: 0x00ffff, //debug map point color; set false to disable
+          mapSegment: 0x0000fe, //debug map segment color; set false to disable
+          mapBoundingBox: 0xff0000, //debug map bounding box color; set false to disable
+        },
+      },
+    });
+
+    // Set raycaster to collide with the tileMap
+    this.raycaster.mapGameObjects(this.groundLayer, false, {
+      collisionTiles: [1, 2],
+    });
   }
 
   #setDoorZones(tileSize: number) {
@@ -543,6 +561,8 @@ export default class Dungeon extends Scene {
       this.doors.splice(0);
       // Remove collider
       this.physics.world.colliders.destroy();
+      //remove mapped objects
+      this.raycaster?.removeMappedObjects(this.groundLayer);
       // Remove layer
       this.groundLayer?.destroy();
       // Store player data
@@ -550,6 +570,8 @@ export default class Dungeon extends Scene {
       // Keep enemies if any
       if (this.enemies.length) {
         const copy = this.enemies.map((e) => {
+          // distory ray
+          e.ray?.destroy();
           if (e.sprite)
             // Update position
             e.data.position = {
@@ -561,6 +583,8 @@ export default class Dungeon extends Scene {
         });
         gameStore.storeEnemyIntheRoom(copy, this.content.roomIndex);
       }
+      // destroy raycaster
+      this.raycaster?.destroy();
       // Reset offset
       this.offsetX = 0;
       this.offsetY = 0;
