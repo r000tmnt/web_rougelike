@@ -11,6 +11,7 @@ export default class Skeleton {
   map: number[][];
   ready: boolean;
   overlap: boolean;
+  ray: Raycaster.Ray | null;
 
   private zone!: Phaser.GameObjects.Zone;
 
@@ -24,7 +25,8 @@ export default class Skeleton {
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     map: number[][],
-    tileSize: number
+    tileSize: number,
+    raycaster: Raycaster
   ) {
     this.scene = scene;
     this.sprite = this.scene.physics.add.sprite(x, y);
@@ -34,13 +36,17 @@ export default class Skeleton {
     this.map = map;
     this.ready = false;
     this.overlap = false;
-    this.init(texture, player, groundLayer);
+    this.ray = null;
+    this.init(x, y, texture, player, groundLayer, raycaster);
   }
 
   init(
+    x: number,
+    y: number,
     texture: string,
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
-    groundLayer: Phaser.Tilemaps.TilemapLayer
+    groundLayer: Phaser.Tilemaps.TilemapLayer,
+    raycaster: Raycaster
   ) {
     this.sprite.name = `enemy_${this.index}`;
     this.sprite.setSize(this.tileSize, this.tileSize);
@@ -138,6 +144,46 @@ export default class Skeleton {
         }
       }
     });
+
+    //Create ray
+    this.ray = raycaster.createRay();
+    //set ray position
+    this.ray.setOrigin(x, y);
+    //set ray direction (in radians)
+    this.ray.setAngle(2);
+    //set ray direction (in degrees)
+    this.ray.setAngleDeg(90);
+    //cast single ray and get closets intersection, hit mapped object and hit segment
+    // const intersection = this.ray.cast();
+    //enable auto slicing field of view
+    this.ray.autoSlice = true;
+    //enable arcade physics body
+    this.ray.enablePhysics();
+    //set collision (field of view) range
+    this.ray.setCollisionRange(this.tileSize * this.data.base_attribute.vd);
+    //cast ray
+    this.ray.castCircle();
+
+    //get all game objects in field of view (which bodies overlap ray's field of view)
+    let visibleObjects = this.ray.overlap();
+
+    //get objects in field of view
+    // visibleObjects = this.ray.overlap(group.getChildren());
+
+    //check if object is in field of view
+    visibleObjects = this.ray.overlap(player);
+
+    //add overlap collider (require passing ray.processOverlap as process callback)
+    this.scene.physics.add.overlap(
+      this.ray,
+      player,
+      function (rayFoVCircle, target) {
+        /*
+         * What to do with game objects in line of sight.
+         */
+      },
+      this.ray.processOverlap.bind(this.ray)
+    );
 
     console.log('enemy? ', this.sprite);
   }
