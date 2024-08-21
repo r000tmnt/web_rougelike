@@ -5,12 +5,9 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { useGameStore } from 'src/stores/game';
-import * as Phaser from 'phaser';
 // import { GridEngine } from 'grid-engine';
-
+import PhaserRaycaster from 'phaser-raycaster';
 import Dungeon from '../scene/dungeon';
-
-// window.Phaser = Phaser;
 
 const gameStore = useGameStore();
 
@@ -35,15 +32,20 @@ onMounted(() => {
         debug: true,
       },
     },
-    // plugins: {
-    //   scene: [
-    //     {
-    //       key: 'gridEngine',
-    //       plugin: GridEngine,
-    //       mapping: 'gridEngine',
-    //     },
-    //   ],
-    // },
+    plugins: {
+      scene: [
+        {
+          key: 'PhaserRaycaster',
+          plugin: PhaserRaycaster,
+          mapping: 'raycasterPlugin',
+        },
+        //     {
+        //       key: 'gridEngine',
+        //       plugin: GridEngine,
+        //       mapping: 'gridEngine',
+        //     },
+      ],
+    },
   });
 
   console.log('game :>>>', gameStore.game);
