@@ -234,13 +234,14 @@ export default class Skeleton {
   }
 
   #update() {
-    if (this.sprite) {
-      if (!this.ray?.body.embedded && this.inSight) {
+    if (this.sprite && this.ray?.body) {
+      if (this.ray.body.embedded === false && this.inSight) {
         this.inSight = false;
         // Keep chasing for one second
-        // setTimeout(() => {
-        //   this.#stopMoving();
-        // }, 1000);
+        setTimeout(() => {
+          // this.#stopMoving();
+          this.sprite.body.reset(this.sprite.x, this.sprite.y);
+        }, 1000);
       }
 
       if (!this.zone.body.embedded && this.overlap) {
