@@ -7,6 +7,7 @@ import { calculateDamage, levelUp, setInitialStatus } from 'src/utils/battle';
 import Skeleton from 'src/entity/skeleton';
 import Player from 'src/entity/player';
 // import { Direction, GridEngine } from 'grid-engine';
+import PhaserRaycaster from 'phaser-raycaster';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
@@ -29,11 +30,13 @@ export default class Dungeon extends Scene {
   limitHeight: number;
 
   // private gridEngine!: GridEngine;
+  private raycasterPlugin!: PhaserRaycaster;
+  raycaster: Raycaster | null;
 
   constructor() {
     super('Dungeon');
     this.content = null;
-    this.eventEmitter = undefined;
+    this.eventEmitter = null;
     this.theme = 'demo';
     this.map = null;
     this.groundLayer = null;
@@ -44,12 +47,13 @@ export default class Dungeon extends Scene {
     this.enemies = [];
     this.offsetX = 0;
     this.offsetY = 0;
-    this.cursor = undefined;
+    this.cursor = null;
     this.doors = [];
     this.doorTouching = -1;
     this.enemyContact = -1;
     this.limitWidth = 0;
     this.limitHeight = 0;
+    this.raycaster = null;
   }
 
   setTheme(theme: string) {
@@ -77,9 +81,6 @@ export default class Dungeon extends Scene {
 
   preload() {
     console.log('scene preload');
-
-    const gameStore = useGameStore();
-    const tileSize = gameStore.getTileSize;
 
     // Load tiles
     this.load.image('tiles', '/assets/demo_tiles_test_48.png');
@@ -232,6 +233,14 @@ export default class Dungeon extends Scene {
     console.log('groundLayer :>>>', this.groundLayer);
     console.log('groundLayer tileset :>>>', this.groundLayer?.tileset);
     // console.log('stuffLayer :>>>', this.stuffLayer);
+
+    // Init raycaster
+    this.raycaster = this.raycasterPlugin.createRaycaster();
+
+    // Set raycaster to collide with the tileMap
+    this.raycaster.mapGameObjects(this.groundLayer, false, {
+      collisionTiles: [1, 2],
+    });
   }
 
   #setCamera(windowWidth: number, windowHeight: number) {
@@ -403,7 +412,12 @@ export default class Dungeon extends Scene {
 
   #setEnemy(tileSize: number, gameStore: any) {
     // Set enemies
-    if (this.content && this.player?.sprite && this.groundLayer) {
+    if (
+      this.content &&
+      this.player?.sprite &&
+      this.groundLayer &&
+      this.raycaster
+    ) {
       const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
 
       const storedEnemy = gameStore.getEnemyIntheRoom(this.content.roomIndex);
@@ -430,7 +444,8 @@ export default class Dungeon extends Scene {
             this.player.sprite,
             this.groundLayer,
             this.content.level[this.content.roomIndex],
-            tileSize
+            tileSize,
+            this.raycaster
           );
 
           const randomLv =
@@ -460,7 +475,8 @@ export default class Dungeon extends Scene {
             this.player.sprite,
             this.groundLayer,
             this.content.level[this.content.roomIndex],
-            tileSize
+            tileSize,
+            this.raycaster
           );
 
           console.log('stored enemy data :>>>', storedEnemy[i]);
