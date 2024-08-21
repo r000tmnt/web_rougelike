@@ -463,7 +463,9 @@ export default class Dungeon extends Scene {
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize,
-            this.raycaster
+            this.raycaster,
+            this.offsetX,
+            this.offsetY
           );
 
           const randomLv =
@@ -494,7 +496,9 @@ export default class Dungeon extends Scene {
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize,
-            this.raycaster
+            this.raycaster,
+            this.offsetX,
+            this.offsetY
           );
 
           console.log('stored enemy data :>>>', storedEnemy[i]);
