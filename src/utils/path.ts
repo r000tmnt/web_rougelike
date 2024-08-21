@@ -1,6 +1,11 @@
-export const getPosition = (target: any, tileSize: number) => {
+export const getPosition = (
+  target: any,
+  offsetX: number,
+  offsetY: number,
+  tileSize: number
+) => {
   return {
-    x: Math.floor(target.x / tileSize),
-    y: Math.floor(target.y / tileSize),
+    x: Math.floor((target.x - offsetX) / tileSize),
+    y: Math.floor((target.y - offsetY) / tileSize),
   };
 };
