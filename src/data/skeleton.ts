@@ -29,6 +29,11 @@ export default {
   attribute_limit: {
     hp: 5,
     mp: 1,
+    str: 5,
+    def: 3,
+    int: 3,
+    spd: 3,
+    luck: 2,
     vd: 3,
   },
   drop: [],
