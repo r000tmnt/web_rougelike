@@ -23,12 +23,7 @@ interface unit {
   status: string;
   base_attribute: base_attribute;
   add_attribute: base_attribute;
-  attribute_limit: {
-    hp: number;
-    mp: number;
-    //ms: number; // move speed
-    //vd: number // view distant
-  };
+  attribute_limit: base_attribute;
 }
 
 export type player = unit & {
