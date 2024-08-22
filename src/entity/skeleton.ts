@@ -11,6 +11,7 @@ export default class Skeleton {
   tileSize: number;
   offsetX: number;
   offsetY: number;
+  chaseTimer: number | null;
   map: number[][];
   angle: number[];
   ready: boolean;
@@ -55,6 +56,7 @@ export default class Skeleton {
     this.angle = [0, 45, 90, 135, 180, 255, -135, -90, -45];
     this.facingAngle = 0;
     this.idleTimer = null;
+    this.chaseTimer = null;
     this.init(x, y, texture, player, groundLayer, raycaster);
   }
 
@@ -166,6 +168,31 @@ export default class Skeleton {
     });
 
     //Create ray
+    this.#setRay(raycaster, x, y, player);
+
+    console.log('enemy? ', this.sprite);
+    this.sprite.anims.play('enemy_idle');
+    this.#getRandomDirection();
+  }
+
+  addCollision(target: any) {
+    if (this.sprite) {
+      // console.log('target :>>>', target);
+      this.scene.physics.add.collider(
+        this.sprite,
+        target,
+        this.#onCollide,
+        null,
+        this
+      );
+    }
+  }
+
+  updateData(data: enemy) {
+    this.data = data;
+  }
+
+  #setRay(raycaster: Raycaster, x: number, y: number, player: any) {
     this.ray = raycaster.createRay();
     //set ray position to the center of the object
     this.ray.setOrigin(x + this.tileSize / 2, y + this.tileSize / 2);
@@ -212,38 +239,21 @@ export default class Skeleton {
       },
       this.ray.processOverlap.bind(this.ray)
     );
-
-    console.log('enemy? ', this.sprite);
-    this.sprite.anims.play('enemy_idle');
-    this.#getRandomDirection();
-  }
-
-  addCollision(target: any) {
-    if (this.sprite) {
-      // console.log('target :>>>', target);
-      this.scene.physics.add.collider(
-        this.sprite,
-        target,
-        this.#onCollide,
-        null,
-        this
-      );
-    }
-  }
-
-  updateData(data: enemy) {
-    this.data = data;
   }
 
   #update() {
     if (this.sprite && this.ray?.body) {
       if (this.ray.body.embedded === false && this.inSight) {
-        console.log('Player not in sight');
+        console.log(`${this.sprite.name} lost the player`);
         this.inSight = false;
         // Keep chasing for one second
         setTimeout(() => {
+          console.log(`${this.sprite.name} stop chasing`);
           // this.#stopMoving();
-          this.sprite.body.reset(this.sprite.x, this.sprite.y);
+          // this.sprite.body.reset(this.sprite.x, this.sprite.y);
+          this.sprite.body.stop();
+          this.chaseTimer = null;
+          // this.ray?.destroy()
         }, 1000);
       }
 
@@ -294,10 +304,10 @@ export default class Skeleton {
         this.offsetY,
         this.tileSize
       );
-      console.log(`${this.sprite.name} on position x:${x} y:${y}`);
+      // console.log(`${this.sprite.name} on position x:${x} y:${y}`);
 
       // let playerHide = false;、
-      console.log('this.facingAngle ', this.facingAngle);
+      // console.log('this.facingAngle ', this.facingAngle);
       if (this.facingAngle <= -45 && this.facingAngle >= -135) {
         // If player not in sight
         if (!this.inSight) {
@@ -375,8 +385,14 @@ export default class Skeleton {
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
     if (this.inSight) {
+      console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+      if (this.chaseTimer === null)
+        this.chaseTimer = this.scene.physics.moveToObject(
+          this.sprite,
+          this.target,
+          this.tileSize
+        );
     } else {
       this.sprite.setVelocityY(-this.tileSize);
     }
@@ -390,8 +406,14 @@ export default class Skeleton {
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
     if (this.inSight) {
+      console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+      if (this.chaseTimer === null)
+        this.chaseTimer = this.scene.physics.moveToObject(
+          this.sprite,
+          this.target,
+          this.tileSize
+        );
     } else {
       this.sprite.setVelocityX(this.tileSize);
     }
@@ -404,8 +426,14 @@ export default class Skeleton {
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
     if (this.inSight) {
+      console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+      if (this.chaseTimer === null)
+        this.chaseTimer = this.scene.physics.moveToObject(
+          this.sprite,
+          this.target,
+          this.tileSize
+        );
     } else {
       this.sprite.setVelocityY(this.tileSize);
     }
@@ -419,8 +447,14 @@ export default class Skeleton {
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
     if (this.inSight) {
+      console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
+      if (this.chaseTimer === null)
+        this.chaseTimer = this.scene.physics.moveToObject(
+          this.sprite,
+          this.target,
+          this.tileSize
+        );
     } else {
       this.sprite.setVelocityX(-this.tileSize);
     }
