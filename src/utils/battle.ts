@@ -30,6 +30,7 @@ export const setInitialStatus = (data: enemy, lv: number) => {
 
   data.attribute_limit.hp = data.base_attribute.hp + data.add_attribute.hp;
   data.attribute_limit.mp = data.base_attribute.mp + data.add_attribute.mp;
+  data.base_attribute.vd = data.attribute_limit.vd;
 
   return data;
 };
