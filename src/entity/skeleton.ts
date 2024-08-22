@@ -3,14 +3,12 @@ import { Animations, Math } from 'phaser';
 import { getPosition } from 'src/utils/path';
 
 export default class Skeleton {
-  scene: Phaser.Scene;
+  scene: any;
   sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   data: enemy;
   index: number;
   facingAngle: number;
   tileSize: number;
-  offsetX: number;
-  offsetY: number;
   chaseTimer: number | null;
   map: number[][];
   angle: number[];
@@ -34,10 +32,7 @@ export default class Skeleton {
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     map: number[][],
-    tileSize: number,
-    raycaster: Raycaster,
-    offsetX: number,
-    offsetY: number
+    tileSize: number
   ) {
     this.scene = scene;
     this.sprite = this.scene.physics.add.sprite(x, y);
@@ -51,13 +46,11 @@ export default class Skeleton {
     this.looking = false;
     this.target = null;
     this.ray = null;
-    this.offsetX = offsetX;
-    this.offsetY = offsetY;
     this.angle = [0, 45, 90, 135, 180, 255, -135, -90, -45];
     this.facingAngle = 0;
     this.idleTimer = null;
     this.chaseTimer = null;
-    this.init(x, y, texture, player, groundLayer, raycaster);
+    this.init(x, y, texture, player, groundLayer);
   }
 
   init(
@@ -65,8 +58,7 @@ export default class Skeleton {
     y: number,
     texture: string,
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
-    groundLayer: Phaser.Tilemaps.TilemapLayer,
-    raycaster: Raycaster
+    groundLayer: Phaser.Tilemaps.TilemapLayer
   ) {
     this.sprite.name = `enemy_${this.index}`;
     this.sprite.setSize(this.tileSize, this.tileSize);
@@ -168,7 +160,7 @@ export default class Skeleton {
     });
 
     //Create ray
-    this.#setRay(raycaster, x, y, player);
+    this.#setRay(this.scene.raycaster, x, y, player);
 
     console.log('enemy? ', this.sprite);
     this.sprite.anims.play('enemy_idle');
@@ -243,18 +235,27 @@ export default class Skeleton {
 
   #update() {
     if (this.sprite && this.ray?.body) {
-      if (this.ray.body.embedded === false && this.inSight) {
+      if (
+        this.ray.body.embedded === false &&
+        this.inSight &&
+        this.chaseTimer !== null
+      ) {
         console.log(`${this.sprite.name} lost the player`);
         this.inSight = false;
         // Keep chasing for one second
         setTimeout(() => {
           console.log(`${this.sprite.name} stop chasing`);
-          // this.#stopMoving();
-          // this.sprite.body.reset(this.sprite.x, this.sprite.y);
+          this.target = null;
           this.sprite.body.stop();
           this.chaseTimer = null;
-          // this.ray?.destroy()
-        }, 1000);
+          this.ray?.destroy();
+          this.#setRay(
+            this.scene.raycaster,
+            this.sprite.x,
+            this.sprite.y,
+            this.scene.player.sprite
+          );
+        }, 10000);
       }
 
       if (!this.zone.body.embedded && this.overlap) {
@@ -300,8 +301,8 @@ export default class Skeleton {
 
       const { x, y } = getPosition(
         this.sprite,
-        this.offsetX,
-        this.offsetY,
+        this.scene.offsetX,
+        this.scene.offsetY,
         this.tileSize
       );
       // console.log(`${this.sprite.name} on position x:${x} y:${y}`);
@@ -464,10 +465,6 @@ export default class Skeleton {
     this.looking = true;
     this.sprite.anims.play('enemy_idle', true);
     this.sprite.body.setVelocity(0);
-    this.ray?.setOrigin(
-      this.sprite.x + this.tileSize / 2,
-      this.sprite.y + this.tileSize / 2
-    );
 
     if (!this.inSight) {
       // Starting moving again
