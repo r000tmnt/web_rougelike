@@ -1,9 +1,10 @@
-import { enemy } from 'src/model/character';
+import { enemy, base_attribute, player } from 'src/model/character';
 import { Animations, Math } from 'phaser';
 import { getPosition } from 'src/utils/path';
+import { calculateDamage } from 'src/utils/battle';
 
 export default class Skeleton {
-  scene: any;
+  scene: Phaser.Scene;
   sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   data: enemy;
   index: number;
@@ -19,6 +20,7 @@ export default class Skeleton {
   target: any;
   idleTimer: NodeJS.Timeout | null;
   ray: Raycaster.Ray | null;
+  text: Phaser.GameObjects.Text;
 
   private zone!: Phaser.GameObjects.Zone;
 
@@ -50,7 +52,10 @@ export default class Skeleton {
     this.facingAngle = 0;
     this.idleTimer = null;
     this.chaseTimer = null;
-    this.init(x, y, texture, player, groundLayer);
+    (this.text = this.scene.add
+      .text(x, y - tileSize / 2, '', { fontSize: tileSize * 0.5 })
+      .setVisible(false)),
+      this.init(x, y, texture, player, groundLayer);
   }
 
   init(
@@ -219,7 +224,7 @@ export default class Skeleton {
     this.scene.physics.add.overlap(
       this.ray,
       player,
-      (rayFoVCircle, target) => {
+      (rayFoVCircle: any, target: any) => {
         /*
          * What to do with game objects in line of sight.
          */
@@ -479,97 +484,49 @@ export default class Skeleton {
   #onCollide(self: any, target: any) {
     // console.log('self', self);
     // console.log('target', target);
-    if (target.body) {
-      target.body.setVelocity(0);
+    if (target.name && target.name.includes('enemy')) {
+      // target.body.setVelocity(0);
+      this.#stopMoving();
     }
   }
-
-  // /**
-  //  * Check if the player is hide behind the wall
-  //  * @param viewTop - The starting row to check
-  //  * @param viewLeft - The starting col to check
-  //  * @param viewRight - The last col to check
-  //  * @param direction - The direction this entity is facing
-  //  * @param player - The target
-  //  * @returns
-  //  */
-  // #ifPlayerOutofSight(
-  //   viewTop: number,
-  //   viewLeft: number,
-  //   viewRight: number,
-  //   direction: string,
-  //   player: any
-  // ) {
-  //   const wall: number[][] = [];
-  //   let hitWall = false;
-
-  //   const { x, y } = getPosition(player, this.tileSize);
-
-  //   // In case if stepping out of map
-  //   if (viewRight > this.map[0].length - 1) {
-  //     viewRight = this.map[0].length - 1;
-  //   }
-  //   // In case if stepping out of map
-  //   if (this.map[viewTop] === undefined) {
-  //     viewTop = 0;
-  //   }
-  //   // In case if stepping out of map
-  //   const viewDown =
-  //     viewTop + 4 > this.map.length - 1 ? this.map.length - 1 : viewTop + 4;
-
-  //   for (let i = viewTop; i <= viewDown; i++) {
-  //     for (let j = viewLeft; j <= viewRight; j++) {
-  //       if (this.map[i][j] === 1) {
-  //         wall.push([i, j]);
-  //       }
-  //     }
-  //   }
-
-  //   switch (direction) {
-  //     case 'up':
-  //       for (let i = 0; i < wall.length; i++) {
-  //         if (y < wall[i][0] && x === wall[i][1]) {
-  //           hitWall = true;
-  //           break;
-  //         }
-  //       }
-  //       break;
-  //     case 'right':
-  //       for (let i = 0; i < wall.length; i++) {
-  //         if (y === wall[i][0] && x > wall[i][1]) {
-  //           hitWall = true;
-  //           break;
-  //         }
-  //       }
-  //       break;
-  //     case 'down':
-  //       for (let i = 0; i < wall.length; i++) {
-  //         if (y > wall[i][0] && x === wall[i][1]) {
-  //           hitWall = true;
-  //           break;
-  //         }
-  //       }
-  //       break;
-  //     case 'left':
-  //       for (let i = 0; i < wall.length; i++) {
-  //         if (y === wall[i][0] && x < wall[i][1]) {
-  //           hitWall = true;
-  //           break;
-  //         }
-  //       }
-  //       break;
-  //   }
-
-  //   return hitWall;
-  // }
 
   #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
     console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack') && frameKey === '4') {
       // Check overlap
-      if (this.overlap) {
+      if (this.overlap && !this.text.visible) {
+        const result = calculateDamage(this.data, this.scene.player.data);
+
+        this.text.setPosition(
+          this.scene.player.sprite.x,
+          this.scene.player.sprite.y - this.tileSize / 2
+        );
+
         // Check demage
-        console.log('ENEMY HIT!');
+        if (result.value === 0) {
+          // Miss!
+          this.text.setText('MISS');
+          this.text.setVisible(true);
+        } else {
+          console.log('ENEMY HIT!');
+          if (result.type.includes('crit')) {
+            this.text.setText(`${result.value}`);
+            this.text.setStyle({ color: '#FFB343' });
+            this.text.setFontSize(this.tileSize * 0.75);
+            this.text.setVisible(true);
+          } else {
+            this.text.setText(`${result.value}`);
+            this.text.setVisible(true);
+          }
+
+          this.scene.player.data.base_attribute.hp -= result.value;
+        }
+
+        setTimeout(() => {
+          this.text.setVisible(false);
+          this.text.setFontSize(this.tileSize * 0.5);
+          this.text.setStyle({ color: '#ffffff' });
+        }, 500);
       }
     }
   }
