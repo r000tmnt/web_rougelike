@@ -18,6 +18,7 @@ export default class Skeleton {
   inSight: boolean;
   looking: boolean;
   target: any;
+  idleTimer: NodeJS.Timeout | null;
   ray: Raycaster.Ray | null;
 
   private zone!: Phaser.GameObjects.Zone;
@@ -53,6 +54,7 @@ export default class Skeleton {
     this.offsetY = offsetY;
     this.angle = [0, 45, 90, 135, 180, 255, -135, -90, -45];
     this.facingAngle = 0;
+    this.idleTimer = null;
     this.init(x, y, texture, player, groundLayer, raycaster);
   }
 
@@ -236,6 +238,7 @@ export default class Skeleton {
   #update() {
     if (this.sprite && this.ray?.body) {
       if (this.ray.body.embedded === false && this.inSight) {
+        console.log('Player not in sight');
         this.inSight = false;
         // Keep chasing for one second
         setTimeout(() => {
@@ -273,6 +276,7 @@ export default class Skeleton {
       this.ray?.setAngleDeg(this.facingAngle);
 
       // this.ray?.castCircle();
+      // this.#startChasing();
     }
   }
 
@@ -299,42 +303,42 @@ export default class Skeleton {
         if (!this.inSight) {
           // If is going to hit the wall
           if (y - 1 >= 1 && this.map[y - 1][x] == 0) {
-            this.#goUp(false);
+            this.#goUp();
           } else {
             this.#getRandomDirection({ min: -135, max: -45 });
           }
         } else {
-          this.#goUp(true);
+          this.#goUp();
         }
       } else if (this.facingAngle <= 45 && this.facingAngle >= -45) {
         // If player not in sight
         if (!this.inSight) {
           // If is going to hit the wall
           if (x + 1 < this.map[y].length - 1 && this.map[y][x + 1] == 0) {
-            this.#goRight(false);
+            this.#goRight();
           } else {
             this.#getRandomDirection({ min: -45, max: 45 });
           }
         } else {
-          this.#goRight(true);
+          this.#goRight();
         }
       } else if (this.facingAngle <= 135 && this.facingAngle >= 45) {
         if (!this.inSight) {
           // If is going to hit the wall
           if (y + 1 <= this.map.length - 1 && this.map[y + 1][x] == 0) {
-            this.#goDown(false);
+            this.#goDown();
           } else {
             this.#getRandomDirection({ min: 45, max: 135 });
           }
         } else {
-          this.#goDown(true);
+          this.#goDown();
         }
       } else if (this.facingAngle <= 255 && this.facingAngle >= 135) {
         // If player not in sight
         if (!this.inSight) {
           // If is going to hit the wall
           if (x - 1 >= 1 && this.map[y][x - 1] == 0) {
-            this.#goLeft(false);
+            this.#goLeft();
           } else {
             // Go to the other direction
             // this.ray?.setAngleDeg(Math.Between(-45, 45));
@@ -342,7 +346,7 @@ export default class Skeleton {
             this.#getRandomDirection({ min: 135, max: 255 });
           }
         } else {
-          this.#goLeft(true);
+          this.#goLeft();
         }
       }
       this.sprite.anims.play('enemy_walking', true);
@@ -356,19 +360,21 @@ export default class Skeleton {
       // this.ray?.cast();
       this.ray?.castCone();
 
-      // setTimeout(() => {
-      //   this.#stopMoving();
-      // }, Math.Between(1000, 3000));
+      if (!this.inSight && this.idleTimer === null) {
+        this.idleTimer = setTimeout(() => {
+          this.#stopMoving();
+        }, Math.Between(1000, 3000));
+      }
     }
   }
 
-  #goUp(follow: boolean) {
+  #goUp() {
     console.log(`${this.sprite.name} go up`);
     // Update zone
     this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (follow) {
+    if (this.inSight) {
       // Follow player
       this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
     } else {
@@ -376,14 +382,14 @@ export default class Skeleton {
     }
   }
 
-  #goRight(follow: boolean) {
+  #goRight() {
     console.log(`${this.sprite.name} go right`);
     this.sprite.setFlipX(true);
     // Update zone
     this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (follow) {
+    if (this.inSight) {
       // Follow player
       this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
     } else {
@@ -391,13 +397,13 @@ export default class Skeleton {
     }
   }
 
-  #goDown(follow: boolean) {
+  #goDown() {
     console.log(`${this.sprite.name} go down`);
     // Update zone
     this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (follow) {
+    if (this.inSight) {
       // Follow player
       this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
     } else {
@@ -405,14 +411,14 @@ export default class Skeleton {
     }
   }
 
-  #goLeft(follow: boolean) {
+  #goLeft() {
     console.log(`${this.sprite.name} go left`);
     this.sprite.setFlipX(false);
     // Update zone
     this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (follow) {
+    if (this.inSight) {
       // Follow player
       this.scene.physics.moveToObject(this.sprite, this.target, this.tileSize);
     } else {
@@ -429,11 +435,14 @@ export default class Skeleton {
       this.sprite.y + this.tileSize / 2
     );
 
-    // Starting moving again
-    setTimeout(() => {
-      this.looking = false;
-      this.#getRandomDirection();
-    }, 2000);
+    if (!this.inSight) {
+      // Starting moving again
+      setTimeout(() => {
+        this.idleTimer = null;
+        this.looking = false;
+        this.#getRandomDirection();
+      }, 2000);
+    }
   }
 
   #onCollide(self: any, target: any) {
