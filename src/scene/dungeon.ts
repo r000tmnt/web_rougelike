@@ -106,6 +106,7 @@ export default class Dungeon extends Scene {
       this.content.ready &&
       this.content.level[this.content.roomIndex].length
     ) {
+      this.physics.resume();
       this.#setUpDungeon();
       // Listen to the mouse event
       // this.input.on('pointermove', (pointer: any) => {
@@ -507,6 +508,7 @@ export default class Dungeon extends Scene {
     const gameStore = useGameStore();
     this.eventEmitter = new Events.EventEmitter();
     this.eventEmitter.on('open-door', () => {
+      this.physics.pause();
       this.#updateContent(gameStore);
     });
     // this.eventEmitter.on('attack', (attacker: any, defender: any, skill?) => {
