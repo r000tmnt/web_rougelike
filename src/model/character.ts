@@ -63,3 +63,8 @@ export type enemy = unit & {
     y: number;
   };
 };
+
+export interface rate {
+  name: string;
+  value: number;
+}
