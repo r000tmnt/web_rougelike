@@ -128,7 +128,7 @@ export default class Skeleton {
       this
     );
 
-    console.log('setting enemy collision');
+    // console.log('setting enemy collision');
 
     this.addCollision(groundLayer);
     this.addCollision(player);
@@ -237,8 +237,8 @@ export default class Skeleton {
         /*
          * What to do with game objects in line of sight.
          */
-        console.log('rayFoVCircle :>>>', rayFoVCircle);
-        console.log('target :>>>', target);
+        // console.log('rayFoVCircle :>>>', rayFoVCircle);
+        // console.log('target :>>>', target);
         this.inSight = true;
         this.looking = false;
         this.target = target;
@@ -514,7 +514,7 @@ export default class Skeleton {
   }
 
   #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
-    console.log('frameKey :>>>', frameKey);
+    // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack') && frameKey === '4') {
       // Check overlap
       if (this.overlap && !this.text.visible) {
