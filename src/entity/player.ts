@@ -42,7 +42,7 @@ export default class Player {
     this.tileSize = tileSize;
     (this.text = this.scene.add
       .text(x, y - tileSize / 2, '', {
-        fontSize: tileSize * 0.2,
+        fontSize: tileSize * 0.3,
         fontFamily: 'pixelify',
       })
       .setVisible(false)),
@@ -336,7 +336,7 @@ export default class Player {
             if (result.type.includes('crit')) {
               this.text.setText(`${result.value}`);
               this.text.setStyle({ color: '#FFB343' });
-              this.text.setFontSize(this.tileSize * 0.5);
+              this.text.setFontSize(this.tileSize * 0.4);
               this.text.setVisible(true);
             } else {
               this.text.setText(`${result.value}`);
@@ -350,7 +350,7 @@ export default class Player {
 
           setTimeout(() => {
             this.text.setVisible(false);
-            this.text.setFontSize(this.tileSize * 0.2);
+            this.text.setFontSize(this.tileSize * 0.3);
             this.text.setStyle({ color: '#ffffff' });
           }, 500);
         });
