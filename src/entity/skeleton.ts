@@ -56,7 +56,7 @@ export default class Skeleton {
     this.status = '';
     (this.text = this.scene.add
       .text(x, y - tileSize / 2, '', {
-        fontSize: tileSize * 0.2,
+        fontSize: tileSize * 0.3,
         fontFamily: 'pixelify',
       })
       .setVisible(false)),
@@ -421,7 +421,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (this.inSight) {
+    if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
       if (this.target)
@@ -442,7 +442,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (this.inSight) {
+    if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
       if (this.target)
@@ -462,7 +462,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (this.inSight) {
+    if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
       if (this.target)
@@ -483,7 +483,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (this.inSight) {
+    if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
       if (this.target)
@@ -543,7 +543,7 @@ export default class Skeleton {
           if (result.type.includes('crit')) {
             this.text.setText(`${result.value}`);
             this.text.setStyle({ color: '#FFB343' });
-            this.text.setFontSize(this.tileSize * 0.5);
+            this.text.setFontSize(this.tileSize * 0.4);
             this.text.setVisible(true);
           } else {
             this.text.setText(`${result.value}`);
@@ -556,7 +556,7 @@ export default class Skeleton {
 
         setTimeout(() => {
           this.text.setVisible(false);
-          this.text.setFontSize(this.tileSize * 0.2);
+          this.text.setFontSize(this.tileSize * 0.3);
           this.text.setStyle({ color: '#ffffff' });
         }, 500);
       }
