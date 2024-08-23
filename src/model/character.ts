@@ -68,3 +68,7 @@ export interface rate {
   name: string;
   value: number;
 }
+
+export interface action {
+  [name: string]: number;
+}
