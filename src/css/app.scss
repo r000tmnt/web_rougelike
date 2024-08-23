@@ -7,3 +7,11 @@ body {
     justify-content: center;
   }
 }
+
+// Load local font
+@font-face {
+  font-family: 'pixelify';
+  src: url('/assets/font/PixelifySans-Regular.ttf');
+  font-weight: 400;
+  font-weight: normal;
+}
