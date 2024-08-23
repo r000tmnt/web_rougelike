@@ -76,7 +76,7 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
         (attacker.base_attribute.int +
           Math.floor(
             attacker.base_attribute.int * (attacker.base_attribute.spd / 100)
-          )),
+          )) + 100,
     },
     {
       name: 'evade',
@@ -96,7 +96,7 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
         (attacker.base_attribute.int +
           Math.floor(
             attacker.base_attribute.int * (attacker.base_attribute.luck / 100)
-          )),
+          )) + 25,
     },
   ];
 
