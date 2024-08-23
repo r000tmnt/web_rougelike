@@ -229,50 +229,54 @@ export default class Player {
         } else {
           console.log('lock key');
         }
-      } else if (this.cursor?.left.isDown) {
-        this.sprite.setVelocityX(-this.tileSize * 2.5);
-        this.sprite.setFlipX(false);
-        this.sprite.anims.play('player-walking', true);
-        // Update zone
-        this.zone.setPosition(
-          this.sprite.x - this.tileSize / 4,
-          this.sprite.y + this.tileSize / 2
-        );
-        // this.zone.setSize(this.tileSize / 2, this.tileSize);
-        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-      } else if (this.cursor?.right.isDown) {
-        this.sprite.setVelocityX(this.tileSize * 2.5);
-        this.sprite.setFlipX(true);
-        this.sprite.anims.play('player-walking', true);
-        // Update zone
-        this.zone.setPosition(
-          this.sprite.x + this.tileSize + this.tileSize / 3,
-          this.sprite.y + this.tileSize / 2
-        );
-        // this.zone.setSize(this.tileSize / 2, this.tileSize);
-        this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-      } else if (this.cursor?.up.isDown) {
-        this.sprite.setVelocityY(-this.tileSize * 2.5);
-        // Update zone
-        this.zone.setPosition(
-          this.sprite.x + this.tileSize / 2,
-          this.sprite.y - this.tileSize / 4
-        );
-        // this.zone.setSize(this.tileSize, this.tileSize / 2);
-        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-      } else if (this.cursor?.down.isDown) {
-        this.sprite.setVelocityY(this.tileSize * 2.5);
-        // Update zone
-        this.zone.setPosition(
-          this.sprite.x + this.tileSize / 2,
-          this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
-        );
-        // this.zone.setSize(this.tileSize, this.tileSize / 2);
-        this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-      } else {
-        this.sprite.body.setVelocity(0);
-        if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
-          this.sprite.anims.play('player-idle', true);
+      }
+
+      if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
+        if (this.cursor?.left.isDown) {
+          this.sprite.setVelocityX(-this.tileSize * 2.5);
+          this.sprite.setFlipX(false);
+          this.sprite.anims.play('player-walking', true);
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x - this.tileSize / 4,
+            this.sprite.y + this.tileSize / 2
+          );
+          // this.zone.setSize(this.tileSize / 2, this.tileSize);
+          this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+        } else if (this.cursor?.right.isDown) {
+          this.sprite.setVelocityX(this.tileSize * 2.5);
+          this.sprite.setFlipX(true);
+          this.sprite.anims.play('player-walking', true);
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x + this.tileSize + this.tileSize / 3,
+            this.sprite.y + this.tileSize / 2
+          );
+          // this.zone.setSize(this.tileSize / 2, this.tileSize);
+          this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+        } else if (this.cursor?.up.isDown) {
+          this.sprite.setVelocityY(-this.tileSize * 2.5);
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x + this.tileSize / 2,
+            this.sprite.y - this.tileSize / 4
+          );
+          // this.zone.setSize(this.tileSize, this.tileSize / 2);
+          this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+        } else if (this.cursor?.down.isDown) {
+          this.sprite.setVelocityY(this.tileSize * 2.5);
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x + this.tileSize / 2,
+            this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
+          );
+          // this.zone.setSize(this.tileSize, this.tileSize / 2);
+          this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+        } else {
+          this.sprite.body.setVelocity(0);
+          if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
+            this.sprite.anims.play('player-idle', true);
+          }
         }
       }
     }
