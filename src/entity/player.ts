@@ -1,6 +1,7 @@
 import { player } from 'src/model/character';
 import { Input, Events, Animations } from 'phaser';
 import { useGameStore } from 'src/stores/game';
+import { calculateDamage } from 'src/utils/battle';
 
 export default class Player {
   scene: Phaser.Scene;
@@ -11,6 +12,9 @@ export default class Player {
   map: number[][];
   ready: boolean;
   overlap: boolean;
+  status: string;
+  target: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
+  text: Phaser.GameObjects.Text;
 
   private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -33,12 +37,20 @@ export default class Player {
     this.scene = scene;
     this.sprite = this.scene.physics.add.sprite(x, y);
     this.data = data;
+    this.status = '';
     this.tileSize = tileSize;
-    this.init(x, y, texture, groundLayer);
-    this.map = map;
+    (this.text = this.scene.add
+      .text(x, y - tileSize / 2, '', {
+        fontSize: tileSize * 0.2,
+        fontFamily: 'pixelify',
+      })
+      .setVisible(false)),
+      (this.map = map);
     this.ready = false;
     this.overlap = false;
+    this.target = [];
     this.eventEmitter = eventEmitter;
+    this.init(x, y, texture, groundLayer);
   }
 
   init(
@@ -163,6 +175,9 @@ export default class Player {
     this.scene.physics.add.overlap(this.zone, target, () => {
       console.log('overlap with ', target);
       this.overlap = true;
+
+      if (!this.target.find((t) => t.name === target.name))
+        this.target.push(target);
     });
   }
 
@@ -182,9 +197,14 @@ export default class Player {
   #update() {
     // console.log('listen to scene update');
     // Listen to key press
-    if (this.sprite?.body) {
+    if (
+      this.sprite?.body &&
+      !this.status.includes('hit') &&
+      !this.status.includes('dead')
+    ) {
       if (!this.zone.body.embedded) {
         this.overlap = false;
+        this.target.splice(0);
       }
 
       if (this.fKey && this.eventEmitter) {
@@ -198,6 +218,9 @@ export default class Player {
 
       if (this.dKey && this.dKey.isDown) {
         this.sprite?.anims.play('player-attack', true);
+        this.scene.time.delayedCall(200, () => {
+          /** Not sure if this works  */
+        });
       } else if (this.cursor?.left.isDown) {
         this.sprite.setVelocityX(-this.tileSize * 2.5);
         this.sprite.setFlipX(false);
@@ -245,6 +268,18 @@ export default class Player {
         }
       }
     }
+
+    if (this.status === 'hit') {
+      // TODO: Lock the player at where it is for a while
+      this.sprite.body.setVelocity(0);
+      this.scene.time.delayedCall(200, () => {
+        this.status = '';
+      });
+    }
+
+    if (this.status === 'dead') {
+      // TODO: Play dead animation
+    }
   }
 
   #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
@@ -269,6 +304,44 @@ export default class Player {
       // Check overlap
       if (this.overlap) {
         console.log('PLAYER HIT!');
+        this.target.forEach((t) => {
+          const enemyIndex = Number(t.name.split('_')[1]);
+
+          const result = calculateDamage(
+            this.data,
+            this.scene.enemies[enemyIndex].data
+          );
+
+          this.text.setPosition(t.x, t.y - this.tileSize / 2);
+
+          // Check demage
+          if (result.value === 0) {
+            // Miss!
+            this.text.setText('MISS');
+            this.text.setVisible(true);
+          } else {
+            console.log('ENEMY HIT!');
+            if (result.type.includes('crit')) {
+              this.text.setText(`${result.value}`);
+              this.text.setStyle({ color: '#FFB343' });
+              this.text.setFontSize(this.tileSize * 0.5);
+              this.text.setVisible(true);
+            } else {
+              this.text.setText(`${result.value}`);
+              this.text.setVisible(true);
+            }
+
+            this.scene.enemies[enemyIndex].data.base_attribute.hp -=
+              result.value;
+            this.scene.enemies[enemyIndex].updateStatus('hit');
+          }
+
+          setTimeout(() => {
+            this.text.setVisible(false);
+            this.text.setFontSize(this.tileSize * 0.2);
+            this.text.setStyle({ color: '#ffffff' });
+          }, 500);
+        });
       }
     }
   }
@@ -291,6 +364,10 @@ export default class Player {
 
   updateData(data: player) {
     this.data = data;
+  }
+
+  updateStatus(status: string) {
+    this.status = status;
   }
 
   #onCollide(self: any, target: any) {
