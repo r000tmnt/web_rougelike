@@ -262,13 +262,13 @@ export default class Skeleton {
               console.log(`${this.sprite.name} stop chasing`);
               this.target = null;
               this.sprite.body.stop();
-              this.ray?.destroy();
-              this.#setRay(
-                this.scene.raycaster,
-                this.sprite.x,
-                this.sprite.y,
-                this.scene.player.sprite
-              );
+              // this.ray?.destroy();
+              // this.#setRay(
+              //   this.scene.raycaster,
+              //   this.sprite.x,
+              //   this.sprite.y,
+              //   this.scene.player.sprite
+              // );
 
               this.#getRandomDirection();
               clearInterval(Number(this.chaseTimer));
