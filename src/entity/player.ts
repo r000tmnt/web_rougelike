@@ -168,14 +168,14 @@ export default class Player {
         this.tileSize
       );
       // this.zone.setOrigin(0.5, 0.5);
-      console.log('zone ', this.zone);
+      // console.log('zone ', this.zone);
       this.scene.physics.add.existing(this.zone, false);
     }
   }
 
   addOverlap(target: any) {
     this.scene.physics.add.overlap(this.zone, target, () => {
-      console.log('overlap with ', target);
+      // console.log('overlap with ', target);
       this.overlap = true;
 
       if (!this.target.find((t) => t.name === target.name))
