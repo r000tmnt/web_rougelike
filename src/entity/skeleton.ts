@@ -252,7 +252,7 @@ export default class Skeleton {
       (this.sprite && this.ray?.body && this.status !== 'hit') ||
       this.status !== 'dead'
     ) {
-      if (this.ray.body.embedded === false && this.inSight) {
+      if (this.ray?.body?.embedded === false && this.inSight) {
         console.log(`${this.sprite.name} lost the player`);
         this.inSight = false;
         if (this.chaseTimer == null) {
@@ -283,7 +283,7 @@ export default class Skeleton {
         this.overlap = false;
       }
 
-      if (!this.looking) {
+      if (!this.looking && this.ray?.body) {
         this.#startChasing();
       }
     }
@@ -301,7 +301,7 @@ export default class Skeleton {
   }
 
   #getRandomDirection(limiter?: any) {
-    if (!this.inSight) {
+    if (!this.inSight && this.ray) {
       let randomNumber = -1;
 
       if (limiter) {
@@ -316,7 +316,7 @@ export default class Skeleton {
         this.facingAngle = this.angle[randomNumber];
       }
 
-      this.ray?.setAngleDeg(this.facingAngle);
+      this.ray.setAngleDeg(this.facingAngle);
 
       // this.ray?.castCircle();
       // this.#startChasing();
@@ -328,7 +328,7 @@ export default class Skeleton {
       if (this.target) {
         const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
         this.facingAngle = Math.RadToDeg(radain);
-        this.ray?.setAngleDeg(this.facingAngle);
+        this.ray.setAngleDeg(this.facingAngle);
       }
 
       const { x, y } = getPosition(
@@ -401,9 +401,13 @@ export default class Skeleton {
 
       // this.ray?.castCircle();
       // this.ray?.cast();
-      this.ray?.castCone();
+      this.ray.castCone();
 
-      if (!this.inSight && this.idleTimer === null) {
+      if (
+        !this.inSight &&
+        this.idleTimer === null &&
+        this.chaseTimer === null
+      ) {
         this.idleTimer = setTimeout(() => {
           this.#stopMoving();
         }, Math.Between(1000, 3000));
