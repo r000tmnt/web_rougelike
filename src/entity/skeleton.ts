@@ -10,7 +10,7 @@ export default class Skeleton {
   index: number;
   facingAngle: number;
   tileSize: number;
-  chaseTimer: number | null;
+  chaseTimer: NodeJS.Timeout | null;
   map: number[][];
   angle: number[];
   ready: boolean;
@@ -252,27 +252,31 @@ export default class Skeleton {
       (this.sprite && this.ray?.body && this.status !== 'hit') ||
       this.status !== 'dead'
     ) {
-      if (
-        this.ray.body.embedded === false &&
-        this.inSight &&
-        this.chaseTimer !== null
-      ) {
+      if (this.ray.body.embedded === false && this.inSight) {
         console.log(`${this.sprite.name} lost the player`);
         this.inSight = false;
-        // Keep chasing for one second
-        setTimeout(() => {
-          console.log(`${this.sprite.name} stop chasing`);
-          this.target = null;
-          this.sprite.body.stop();
-          this.chaseTimer = null;
-          this.ray?.destroy();
-          this.#setRay(
-            this.scene.raycaster,
-            this.sprite.x,
-            this.sprite.y,
-            this.scene.player.sprite
-          );
-        }, 10000);
+        if (this.chaseTimer == null) {
+          // Keep chasing for 10 second
+          this.chaseTimer = setInterval(() => {
+            if (!this.inSight) {
+              console.log(`${this.sprite.name} stop chasing`);
+              this.target = null;
+              this.sprite.body.stop();
+              this.ray?.destroy();
+              this.#setRay(
+                this.scene.raycaster,
+                this.sprite.x,
+                this.sprite.y,
+                this.scene.player.sprite
+              );
+
+              this.#getRandomDirection();
+              clearInterval(Number(this.chaseTimer));
+            }
+          }, 10000);
+        }
+
+        console.log('chasing :>>>', this.chaseTimer);
       }
 
       if (!this.zone.body.embedded && this.overlap) {
@@ -416,8 +420,8 @@ export default class Skeleton {
     if (this.inSight) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      if (this.chaseTimer === null && this.target)
-        this.chaseTimer = this.scene.physics.moveToObject(
+      if (this.target)
+        this.scene.physics.moveToObject(
           this.sprite,
           this.target,
           this.tileSize
@@ -437,8 +441,8 @@ export default class Skeleton {
     if (this.inSight) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      if (this.chaseTimer === null && this.target)
-        this.chaseTimer = this.scene.physics.moveToObject(
+      if (this.target)
+        this.scene.physics.moveToObject(
           this.sprite,
           this.target,
           this.tileSize
@@ -457,8 +461,8 @@ export default class Skeleton {
     if (this.inSight) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      if (this.chaseTimer === null && this.target)
-        this.chaseTimer = this.scene.physics.moveToObject(
+      if (this.target)
+        this.scene.physics.moveToObject(
           this.sprite,
           this.target,
           this.tileSize
@@ -478,8 +482,8 @@ export default class Skeleton {
     if (this.inSight) {
       // console.log(`${this.sprite.name} start chasing`);
       // Follow player
-      if (this.chaseTimer === null && this.target)
-        this.chaseTimer = this.scene.physics.moveToObject(
+      if (this.target)
+        this.scene.physics.moveToObject(
           this.sprite,
           this.target,
           this.tileSize
