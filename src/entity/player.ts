@@ -1,4 +1,4 @@
-import { player } from 'src/model/character';
+import { player, action } from 'src/model/character';
 import { Input, Events, Animations } from 'phaser';
 import { useGameStore } from 'src/stores/game';
 import { calculateDamage } from 'src/utils/battle';
@@ -15,6 +15,7 @@ export default class Player {
   status: string;
   target: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
   text: Phaser.GameObjects.Text;
+  keys: action;
 
   private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -49,6 +50,7 @@ export default class Player {
     this.ready = false;
     this.overlap = false;
     this.target = [];
+    this.keys = {};
     this.eventEmitter = eventEmitter;
     this.init(x, y, texture, groundLayer);
   }
@@ -217,10 +219,16 @@ export default class Player {
       }
 
       if (this.dKey && this.dKey.isDown) {
-        this.sprite?.anims.play('player-attack', true);
-        this.scene.time.delayedCall(200, () => {
-          /** Not sure if this works  */
-        });
+        if (
+          !this.keys[this.dKey.keyCode] ||
+          this.keys[this.dKey.keyCode] === 0
+        ) {
+          console.log('add key');
+          this.keys[this.dKey.keyCode] = 1;
+          this.sprite?.anims.play('player-attack', true);
+        } else {
+          console.log('lock key');
+        }
       } else if (this.cursor?.left.isDown) {
         this.sprite.setVelocityX(-this.tileSize * 2.5);
         this.sprite.setFlipX(false);
@@ -283,7 +291,7 @@ export default class Player {
   }
 
   #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
-    console.log('frameKey :>>>', frameKey);
+    // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack')) {
       // console.log('change sprite position');
       // Stop moving if needed
@@ -299,7 +307,7 @@ export default class Player {
   }
 
   #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
-    console.log('frameKey :>>>', frameKey);
+    // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack') && frameKey === '1') {
       // Check overlap
       if (this.overlap) {
@@ -359,6 +367,10 @@ export default class Player {
       );
       this.sprite.setOffset(0, 0);
       this.sprite.anims.play('player-idle');
+      setTimeout(() => {
+        // release key
+        if (this.dKey) this.keys[this.dKey.keyCode] = 0;
+      }, 500);
     }
   }
 
