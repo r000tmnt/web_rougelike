@@ -1,4 +1,4 @@
-import { player, enemy, base_attribute } from 'src/model/character';
+import { player, enemy, base_attribute, rate } from 'src/model/character';
 
 const grows = [0, 1, 3];
 
@@ -67,68 +67,77 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
 
   // Alter baseDEF if needed
 
-  const rates = {
-    hitRate:
-      attacker.base_attribute.int +
-      attacker.add_attribute.int +
-      (attacker.base_attribute.int +
-        Math.floor(
-          attacker.base_attribute.int * (100 / attacker.base_attribute.spd)
-        )),
-    evadeRate:
-      defender.base_attribute.spd +
-      defender.add_attribute.spd +
-      (defender.base_attribute.spd +
-        Math.floor(defender.base_attribute * (100 / defender.base_attribute))),
-    critRate:
-      attacker.base_attribute.luck +
-      attacker.add_attribute.luck +
-      (attacker.base_attribute.int +
-        Math.floor(
-          attacker.base_attribute.int * (100 / attacker.base_attribute.luck)
-        )),
-  };
+  const rates: rate[] = [
+    {
+      name: 'hit',
+      value:
+        attacker.base_attribute.int +
+        attacker.add_attribute.int +
+        (attacker.base_attribute.int +
+          Math.floor(
+            attacker.base_attribute.int * (attacker.base_attribute.spd / 100)
+          )),
+    },
+    {
+      name: 'evade',
+      value:
+        defender.base_attribute.spd +
+        defender.add_attribute.spd +
+        (defender.base_attribute.spd +
+          Math.floor(
+            defender.base_attribute.spd * (defender.base_attribute.spd / 100)
+          )),
+    },
+    {
+      name: 'crit',
+      value:
+        attacker.base_attribute.luck +
+        attacker.add_attribute.luck +
+        (attacker.base_attribute.int +
+          Math.floor(
+            attacker.base_attribute.int * (attacker.base_attribute.luck / 100)
+          )),
+    },
+  ];
 
-  const totalRate = rates.hitRate + rates.evadeRate + rates.critRate;
+  const totalRate = rates.reduce((accu, rate) => accu + rate.value, 0);
 
-  for (const [key] of Object.entries(rates)) {
-    rates[key] = rates[key] / totalRate;
-  }
+  console.log('total rate :>>>', totalRate);
 
-  // Object.keys(list).sort(function(a,b){return list[a]-list[b]})
-
-  Object.keys(rates).sort((a, b) => {
-    return rates[a] - rates[b];
+  rates.forEach((rate) => {
+    rate.value = rate.value / totalRate;
   });
+
+  rates.sort((a, b) => a.value - b.value);
 
   console.log('rates :>>>', rates);
 
   // Dice roll
   const randomNumber = Math.random();
 
-  for (const [key, val] of Object.entries(rates)) {
-    if (val < randomNumber) {
-      if (key === 'hitRate') {
-        if (baseDEF > baseDMG) {
+  for (let i = 0; i < rates.length; i++) {
+    if (randomNumber < rates[i].value) {
+      if (rates[i].name === 'hit') {
+        if (baseDEF > baseDMG || baseDEF === baseDMG) {
           baseDMG = 1; // Minimun damage
         } else {
           baseDMG -= baseDEF;
         }
       }
 
-      if (key === 'evadeRate') {
+      if (rates[i].name === 'evade') {
         baseDMG = 0;
       }
 
-      if (key === 'critRate') {
-        if (baseDEF > baseDMG) {
+      if (rates[i].name === 'crit') {
+        if (baseDEF > baseDMG || baseDEF === baseDMG) {
           baseDMG = Math.floor(1 * 1.5); // Minimun damage
         } else {
           baseDMG = Math.floor(baseDMG * 1.5) - baseDEF;
         }
       }
 
-      result.type = key;
+      result.type = rates[i].name;
       result.value = baseDMG;
 
       break;
