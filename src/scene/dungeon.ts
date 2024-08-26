@@ -3,12 +3,12 @@ import DungeonGenerator from 'src/utils/dungeonGenerator';
 import { useGameStore } from 'src/stores/game';
 import skeleton from 'src/data/skeleton';
 import swordsman from 'src/data/swordsman';
-import { calculateDamage, levelUp, setInitialStatus } from 'src/utils/battle';
+import { setInitialStatus } from 'src/utils/battle';
 import Skeleton from 'src/entity/skeleton';
 import Player from 'src/entity/player';
 // import { Direction, GridEngine } from 'grid-engine';
 import PhaserRaycaster from 'phaser-raycaster';
-
+import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
   eventEmitter: Phaser.Events.EventEmitter | null;
@@ -28,9 +28,11 @@ export default class Dungeon extends Scene {
   enemyContact: number;
   limitWidth: number;
   limitHeight: number;
+  navMesh: any;
 
   // private gridEngine!: GridEngine;
   private raycasterPlugin!: PhaserRaycaster;
+  private navMeshPlugin!: PhaserNavMeshPlugin;
   raycaster: Raycaster | null;
 
   constructor() {
@@ -98,6 +100,9 @@ export default class Dungeon extends Scene {
     );
   }
 
+  /**
+   * Render the dungeon based from the two-dimentional array from the generator and setting up playerm, camera, collision...etc
+   */
   create() {
     console.log('scene create');
     // Generate tileMap
@@ -107,7 +112,38 @@ export default class Dungeon extends Scene {
       this.content.level[this.content.roomIndex].length
     ) {
       this.physics.resume();
-      this.#setUpDungeon();
+
+      const gameStore = useGameStore();
+      const windowWidth = gameStore.getWindowWidth;
+      const windowHeight = gameStore.getWindowHeight;
+      const tileSize = gameStore.getTileSize;
+
+      const room = this.#getRoom(tileSize);
+      console.log('room :>>>', room);
+
+      this.#setEventEmitter();
+
+      this.#setTileMap(room, tileSize);
+      console.log('map :>>>', this.map);
+
+      this.#setCamera(windowWidth, windowHeight);
+
+      this.#setRayCaster();
+
+      this.#setNavMesh();
+
+      // Set collision on doors
+      this.#setDoorZones(tileSize);
+
+      // Set up player
+      this.#setPlayer(tileSize);
+
+      // Set up enemy
+      this.#setEnemy(tileSize, gameStore);
+
+      // Set collision on tileMap and enable zones
+      this.#setCollision(room, gameStore);
+
       // Listen to the mouse event
       // this.input.on('pointermove', (pointer: any) => {
       //   if (pointer.isDown) {
@@ -166,40 +202,6 @@ export default class Dungeon extends Scene {
     }
 
     // Check the distance between the player and enemies
-  }
-
-  /**
-   * Render the dungeon based from the two-dimentional array from the generator and setting up playerm, camera, collision...etc
-   */
-  #setUpDungeon() {
-    const gameStore = useGameStore();
-    const windowWidth = gameStore.getWindowWidth;
-    const windowHeight = gameStore.getWindowHeight;
-    const tileSize = gameStore.getTileSize;
-
-    const room = this.#getRoom(tileSize);
-    console.log('room :>>>', room);
-
-    this.#setEventEmitter();
-
-    this.#setTileMap(room, tileSize);
-    console.log('map :>>>', this.map);
-
-    this.#setCamera(windowWidth, windowHeight);
-
-    this.#setRayCaster();
-
-    // Set collision on doors
-    this.#setDoorZones(tileSize);
-
-    // Set up player
-    this.#setPlayer(tileSize);
-
-    // Set up enemy
-    this.#setEnemy(tileSize, gameStore);
-
-    // Set collision on tileMap and enable zones
-    this.#setCollision(room, gameStore);
   }
 
   #getRoom(tileSize: number) {
@@ -296,6 +298,34 @@ export default class Dungeon extends Scene {
     this.raycaster.mapGameObjects(this.groundLayer, false, {
       collisionTiles: [1, 2],
     });
+  }
+
+  #setNavMesh() {
+    // Automatically generate mesh from colliding tiles in a layer or layers:
+    this.navMesh = this.navMeshPlugin.buildMeshFromTilemap('mesh', this.map, [
+      this.groundLayer,
+    ]);
+
+    console.log('navMesh :>>>', this.navMesh);
+    // const path = navMesh.findPath({ x: 0, y: 0 }, { x: 300, y: 400 });
+    // ⮡  path will either be null or an array of Phaser.Geom.Point objects
+
+    // Alternatively, you can load a navmesh created by hand in Tiled that is stored in an object
+    // layer. See the creating a navmesh guide for more info on this.
+    // const objectLayer = tilemap.getObjectLayer("navmesh");
+    // const navMesh = this.navMeshPlugin.buildMeshFromTiled("mesh1", objectLayer, 12.5);
+
+    this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
+    this.navMesh.debugDrawClear(); // Clears the overlay
+    // Visualize the underlying navmesh
+    this.navMesh.debugDrawMesh({
+      drawCentroid: true,
+      drawBounds: false,
+      drawNeighbors: true,
+      drawPortals: true,
+    });
+    // Visualize an individual path
+    // this.navMesh.debugDrawPath(path, 0xffd900);
   }
 
   #setDoorZones(tileSize: number) {
@@ -463,7 +493,8 @@ export default class Dungeon extends Scene {
             this.player.sprite,
             this.groundLayer,
             this.content.level[this.content.roomIndex],
-            tileSize
+            tileSize,
+            this.navMesh
           );
 
           const randomLv =
@@ -493,7 +524,8 @@ export default class Dungeon extends Scene {
             this.player.sprite,
             this.groundLayer,
             this.content.level[this.content.roomIndex],
-            tileSize
+            tileSize,
+            this.navMesh
           );
 
           console.log('stored enemy data :>>>', storedEnemy[i]);
