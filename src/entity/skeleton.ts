@@ -1,4 +1,4 @@
-import { enemy, base_attribute, player } from 'src/model/character';
+import { enemy, action } from 'src/model/character';
 import { Animations, Math } from 'phaser';
 import { getPosition } from 'src/utils/path';
 import { calculateDamage } from 'src/utils/battle';
@@ -22,6 +22,7 @@ export default class Skeleton {
   idleTimer: NodeJS.Timeout | null;
   ray: Raycaster.Ray | null;
   text: Phaser.GameObjects.Text;
+  keys: action;
 
   private zone!: Phaser.GameObjects.Zone;
 
@@ -54,12 +55,13 @@ export default class Skeleton {
     this.idleTimer = null;
     this.chaseTimer = null;
     this.status = '';
-    (this.text = this.scene.add
-      .text(x, y - tileSize / 2, '', {
-        fontSize: tileSize * 0.3,
-        fontFamily: 'pixelify',
-      })
-      .setVisible(false)),
+    (this.keys = {}),
+      (this.text = this.scene.add
+        .text(x, y - tileSize / 2, '', {
+          fontSize: tileSize * 0.3,
+          fontFamily: 'pixelify',
+        })
+        .setVisible(false)),
       this.init(x, y, texture, player, groundLayer);
   }
 
@@ -163,8 +165,11 @@ export default class Skeleton {
           (player.x - pointerX <= 5 && player.x - pointerX >= 0) ||
           (player.y - pointerY <= 5 && player.y - pointerY >= 0)
         ) {
+          // if (!this.keys['d'] || this.keys['d'] === 0) {
           this.sprite?.body.setVelocity(0);
           this.sprite?.anims.play('enemy_attack', true);
+          // this.keys['d'] = 1;
+          // }
         }
       }
     });
@@ -293,6 +298,11 @@ export default class Skeleton {
       this.scene.time.delayedCall(200, () => {
         this.status = '';
       });
+
+      // If player not found
+      if (this.target === null) {
+        // Turn to the player
+      }
     }
 
     if (this.status === 'dead') {
@@ -328,7 +338,7 @@ export default class Skeleton {
       if (this.target) {
         const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
         this.facingAngle = Math.RadToDeg(radain);
-        this.ray.setAngleDeg(this.facingAngle);
+        this.ray?.setAngleDeg(this.facingAngle);
       }
 
       const { x, y } = getPosition(
@@ -401,7 +411,7 @@ export default class Skeleton {
 
       // this.ray?.castCircle();
       // this.ray?.cast();
-      this.ray.castCone();
+      this.ray?.castCone();
 
       if (
         !this.inSight &&
@@ -427,7 +437,7 @@ export default class Skeleton {
       if (this.target)
         this.scene.physics.moveToObject(
           this.sprite,
-          this.target,
+          { x: this.target.x, y: this.target.y + this.tileSize },
           this.tileSize
         );
     } else {
@@ -448,7 +458,7 @@ export default class Skeleton {
       if (this.target)
         this.scene.physics.moveToObject(
           this.sprite,
-          this.target,
+          { x: this.target.x - this.tileSize, y: this.target.y },
           this.tileSize
         );
     } else {
@@ -468,7 +478,7 @@ export default class Skeleton {
       if (this.target)
         this.scene.physics.moveToObject(
           this.sprite,
-          this.target,
+          { x: this.target.x, y: this.target.y - this.tileSize },
           this.tileSize
         );
     } else {
@@ -489,7 +499,7 @@ export default class Skeleton {
       if (this.target)
         this.scene.physics.moveToObject(
           this.sprite,
-          this.target,
+          { x: this.target.x + this.tileSize, y: this.target.y },
           this.tileSize
         );
     } else {
