@@ -7,6 +7,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useGameStore } from 'src/stores/game';
 // import { GridEngine } from 'grid-engine';
 import PhaserRaycaster from 'phaser-raycaster';
+import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 import Dungeon from '../scene/dungeon';
 
 const gameStore = useGameStore();
@@ -38,6 +39,12 @@ onMounted(() => {
           key: 'PhaserRaycaster',
           plugin: PhaserRaycaster,
           mapping: 'raycasterPlugin',
+        },
+        {
+          key: 'PhaserNavMeshPlugin', // Key to store the plugin class under in cache
+          plugin: PhaserNavMeshPlugin, // Class that constructs plugins
+          mapping: 'navMeshPlugin', // Property mapping to use for the scene, e.g. this.navMeshPlugin
+          start: true,
         },
         //     {
         //       key: 'gridEngine',
