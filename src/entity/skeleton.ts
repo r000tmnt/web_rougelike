@@ -1,4 +1,4 @@
-import { enemy, action } from 'src/model/character';
+import { enemy, action, position } from 'src/model/character';
 import { Animations, Math } from 'phaser';
 import { getPosition } from 'src/utils/path';
 import { calculateDamage } from 'src/utils/battle';
@@ -161,15 +161,15 @@ export default class Skeleton {
             ? this.sprite.y + this.tileSize
             : this.sprite.y;
 
-        if (
-          (player.x - pointerX <= 5 && player.x - pointerX >= 0) ||
-          (player.y - pointerY <= 5 && player.y - pointerY >= 0)
-        ) {
-          // if (!this.keys['d'] || this.keys['d'] === 0) {
-          this.sprite?.body.setVelocity(0);
-          this.sprite?.anims.play('enemy_attack', true);
-          // this.keys['d'] = 1;
-          // }
+        const diffX = Math.Difference(player.x, pointerX);
+        const diffY = Math.Difference(player.y, pointerY);
+
+        if ((diffX <= 5 && diffX >= 0) || (diffY <= 5 && diffY >= 0)) {
+          if (!this.keys['d'] || this.keys['d'] === 0) {
+            this.sprite?.body.setVelocity(0);
+            this.sprite?.anims.play('enemy_attack', true);
+            this.keys['d'] = 1;
+          }
         }
       }
     });
@@ -298,11 +298,6 @@ export default class Skeleton {
       this.scene.time.delayedCall(200, () => {
         this.status = '';
       });
-
-      // If player not found
-      if (this.target === null) {
-        // Turn to the player
-      }
     }
 
     if (this.status === 'dead') {
@@ -433,13 +428,10 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      // Follow player
-      if (this.target)
-        this.scene.physics.moveToObject(
-          this.sprite,
-          { x: this.target.x, y: this.target.y + this.tileSize },
-          this.tileSize
-        );
+      this.#moveToTarget({
+        x: this.target.x,
+        y: this.target.y + this.tileSize,
+      });
     } else {
       this.sprite.setVelocityY(-this.tileSize);
     }
@@ -454,13 +446,10 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      // Follow player
-      if (this.target)
-        this.scene.physics.moveToObject(
-          this.sprite,
-          { x: this.target.x - this.tileSize, y: this.target.y },
-          this.tileSize
-        );
+      this.#moveToTarget({
+        x: this.target.x - this.tileSize,
+        y: this.target.y,
+      });
     } else {
       this.sprite.setVelocityX(this.tileSize);
     }
@@ -474,13 +463,10 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      // Follow player
-      if (this.target)
-        this.scene.physics.moveToObject(
-          this.sprite,
-          { x: this.target.x, y: this.target.y - this.tileSize },
-          this.tileSize
-        );
+      this.#moveToTarget({
+        x: this.target.x,
+        y: this.target.y - this.tileSize,
+      });
     } else {
       this.sprite.setVelocityY(this.tileSize);
     }
@@ -495,15 +481,22 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      // Follow player
-      if (this.target)
-        this.scene.physics.moveToObject(
-          this.sprite,
-          { x: this.target.x + this.tileSize, y: this.target.y },
-          this.tileSize
-        );
+      this.#moveToTarget({
+        x: this.target.x + this.tileSize,
+        y: this.target.y,
+      });
     } else {
       this.sprite.setVelocityX(-this.tileSize);
+    }
+  }
+
+  #moveToTarget(destination: position) {
+    if (
+      Math.Difference(this.sprite.x, destination.x) > 5 ||
+      Math.Difference(this.sprite.y, destination.y) > 5
+    ) {
+      // Follow player
+      this.scene.physics.moveToObject(this.sprite, destination, this.tileSize);
     }
   }
 
@@ -528,6 +521,11 @@ export default class Skeleton {
     if (target.name && target.name.includes('enemy')) {
       // target.body.setVelocity(0);
       this.#stopMoving();
+    }
+
+    // If collide with player but player not in sight
+    if (target.name && target.name.includes('player') && this.target === null) {
+      this.target = target;
     }
   }
 
@@ -578,6 +576,10 @@ export default class Skeleton {
     // Check if the attack animation finished
     if (context.key.includes('attack')) {
       this.sprite?.anims.play('enemy_idle');
+      setTimeout(() => {
+        // release key
+        this.keys.d = 0;
+      }, 500);
     }
   }
 }
