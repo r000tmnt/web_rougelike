@@ -23,6 +23,8 @@ export default class Skeleton {
   ray: Raycaster.Ray | null;
   text: Phaser.GameObjects.Text;
   keys: action;
+  navMesh: any;
+  path: any;
 
   private zone!: Phaser.GameObjects.Zone;
 
@@ -36,7 +38,8 @@ export default class Skeleton {
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     map: number[][],
-    tileSize: number
+    tileSize: number,
+    navMesh: any
   ) {
     this.scene = scene;
     this.sprite = this.scene.physics.add.sprite(x, y);
@@ -55,14 +58,15 @@ export default class Skeleton {
     this.idleTimer = null;
     this.chaseTimer = null;
     this.status = '';
-    (this.keys = {}),
-      (this.text = this.scene.add
-        .text(x, y - tileSize / 2, '', {
-          fontSize: tileSize * 0.3,
-          fontFamily: 'pixelify',
-        })
-        .setVisible(false)),
-      this.init(x, y, texture, player, groundLayer);
+    this.navMesh = navMesh;
+    this.keys = {};
+    this.text = this.scene.add
+      .text(x, y - tileSize / 2, '', {
+        fontSize: tileSize * 0.3,
+        fontFamily: 'pixelify',
+      })
+      .setVisible(false);
+    this.init(x, y, texture, player, groundLayer);
   }
 
   init(
@@ -334,6 +338,28 @@ export default class Skeleton {
         const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
         this.facingAngle = Math.RadToDeg(radain);
         this.ray?.setAngleDeg(this.facingAngle);
+
+        const { x, y } = this.target;
+        const distance = Math.Distance.Between(
+          this.sprite.x,
+          this.sprite.y,
+          x,
+          y
+        );
+
+        if (distance < 5) {
+          // If there is path left, grab the next point. Otherwise, null the target.
+          if (this.path.length > 0) this.target = this.path.shift();
+          else this.target = null;
+        }
+
+        // this.scene.physics.velocityFromAngle(
+        //   radain,
+        //   this.tileSize,
+        //   this.sprite.body.velocity
+        // );
+
+        // this.scene.physics.moveTo()
       }
 
       const { x, y } = getPosition(
@@ -428,10 +454,9 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget({
-        x: this.target.x,
-        y: this.target.y + this.tileSize,
-      });
+      this.#moveToTarget(
+        new Math.Vector2(this.target.x, this.target.y + this.tileSize)
+      );
     } else {
       this.sprite.setVelocityY(-this.tileSize);
     }
@@ -446,10 +471,9 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget({
-        x: this.target.x - this.tileSize,
-        y: this.target.y,
-      });
+      this.#moveToTarget(
+        new Math.Vector2(this.target.x - this.tileSize, this.target.y)
+      );
     } else {
       this.sprite.setVelocityX(this.tileSize);
     }
@@ -463,10 +487,9 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget({
-        x: this.target.x,
-        y: this.target.y - this.tileSize,
-      });
+      this.#moveToTarget(
+        new Math.Vector2(this.target.x, this.target.y - this.tileSize)
+      );
     } else {
       this.sprite.setVelocityY(this.tileSize);
     }
@@ -481,23 +504,33 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget({
-        x: this.target.x + this.tileSize,
-        y: this.target.y,
-      });
+      this.#moveToTarget(
+        new Math.Vector2(this.target.x + this.tileSize, this.target.y)
+      );
     } else {
       this.sprite.setVelocityX(-this.tileSize);
     }
   }
 
-  #moveToTarget(destination: position) {
-    if (
-      Math.Difference(this.sprite.x, destination.x) > 5 ||
-      Math.Difference(this.sprite.y, destination.y) > 5
-    ) {
-      // Follow player
-      this.scene.physics.moveToObject(this.sprite, destination, this.tileSize);
-    }
+  #moveToTarget(destination: Math.Vector2) {
+    this.path = this.navMesh.findPath(
+      new Math.Vector2(this.sprite.x, this.sprite.y),
+      destination
+    );
+
+    console.log('path :>>>', this.path);
+
+    // If there is a valid path, grab the first point from the path and set it as the target
+    if (this.path && this.path.length > 0) this.target = this.path.shift();
+    else this.target = null;
+
+    // if (
+    //   Math.Difference(this.sprite.x, destination.x) > 5 ||
+    //   Math.Difference(this.sprite.y, destination.y) > 5
+    // ) {
+    //   // Follow player
+    //   this.scene.physics.moveToObject(this.sprite, destination, this.tileSize);
+    // }
   }
 
   #stopMoving() {
