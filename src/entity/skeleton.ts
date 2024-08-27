@@ -249,7 +249,7 @@ export default class Skeleton {
         // console.log('rayFoVCircle :>>>', rayFoVCircle);
         // console.log('target :>>>', target);
         this.inSight = true;
-        this.looking = false;
+        // this.looking = false;
         this.target = target;
       },
       this.ray.processOverlap.bind(this.ray)
@@ -292,7 +292,7 @@ export default class Skeleton {
         this.overlap = false;
       }
 
-      if (!this.looking && this.ray?.body) {
+      if (this.ray?.body) {
         this.#startChasing();
       }
     }
@@ -346,18 +346,19 @@ export default class Skeleton {
           x,
           y
         );
-
+        // console.log('distance :>>>', distance);
         if (distance < 5) {
           // If there is path left, grab the next point. Otherwise, null the target.
-          if (this.path.length > 0) this.target = this.path.shift();
+          if (this.path && this.path.length > 0)
+            this.target = this.path.shift();
           else this.target = null;
         }
 
-        // this.scene.physics.velocityFromAngle(
-        //   radain,
-        //   this.tileSize,
-        //   this.sprite.body.velocity
-        // );
+        this.scene.physics.velocityFromRotation(
+          radain,
+          this.tileSize,
+          this.sprite.body.velocity
+        );
 
         // this.scene.physics.moveTo()
       }
@@ -375,8 +376,11 @@ export default class Skeleton {
       if (this.facingAngle <= -45 && this.facingAngle >= -135) {
         // If player not in sight
         if (!this.inSight) {
+          if (this.target) {
+            this.#goUp();
+          }
           // If is going to hit the wall
-          if (y - 1 >= 1 && this.map[y - 1][x] == 0) {
+          else if (y - 1 >= 1 && this.map[y - 1][x] == 0) {
             this.#goUp();
           } else {
             this.#getRandomDirection({ min: -135, max: -45 });
@@ -387,8 +391,11 @@ export default class Skeleton {
       } else if (this.facingAngle <= 45 && this.facingAngle >= -45) {
         // If player not in sight
         if (!this.inSight) {
+          if (this.target) {
+            this.#goRight();
+          }
           // If is going to hit the wall
-          if (x + 1 < this.map[y].length - 1 && this.map[y][x + 1] == 0) {
+          else if (x + 1 < this.map[y].length - 1 && this.map[y][x + 1] == 0) {
             this.#goRight();
           } else {
             this.#getRandomDirection({ min: -45, max: 45 });
@@ -398,8 +405,11 @@ export default class Skeleton {
         }
       } else if (this.facingAngle <= 135 && this.facingAngle >= 45) {
         if (!this.inSight) {
+          if (this.target) {
+            this.#goDown();
+          }
           // If is going to hit the wall
-          if (y + 1 <= this.map.length - 1 && this.map[y + 1][x] == 0) {
+          else if (y + 1 <= this.map.length - 1 && this.map[y + 1][x] == 0) {
             this.#goDown();
           } else {
             this.#getRandomDirection({ min: 45, max: 135 });
@@ -410,13 +420,13 @@ export default class Skeleton {
       } else if (this.facingAngle <= 255 && this.facingAngle >= 135) {
         // If player not in sight
         if (!this.inSight) {
+          if (this.target) {
+            this.#goLeft();
+          }
           // If is going to hit the wall
-          if (x - 1 >= 1 && this.map[y][x - 1] == 0) {
+          else if (x - 1 >= 1 && this.map[y][x - 1] == 0) {
             this.#goLeft();
           } else {
-            // Go to the other direction
-            // this.ray?.setAngleDeg(Math.Between(-45, 45));
-            // this.#goRight();
             this.#getRandomDirection({ min: 135, max: 255 });
           }
         } else {
@@ -455,7 +465,10 @@ export default class Skeleton {
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       this.#moveToTarget(
-        new Math.Vector2(this.target.x, this.target.y + this.tileSize)
+        new Math.Vector2(
+          this.target.x - this.scene.offsetX,
+          this.target.y - this.scene.offsetY + this.tileSize
+        )
       );
     } else {
       this.sprite.setVelocityY(-this.tileSize);
@@ -472,7 +485,10 @@ export default class Skeleton {
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       this.#moveToTarget(
-        new Math.Vector2(this.target.x - this.tileSize, this.target.y)
+        new Math.Vector2(
+          this.target.x - this.scene.offsetX - this.tileSize,
+          this.target.y - this.scene.offsetY
+        )
       );
     } else {
       this.sprite.setVelocityX(this.tileSize);
@@ -488,7 +504,10 @@ export default class Skeleton {
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       this.#moveToTarget(
-        new Math.Vector2(this.target.x, this.target.y - this.tileSize)
+        new Math.Vector2(
+          this.target.x - this.scene.offsetX,
+          this.target.y - this.scene.offsetY - this.tileSize
+        )
       );
     } else {
       this.sprite.setVelocityY(this.tileSize);
@@ -505,7 +524,10 @@ export default class Skeleton {
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
       this.#moveToTarget(
-        new Math.Vector2(this.target.x + this.tileSize, this.target.y)
+        new Math.Vector2(
+          this.target.x - this.scene.offsetX + this.tileSize,
+          this.target.y - this.scene.offsetY
+        )
       );
     } else {
       this.sprite.setVelocityX(-this.tileSize);
@@ -514,7 +536,10 @@ export default class Skeleton {
 
   #moveToTarget(destination: Math.Vector2) {
     this.path = this.navMesh.findPath(
-      new Math.Vector2(this.sprite.x, this.sprite.y),
+      new Math.Vector2(
+        this.sprite.x - this.scene.offsetX,
+        this.sprite.y - this.scene.offsetY
+      ),
       destination
     );
 
@@ -534,7 +559,7 @@ export default class Skeleton {
   }
 
   #stopMoving() {
-    this.looking = true;
+    // this.looking = true;
     this.sprite.anims.play('enemy_idle', true);
     this.sprite.body.setVelocity(0);
 
@@ -542,7 +567,7 @@ export default class Skeleton {
       // Starting moving again
       setTimeout(() => {
         this.idleTimer = null;
-        this.looking = false;
+        // this.looking = false;
         this.#getRandomDirection();
       }, 2000);
     }
@@ -553,12 +578,18 @@ export default class Skeleton {
     // console.log('target', target);
     if (target.name && target.name.includes('enemy')) {
       // target.body.setVelocity(0);
-      this.#stopMoving();
+      if (this.target === null) {
+        this.#stopMoving();
+      } else {
+      }
     }
 
     // If collide with player but player not in sight
     if (target.name && target.name.includes('player') && this.target === null) {
       this.target = target;
+      // this.sprite.body.setImmovable(true);
+    } else {
+      // this.sprite.body.setImmovable(false);
     }
   }
 
