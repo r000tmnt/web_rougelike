@@ -232,9 +232,16 @@ export default class Dungeon extends Scene {
     this.groundLayer = this.map.createLayer(0, tileset ? tileset : [], 0, 0);
     // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
 
-    console.log('tileset :>>>', tileset);
+    this.groundLayer?.setCollisionBetween(
+      1,
+      room.length * room[0].length,
+      true,
+      false
+    );
+
+    // console.log('tileset :>>>', tileset);
     console.log('groundLayer :>>>', this.groundLayer);
-    console.log('groundLayer tileset :>>>', this.groundLayer?.tileset);
+    // console.log('groundLayer tileset :>>>', this.groundLayer?.tileset);
     // console.log('stuffLayer :>>>', this.stuffLayer);
   }
 
@@ -324,6 +331,45 @@ export default class Dungeon extends Scene {
       drawNeighbors: true,
       drawPortals: true,
     });
+
+    this.navMesh.debugGraphics.x = this.groundLayer?.x;
+    this.navMesh.debugGraphics.y = this.groundLayer?.y;
+
+    // Adjust the position of nodes and poligons
+    // this.navMesh.graph.nodes.forEach(node => {
+    //   node.centroid.x += this.offsetX
+    //   node.centroid.y += this.offsetY
+
+    //   node.edges.forEach(edge => {
+    //     edge.bottom += this.offsetY
+    //     edge.end.x += this.offsetX
+    //     edge.end.y += this.offsetY
+    //     edge.left += this.offsetX
+    //     edge.right += this.offsetX
+    //     edge.start.x += this.offsetX
+    //     edge.start.y += this.offsetY
+    //     edge.top += this.offsetY
+    //   });
+
+    //   node.neighbors.forEach(neighbor => {
+    //     neighbor.centroid.x += this.offsetX
+    //     neighbor.centroid.y += this.offsetY
+
+    //     neighbor.edges.forEach(nedge => {
+    //       nedge.bottom += this.offsetY
+    //       nedge.end.x += this.offsetX
+    //       nedge.end.y += this.offsetY
+    //       nedge.left += this.offsetX
+    //       nedge.right += this.offsetX
+    //       nedge.start.x += this.offsetX
+    //       nedge.start.y += this.offsetY
+    //       nedge.top += this.offsetY
+    //     });
+    //   });
+    // });
+
+    // this.navMesh.debugGraphics.displayOriginX = this.offsetX;
+    // this.navMesh.debugGraphics.displayOriginY = this.offsetY;
     // Visualize an individual path
     // this.navMesh.debugDrawPath(path, 0xffd900);
   }
@@ -550,17 +596,11 @@ export default class Dungeon extends Scene {
 
   #setCollision(room: number[][], gameStore: any) {
     // Set collision
-    if (this.groundLayer && this.player && this.content) {
-      this.groundLayer?.setCollisionBetween(
-        1,
-        room.length * room[0].length,
-        true,
-        false
-      );
-
+    if (this.player) {
       // Add collision to each other
       this.enemies.forEach((enemy, i) => {
         this.player?.addOverlap(enemy.sprite);
+        this.player?.addCollision(enemy.sprite);
         const others = this.enemies.filter((e, n) => n !== i);
 
         others.forEach((o) => enemy.addCollision(o.sprite));
