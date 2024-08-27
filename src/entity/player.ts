@@ -183,18 +183,18 @@ export default class Player {
     });
   }
 
-  //   addCollision(target: any) {
-  //     if (this.sprite) {
-  //       console.log('target :>>>', target);
-  //       this.scene.physics.add.collider(
-  //         target,
-  //         this.sprite,
-  //         this.#onCollide,
-  //         null,
-  //         this
-  //       );
-  //     }
-  //   }
+  addCollision(target: any) {
+    if (this.sprite) {
+      console.log('target :>>>', target);
+      this.scene.physics.add.collider(
+        this.sprite,
+        target,
+        this.#onCollide,
+        null,
+        this
+      );
+    }
+  }
 
   #update() {
     // console.log('listen to scene update');
@@ -299,14 +299,21 @@ export default class Player {
     if (anim.key.includes('attack')) {
       // console.log('change sprite position');
       // Stop moving if needed
+      this.sprite.body.setSize(this.tileSize, this.tileSize);
       this.sprite.body.setVelocity(0);
       // Temporary disable key captures
 
-      this.sprite.setSize(sprite.width, sprite.height);
-      this.sprite.setDisplayOrigin(
-        sprite.width - this.tileSize,
-        sprite.height - this.tileSize
-      );
+      const diffX = sprite.width - this.tileSize;
+      const diffY = sprite.height - this.tileSize;
+
+      // this.sprite.setSize(sprite.width, sprite.height);
+      if (this.sprite.flipX) {
+        this.sprite.setDisplayOrigin(-diffX / 2, diffY);
+        this.sprite.setOffset(-diffX / 2, diffY);
+      } else {
+        this.sprite.setDisplayOrigin(diffX, diffY);
+        this.sprite.setOffset(diffX, diffY);
+      }
     }
   }
 
@@ -387,7 +394,12 @@ export default class Player {
   }
 
   #onCollide(self: any, target: any) {
-    console.log('self', self);
-    console.log('target', target);
+    // console.log('self', self);
+    // console.log('target', target);
+    // if (target.name.includes('enemy')) {
+    //   this.sprite.body.setImmovable(true);
+    // } else {
+    //   this.sprite.body.setImmovable(false);
+    // }
   }
 }
