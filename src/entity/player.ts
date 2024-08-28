@@ -133,6 +133,10 @@ export default class Player {
       this
     );
 
+    this.eventEmitter?.on('chase-countdown-calling', () => {
+      this.eventEmitter?.emit('chase-countdown-start', this.sprite);
+    });
+
     this.#setCollision(groundLayer);
     this.#addContorl();
     this.#setZone();
@@ -395,7 +399,7 @@ export default class Player {
 
   #onCollide(self: any, target: any) {
     // console.log('self', self);
-    // console.log('target', target);
+    console.log('player collide with target :>>>', target);
     // if (target.name.includes('enemy')) {
     //   this.sprite.body.setImmovable(true);
     // } else {
