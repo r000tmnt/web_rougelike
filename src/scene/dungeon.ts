@@ -540,6 +540,7 @@ export default class Dungeon extends Scene {
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize,
+            this.eventEmitter,
             this.navMesh
           );
 
@@ -571,6 +572,7 @@ export default class Dungeon extends Scene {
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize,
+            this.eventEmitter,
             this.navMesh
           );
 
@@ -589,9 +591,6 @@ export default class Dungeon extends Scene {
       this.physics.pause();
       this.#updateContent(gameStore);
     });
-    // this.eventEmitter.on('attack', (attacker: any, defender: any, skill?) => {
-    //   const dmg = calculateDamage(attacker, defender)
-    // })
   }
 
   #setCollision(room: number[][], gameStore: any) {
