@@ -9,3 +9,11 @@ export const getPosition = (
     y: Math.floor((target.y - offsetY) / tileSize),
   };
 };
+
+export const getDirection = (deg: number) => {
+  if (deg <= -45 && deg >= -135) return 0; // up
+  if (deg <= 45 && deg >= -45) return 1; // right
+  if (deg <= 135 && deg >= 45) return 2; // down
+  if (deg <= -135 || deg >= 135) return 3; // left
+  else return -1; // Not found
+};
