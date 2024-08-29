@@ -1,6 +1,6 @@
 import { enemy, action } from 'src/model/character';
 import { Animations, Math } from 'phaser';
-import { getPosition } from 'src/utils/path';
+import { getDirection, getPosition } from 'src/utils/path';
 import { calculateDamage } from 'src/utils/battle';
 
 export default class Skeleton {
@@ -346,21 +346,10 @@ export default class Skeleton {
     }
   }
 
-  #getRandomDirection(limiter?: any) {
+  #getRandomDirection() {
     if (!this.inSight && this.ray) {
-      let randomNumber = -1;
-
-      if (limiter) {
-        const limitAngle = this.angle.filter(
-          (a) => a < limiter.min || a > limiter.max
-        );
-
-        randomNumber = Math.Between(0, limitAngle.length - 1);
-        this.facingAngle = limitAngle[randomNumber];
-      } else {
-        randomNumber = Math.Between(0, this.angle.length - 1);
-        this.facingAngle = this.angle[randomNumber];
-      }
+      const randomNumber = Math.Between(0, this.angle.length - 1);
+      this.facingAngle = this.angle[randomNumber];
 
       console.log(
         `${this.sprite.name} facing direcion at random`,
@@ -374,69 +363,155 @@ export default class Skeleton {
     }
   }
 
+  #limitDirection(limiter: any) {
+    let done = false;
+
+    let limitAngle = this.angle.filter(
+      (a) => a !== limiter.min || a !== limiter.max
+    );
+
+    const { x, y } = getPosition(
+      this.sprite,
+      this.scene.offsetX,
+      this.scene.offsetY,
+      this.tileSize
+    );
+
+    do {
+      const randomNumber = Math.Between(0, limitAngle.length - 1);
+      this.facingAngle = limitAngle[randomNumber];
+
+      const direction = getDirection(this.facingAngle);
+
+      switch (direction) {
+        case 0:
+          if (this.map[y - 1][x] !== 0) {
+            limitAngle = limitAngle.filter((a) => a < -135 || a > -45);
+          } else {
+            this.ray?.setAngleDeg(this.facingAngle);
+            this.#goUp();
+            done = true;
+          }
+          break;
+        case 1:
+          if (this.map[y][x + 1] !== 0) {
+            limitAngle = limitAngle.filter((a) => a < -45 || a > 45);
+          } else {
+            this.ray?.setAngleDeg(this.facingAngle);
+            this.#goRight();
+            done = true;
+          }
+          break;
+        case 2:
+          if (this.map[y + 1][x] !== 0) {
+            limitAngle = limitAngle.filter((a) => a < 45 || a > 135);
+          } else {
+            this.ray?.setAngleDeg(this.facingAngle);
+            this.#goDown();
+            done = true;
+          }
+          break;
+        case 3:
+          if (this.map[y][x - 1] !== 0) {
+            limitAngle = limitAngle.filter((a) => a < 135 && a > -135);
+          } else {
+            this.ray?.setAngleDeg(this.facingAngle);
+            this.#goLeft();
+            done = true;
+          }
+          break;
+      }
+    } while (!done);
+  }
+
+  #changeDirection() {
+    const { down, left, right, up } = this.sprite.body.touching;
+
+    // Get current position
+    const { x, y } = getPosition(
+      this.sprite,
+      this.scene.offsetX,
+      this.scene.offsetY,
+      this.tileSize
+    );
+
+    // console.log(this.sprite.touching)
+
+    // Checking other direction
+    const direction = [
+      [y - 1, x],
+      [y, x + 1],
+      [y + 1, x],
+      [y, x - 1],
+    ];
+
+    if (down) {
+      direction.splice(2, 1);
+    }
+
+    if (left) {
+      direction.splice(3, 1);
+    }
+
+    if (right) {
+      direction.splice(1, 1);
+    }
+
+    if (up) {
+      direction.splice(0, 1);
+    }
+
+    for (let i = 0; i < direction.length; i++) {
+      const newX = direction[i][1];
+      const newY = direction[i][0];
+      if (this.map[newY][newX] === 0) {
+        if (newY < y) {
+          this.#goUp();
+        }
+        if (newY < y) {
+          this.#goDown();
+        }
+        if (newX < x) {
+          this.#goLeft();
+        }
+        if (newX > x) {
+          this.#goRight();
+        }
+        break;
+      }
+    }
+  }
+
   #startChasing() {
     if (
       !this.sprite.anims.currentAnim?.key.includes('attack') &&
       !this.overlap
     ) {
-      const { x, y } = getPosition(
-        this.sprite,
-        this.scene.offsetX,
-        this.scene.offsetY,
-        this.tileSize
-      );
       // console.log(`${this.sprite.name} on position x:${x} y:${y}`);
 
       // let playerHide = false;、
       // console.log('this.facingAngle ', this.facingAngle);
-      if (this.facingAngle <= -45 && this.facingAngle >= -135) {
-        // If player not in sight
-        if (this.target === null) {
-          // If is going to hit the wall
-          if (y - 1 >= 1 && this.map[y - 1][x] == 0) {
-            this.#goUp();
-          } else {
-            this.#getRandomDirection({ min: -135, max: -45 });
-          }
-        } else {
+      const direction = getDirection(this.facingAngle);
+      this.ray?.setAngleDeg(this.facingAngle);
+
+      switch (direction) {
+        case 0:
           this.#goUp();
-        }
-      } else if (this.facingAngle <= 45 && this.facingAngle >= -45) {
-        // If player not in sight
-        if (this.target === null) {
-          // If is going to hit the wall
-          if (x + 1 < this.map[y].length - 1 && this.map[y][x + 1] == 0) {
-            this.#goRight();
-          } else {
-            this.#getRandomDirection({ min: -45, max: 45 });
-          }
-        } else {
+          break;
+        case 1:
           this.#goRight();
-        }
-      } else if (this.facingAngle <= 135 && this.facingAngle >= 45) {
-        if (this.target === null) {
-          // If is going to hit the wall
-          if (y + 1 <= this.map.length - 1 && this.map[y + 1][x] == 0) {
-            this.#goDown();
-          } else {
-            this.#getRandomDirection({ min: 45, max: 135 });
-          }
-        } else {
+          break;
+        case 2:
           this.#goDown();
-        }
-      } else if (this.facingAngle <= -135 && this.facingAngle >= 135) {
-        // If player not in sight
-        if (this.target === null) {
-          // If is going to hit the wall
-          if (x - 1 >= 1 && this.map[y][x - 1] == 0) {
-            this.#goLeft();
-          } else {
-            this.#getRandomDirection({ min: 135, max: 255 });
-          }
-        } else {
+          break;
+        case 3:
           this.#goLeft();
-        }
+          break;
+        default:
+          this.#getRandomDirection();
+          break;
       }
+
       this.sprite.anims.play('enemy_walking', true);
 
       this.ray?.setOrigin(
@@ -586,74 +661,50 @@ export default class Skeleton {
     // console.log('target', target);
     if (target.name && target.name.includes('enemy')) {
       if (this.target === null) {
-        // this.#stopMoving();
-
-        const { down, left, right, up } = this.sprite.body.touching;
-
-        // Get current position
-        const { x, y } = getPosition(
-          this.sprite,
-          this.scene.offsetX,
-          this.scene.offsetY,
-          this.tileSize
-        );
-
-        // console.log(this.sprite.touching)
-
-        // Checking other direction
-        const direction = [
-          [y - 1, x],
-          [y, x + 1],
-          [y + 1, x],
-          [y, x - 1],
-        ];
-
-        if (down) {
-          direction.splice(2, 1);
-        }
-
-        if (left) {
-          direction.splice(3, 1);
-        }
-
-        if (right) {
-          direction.splice(1, 1);
-        }
-
-        if (up) {
-          direction.splice(0, 1);
-        }
-
-        for (let i = 0; i < direction.length; i++) {
-          const newX = direction[i][1];
-          const newY = direction[i][0];
-          if (this.map[newY][newX] === 0) {
-            if (newY < y) {
-              this.#goUp();
-            }
-            if (newY < y) {
-              this.#goDown();
-            }
-            if (newX < x) {
-              this.#goLeft();
-            }
-            if (newX > x) {
-              this.#goRight();
-            }
-            break;
-          }
-        }
+        this.sprite.body.setVelocity(0);
+        this.#changeDirection();
       } else {
+        // Find another path
+        this.sprite.body.setVelocity(0);
       }
       // target.body.setVelocity(0);
     }
 
     // If collide with player but player not in sight
-    if (target.name && target.name.includes('player')) {
+    else if (target.name && target.name.includes('player')) {
       this.target = target;
       this.sprite.body.setImmovable(true);
     } else {
       this.sprite.body.setImmovable(false);
+
+      // Collide with something else (ex. wall)
+      if (this.target) {
+        // Find another path
+      } else {
+        // Get facing direction
+        const radain = Math.Angle.BetweenPoints(this.sprite, {
+          x: target.x * this.tileSize,
+          y: target.y * this.tileSize,
+        });
+        this.facingAngle = Math.RadToDeg(radain);
+
+        const direction = getDirection(this.facingAngle);
+
+        switch (direction) {
+          case 0:
+            this.#limitDirection({ min: -135, max: -45 });
+            break;
+          case 1:
+            this.#limitDirection({ min: -45, max: 45 });
+            break;
+          case 2:
+            this.#limitDirection({ min: 45, max: 135 });
+            break;
+          case 3:
+            this.#limitDirection({ min: -135, max: 135 });
+            break;
+        }
+      }
     }
   }
 
