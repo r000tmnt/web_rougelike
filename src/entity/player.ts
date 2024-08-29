@@ -12,6 +12,7 @@ export default class Player {
   map: number[][];
   ready: boolean;
   overlap: boolean;
+  collide: boolean;
   status: string;
   target: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
   text: Phaser.GameObjects.Text;
@@ -49,6 +50,7 @@ export default class Player {
       (this.map = map);
     this.ready = false;
     this.overlap = false;
+    this.collide = false;
     this.target = [];
     this.keys = {};
     this.eventEmitter = eventEmitter;
@@ -137,26 +139,15 @@ export default class Player {
       this.eventEmitter?.emit('chase-countdown-start', this.sprite);
     });
 
-    this.#setCollision(groundLayer);
+    this.scene.physics.add.collider(
+      this.sprite,
+      groundLayer,
+      this.#onCollide,
+      null,
+      this
+    );
     this.#addContorl();
     this.#setZone();
-  }
-
-  #setCollision(groundLayer: Phaser.Tilemaps.TilemapLayer) {
-    if (this.sprite) {
-      console.log('setting player collision');
-
-      this.scene.physics.add.collider(
-        this.sprite,
-        groundLayer,
-        this.#onCollide,
-        null,
-        this
-      );
-      this.ready = true;
-
-      console.log('player? ', this.sprite);
-    }
   }
 
   #addContorl() {
@@ -406,6 +397,7 @@ export default class Player {
   #onCollide(self: any, target: any) {
     // console.log('self', self);
     console.log('player collide with target :>>>', target);
+
     // if (target.name.includes('enemy')) {
     //   this.sprite.body.setImmovable(true);
     // } else {
