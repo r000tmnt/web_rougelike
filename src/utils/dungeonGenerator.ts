@@ -147,6 +147,7 @@ export default class DungeonGenerator {
 
       // Set numbers of enemy
       this.enemies[this.roomIndex] = Math.floor((width * height) / 100);
+      // this.enemies[this.roomIndex] = 1;
 
       console.log(
         `enemies in room ${this.roomIndex} :>>>`,
@@ -613,7 +614,7 @@ export default class DungeonGenerator {
         if (Math.abs(walkables[i].row - this.startingPoint[0]) < distance) {
           for (let j = 0; j < walkables[i].cols.length; j++) {
             if (
-              Math.abs(walkables[i].cols[j] - this.startingPoint[1]) < distance
+              Math.abs(walkables[i].cols[j] - this.startingPoint[1]) <= distance
             ) {
               walkables[i].cols.splice(j, 1);
             }
