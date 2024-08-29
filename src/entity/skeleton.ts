@@ -16,6 +16,7 @@ export default class Skeleton {
   angle: number[];
   ready: boolean;
   overlap: boolean;
+  collide: boolean;
   inSight: boolean;
   looking: boolean;
   status: string;
@@ -51,6 +52,7 @@ export default class Skeleton {
     this.map = map;
     this.ready = false;
     this.overlap = false;
+    this.collide = false;
     this.inSight = false;
     this.looking = false;
     this.target = null;
@@ -309,11 +311,12 @@ export default class Skeleton {
             this.facingAngle
           );
 
-          this.scene.physics.velocityFromRotation(
-            radain,
-            this.tileSize,
-            this.sprite.body.velocity
-          );
+          if (!this.collide)
+            this.scene.physics.velocityFromRotation(
+              radain,
+              this.tileSize,
+              this.sprite.body.velocity
+            );
 
           if (!this.ray?.body.embedded) {
             console.log(`${this.sprite.name} lost the player`);
@@ -424,7 +427,7 @@ export default class Skeleton {
     } while (!done);
   }
 
-  #changeDirection() {
+  #changeDirection(obstacle?: any) {
     const { down, left, right, up } = this.sprite.body.touching;
 
     // Get current position
@@ -541,7 +544,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (this.target) {
+    if (this.target && !this.collide) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
@@ -565,7 +568,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (this.target) {
+    if (this.target && !this.collide) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
@@ -588,7 +591,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (this.target) {
+    if (this.target && !this.collide) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
@@ -612,7 +615,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (this.target) {
+    if (this.target && !this.collide) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
@@ -679,26 +682,22 @@ export default class Skeleton {
 
   #onCollide(self: any, target: any) {
     // console.log('self', self);
-    // console.log('target', target);
+    console.log('enemy collide with target', target);
     if (target.name && target.name.includes('enemy')) {
-      if (this.target) {
-        // Find another path
-        this.sprite.body.setVelocity(0);
-      } else {
-        this.sprite.body.setVelocity(0);
-        this.sprite.anims.play('enemy_idle');
-        this.#changeDirection();
-      }
-      // target.body.setVelocity(0);
+      this.sprite.body.setVelocity(0);
+      this.sprite.anims.play('enemy_idle');
+      this.#changeDirection();
     }
 
     // If collide with player but player not in sight
     else if (target.name && target.name.includes('player')) {
       this.target = target;
-      this.sprite.body.setImmovable(true);
+      // this.sprite.body.setImmovable(true);
+      this.sprite.setVelocity(0);
+      this.collide = true;
     } else {
-      this.sprite.body.setImmovable(false);
-
+      // this.sprite.body.setImmovable(false);
+      this.collide = false;
       // Collide with something else (ex. wall)
       if (this.target) {
         // Find another path
