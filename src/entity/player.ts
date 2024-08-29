@@ -146,7 +146,13 @@ export default class Player {
     if (this.sprite) {
       console.log('setting player collision');
 
-      this.scene.physics.add.collider(this.sprite, groundLayer);
+      this.scene.physics.add.collider(
+        this.sprite,
+        groundLayer,
+        this.#onCollide,
+        null,
+        this
+      );
       this.ready = true;
 
       console.log('player? ', this.sprite);
