@@ -18,7 +18,6 @@ export default class Skeleton {
   overlap: boolean;
   collide: boolean;
   inSight: boolean;
-  looking: boolean;
   status: string;
   target: any;
   idleTimer: NodeJS.Timeout | null;
@@ -272,6 +271,8 @@ export default class Skeleton {
 
   #update() {
     if (this.sprite && this.ray?.body) {
+      this.overlap = !this.sprite.body.touching.none;
+
       if (this.status === 'hit') {
         // TODO: Play get hit animation
         this.scene.time.delayedCall(200, () => {
@@ -311,7 +312,7 @@ export default class Skeleton {
             this.facingAngle
           );
 
-          if (!this.collide)
+          if (!this.overlap)
             this.scene.physics.velocityFromRotation(
               radain,
               this.tileSize,
@@ -544,7 +545,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (this.target && !this.collide) {
+    if (this.target && !this.overlap) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
@@ -568,7 +569,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x + this.tileSize, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (this.target && !this.collide) {
+    if (this.target && !this.overlap) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
@@ -591,7 +592,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
     this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
-    if (this.target && !this.collide) {
+    if (this.target && !this.overlap) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
@@ -615,7 +616,7 @@ export default class Skeleton {
     this.zone.setPosition(this.sprite.x - this.tileSize / 2, this.sprite.y);
     this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-    if (this.target && !this.collide) {
+    if (this.target && !this.overlap) {
       // console.log(`${this.sprite.name} start chasing`);
       if (this.target.name) {
         this.#moveToTarget(
