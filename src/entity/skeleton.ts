@@ -282,15 +282,6 @@ export default class Skeleton {
           this.target &&
           !this.sprite.anims.currentAnim?.key.includes('attack')
         ) {
-          const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
-          this.facingAngle = Math.RadToDeg(radain);
-          this.ray?.setAngleDeg(this.facingAngle);
-
-          console.log(
-            `${this.sprite.name} facing direcion in update`,
-            this.facingAngle
-          );
-
           const { x, y } = this.target;
           const distance = Math.Distance.Between(
             this.sprite.x,
@@ -308,6 +299,15 @@ export default class Skeleton {
               this.target = null;
             }
           }
+
+          const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
+          this.facingAngle = Math.RadToDeg(radain);
+          this.ray?.setAngleDeg(this.facingAngle);
+
+          console.log(
+            `${this.sprite.name} facing direcion in update`,
+            this.facingAngle
+          );
 
           this.scene.physics.velocityFromRotation(
             radain,
@@ -464,11 +464,11 @@ export default class Skeleton {
     for (let i = 0; i < direction.length; i++) {
       const newX = direction[i][1];
       const newY = direction[i][0];
-      if (this.map[newY][newX] === 0) {
+      if (this.map[newY] && this.map[newY][newX] === 0) {
         if (newY < y) {
           this.#goUp();
         }
-        if (newY < y) {
+        if (newY > y) {
           this.#goDown();
         }
         if (newX < x) {
@@ -543,12 +543,16 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget(
-        new Math.Vector2(
-          this.target.x - this.scene.offsetX,
-          this.target.y - this.scene.offsetY + this.tileSize
-        )
-      );
+      if (this.target.name) {
+        this.#moveToTarget(
+          new Math.Vector2(
+            this.target.x - this.scene.offsetX,
+            this.target.y - this.scene.offsetY + this.tileSize
+          )
+        );
+      } else {
+        this.#moveToTarget(new Math.Vector2(this.target.x, this.target.y));
+      }
     } else {
       this.sprite.setVelocityY(-this.tileSize);
     }
@@ -563,12 +567,16 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget(
-        new Math.Vector2(
-          this.target.x - this.scene.offsetX - this.tileSize,
-          this.target.y - this.scene.offsetY
-        )
-      );
+      if (this.target.name) {
+        this.#moveToTarget(
+          new Math.Vector2(
+            this.target.x - this.scene.offsetX - this.tileSize,
+            this.target.y - this.scene.offsetY
+          )
+        );
+      } else {
+        this.#moveToTarget(new Math.Vector2(this.target.x, this.target.y));
+      }
     } else {
       this.sprite.setVelocityX(this.tileSize);
     }
@@ -582,12 +590,16 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget(
-        new Math.Vector2(
-          this.target.x - this.scene.offsetX,
-          this.target.y - this.scene.offsetY - this.tileSize
-        )
-      );
+      if (this.target.name) {
+        this.#moveToTarget(
+          new Math.Vector2(
+            this.target.x - this.scene.offsetX,
+            this.target.y - this.scene.offsetY - this.tileSize
+          )
+        );
+      } else {
+        this.#moveToTarget(new Math.Vector2(this.target.x, this.target.y));
+      }
     } else {
       this.sprite.setVelocityY(this.tileSize);
     }
@@ -602,12 +614,16 @@ export default class Skeleton {
 
     if (this.target) {
       // console.log(`${this.sprite.name} start chasing`);
-      this.#moveToTarget(
-        new Math.Vector2(
-          this.target.x - this.scene.offsetX + this.tileSize,
-          this.target.y - this.scene.offsetY
-        )
-      );
+      if (this.target.name) {
+        this.#moveToTarget(
+          new Math.Vector2(
+            this.target.x - this.scene.offsetX + this.tileSize,
+            this.target.y - this.scene.offsetY
+          )
+        );
+      } else {
+        this.#moveToTarget(new Math.Vector2(this.target.x, this.target.y));
+      }
     } else {
       this.sprite.setVelocityX(-this.tileSize);
     }
@@ -626,6 +642,11 @@ export default class Skeleton {
 
     // If there is a valid path, grab the first point from the path and set it as the target
     if (this.path && this.path.length > 0) {
+      // Add the offset back to path
+      this.path.forEach((p) => {
+        p.x += this.scene.offsetX;
+        p.y += this.scene.offsetY;
+      });
       console.log(`${this.sprite.name} looking to path in #moveToTarget`);
       this.target = this.path.shift();
     } else {
@@ -660,12 +681,13 @@ export default class Skeleton {
     // console.log('self', self);
     // console.log('target', target);
     if (target.name && target.name.includes('enemy')) {
-      if (this.target === null) {
-        this.sprite.body.setVelocity(0);
-        this.#changeDirection();
-      } else {
+      if (this.target) {
         // Find another path
         this.sprite.body.setVelocity(0);
+      } else {
+        this.sprite.body.setVelocity(0);
+        this.sprite.anims.play('enemy_idle');
+        this.#changeDirection();
       }
       // target.body.setVelocity(0);
     }
