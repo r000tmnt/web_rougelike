@@ -236,7 +236,7 @@ export default class Player {
 
       if (this.iKey && this.iKey.isDown) {
         if (
-          this.keys[this.iKey.keyCode] ||
+          !this.keys[this.iKey.keyCode] ||
           this.keys[this.iKey.keyCode] === 0
         ) {
           this.keys[this.iKey.keyCode] = 1;
@@ -252,13 +252,13 @@ export default class Player {
 
       if (this.cKey && this.cKey.isDown) {
         if (
-          this.keys[this.cKey.keyCode] ||
+          !this.keys[this.cKey.keyCode] ||
           this.keys[this.cKey.keyCode] === 0
         ) {
           this.keys[this.cKey.keyCode] = 1;
           const gameStore = useGameStore();
           const openStatus = gameStore.getOpenStatus;
-          gameStore.setOpenInventory(!openStatus);
+          gameStore.setOpenStatus(!openStatus);
 
           setTimeout(() => {
             this.keys[this.cKey.keyCode] = 0;
