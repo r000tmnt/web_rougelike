@@ -13,6 +13,8 @@ export const useGameStore = defineStore('game', {
     textIcon: '',
     doorIndex: -1,
     currentScene: 0,
+    openInventory: false,
+    openStatus: false,
   }),
 
   getters: {
@@ -25,6 +27,8 @@ export const useGameStore = defineStore('game', {
     getPlayer: (state) => state.player,
     getDoorIndex: (state) => state.doorIndex,
     getCurrentScene: (state) => state.currentScene,
+    getOpenInventory: (state) => state.openInventory,
+    getOpenStatus: (state) => state.openStatus,
   },
 
   actions: {
@@ -58,6 +62,14 @@ export const useGameStore = defineStore('game', {
 
     setCurrentScene(scene: number) {
       this.currentScene = scene;
+    },
+
+    setOpenInventory(value: boolean) {
+      this.openInventory = value;
+    },
+
+    setOpenStatus(value: boolean) {
+      this.openStatus = value;
     },
   },
 });
