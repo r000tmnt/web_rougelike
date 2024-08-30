@@ -77,6 +77,8 @@ export default class Dungeon extends Scene {
       const gameStore = useGameStore();
       const tileSize = gameStore.getTileSize;
 
+      gameStore.setCurrentScene(2);
+
       this.content = new DungeonGenerator(tileSize);
     }
   }
@@ -463,20 +465,7 @@ export default class Dungeon extends Scene {
         );
       }
 
-      // this.player.on('animationcomplete', (context: any) => {
-      //   // console.log('context :>>>', context);
-      //   // Check animation name
-      //   if (context.key === 'player-idle') {
-      //     this.player?.anims.pause(); // Pause the animation
-      //     this.playerIdleCount += 1;
-      //     // Play the animation back and forth
-      //     if (this.playerIdleCount % 2 === 0) {
-      //       this.player?.anims.play('player-idle', true);
-      //     } else {
-      //       this.player?.anims.playReverse('player-idle');
-      //     }
-      //   }
-      // });
+      gameStore.setPlayerStatus(this.player.data);
 
       console.log('player :>>>', this.player);
 
@@ -581,6 +570,8 @@ export default class Dungeon extends Scene {
           this.enemies.push(enemy);
         }
       }
+
+      this.#storeEnemyData(gameStore);
     }
   }
 
@@ -637,23 +628,9 @@ export default class Dungeon extends Scene {
       // Remove layer
       this.groundLayer?.destroy();
       // Store player data
-      gameStore.setPlayerStatus = this.player?.data;
+      gameStore.setPlayerStatus(this.player?.data);
       // Keep enemies if any
-      if (this.enemies.length) {
-        const copy = this.enemies.map((e) => {
-          // distory ray
-          e.ray?.destroy();
-          if (e.sprite)
-            // Update position
-            e.data.position = {
-              x: e.sprite.x - this.offsetX,
-              y: e.sprite.y - this.offsetY,
-            };
-
-          return e.data;
-        });
-        gameStore.storeEnemyIntheRoom(copy, this.content.roomIndex);
-      }
+      this.#storeEnemyData(gameStore);
       // destroy raycaster
       this.raycaster?.destroy();
       // Reset offset
@@ -686,6 +663,24 @@ export default class Dungeon extends Scene {
         direction: direction,
         // And more...
       });
+    }
+  }
+
+  #storeEnemyData(gameStore: any) {
+    if (this.enemies.length && this.content) {
+      const copy = this.enemies.map((e) => {
+        // distory ray
+        e.ray?.destroy();
+        if (e.sprite)
+          // Update position
+          e.data.position = {
+            x: e.sprite.x - this.offsetX,
+            y: e.sprite.y - this.offsetY,
+          };
+
+        return e.data;
+      });
+      gameStore.storeEnemyIntheRoom(copy, this.content.roomIndex);
     }
   }
 }
