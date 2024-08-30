@@ -20,10 +20,10 @@ export default class Player {
 
   private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private fKey!: Input.Keyboard.Key | undefined;
-  private iKey!: Input.Keyboard.Key | undefined;
-  private cKey!: Input.Keyboard.Key | undefined;
-  private dKey!: Input.Keyboard.Key | undefined;
+  private fKey!: Input.Keyboard.Key;
+  private iKey!: Input.Keyboard.Key;
+  private cKey!: Input.Keyboard.Key;
+  private dKey!: Input.Keyboard.Key;
 
   constructor(
     scene: Phaser.Scene,
@@ -156,6 +156,8 @@ export default class Player {
       this.cursor = this.scene.input.keyboard.createCursorKeys();
       this.fKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F);
       this.dKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.D);
+      this.iKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.I);
+      this.cKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.C);
     }
     this.scene.events.on('update', this.#update, this);
   }
@@ -229,6 +231,38 @@ export default class Player {
           this.sprite?.anims.play('player-attack', true);
         } else {
           console.log('lock key');
+        }
+      }
+
+      if (this.iKey && this.iKey.isDown) {
+        if (
+          this.keys[this.iKey.keyCode] ||
+          this.keys[this.iKey.keyCode] === 0
+        ) {
+          this.keys[this.iKey.keyCode] = 1;
+          const gameStore = useGameStore();
+          const openInventory = gameStore.getOpenInventory;
+          gameStore.setOpenInventory(!openInventory);
+
+          setTimeout(() => {
+            this.keys[this.iKey.keyCode] = 0;
+          }, 500);
+        }
+      }
+
+      if (this.cKey && this.cKey.isDown) {
+        if (
+          this.keys[this.cKey.keyCode] ||
+          this.keys[this.cKey.keyCode] === 0
+        ) {
+          this.keys[this.cKey.keyCode] = 1;
+          const gameStore = useGameStore();
+          const openStatus = gameStore.getOpenStatus;
+          gameStore.setOpenInventory(!openStatus);
+
+          setTimeout(() => {
+            this.keys[this.cKey.keyCode] = 0;
+          }, 500);
         }
       }
 
