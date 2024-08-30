@@ -1,6 +1,8 @@
 <template>
   <span id="textLayer" ref="textLayer">{{ textContent }}</span>
   <Player_health_bar v-if="currentScene === 2" />
+  <Player_inventory v-if="currentScene > 0 && openInventory" />
+  <Player_status v-if="currentScene > 0 && openStatus" />
 </template>
 
 <script setup lang="ts">
@@ -13,12 +15,18 @@ import Dungeon from '../scene/dungeon';
 
 // Components
 import Player_health_bar from 'src/components/Player_health_bar.vue';
+import Player_inventory from 'src/components/Player_inventory.vue';
+import Player_status from 'src/components/Player_status.vue';
 
 const gameStore = useGameStore();
 
 const textContent = computed(() => gameStore.getTextContent);
 
 const currentScene = computed(() => gameStore.getCurrentScene);
+
+const openInventory = computed(() => gameStore.getOpenInventory);
+
+const openStatus = computed(() => gameStore.getOpenStatus);
 
 const textLayer = ref<HTMLSpanElement | null>(null);
 
