@@ -1,19 +1,39 @@
 <template>
-  <section class="flex">
-    <div>
-      <div class="status_header flex">
-        <span>NAME</span>
-        <span>
+  <section
+    class="row q-pa-md"
+    :style="`font-size:${Math.floor(windowWidth / 100) * 2}px`"
+  >
+    <div class="col-4">
+      <div class="status_header row">
+        <span class="col">NAME</span>
+        <span class="col">
           <div>LV</div>
           <div>CLASS</div>
         </span>
       </div>
+
+      <div class="status">
+        <ul>
+          <li v-for="(key, value) in playerData.base_attribute" :key="value">
+            {{ value }}:
+            {{
+              playerData.base_attribute[value] + playerData.add_attribute[value]
+            }}
+            /
+            {{ playerData.attribute_limit[value] }}
+          </li>
+          <li>STAT: {{ playerData.status }}</li>
+          <li>
+            EXP: {{ playerData.exp }} / {{ playerData.attribute_limit.exp }}
+          </li>
+        </ul>
+      </div>
     </div>
-    <div>
+    <div class="col-8">
       <!-- Equip -->
       <ul>
-        <li v-for="(key, value) in playerData.equip" :key="key">
-          {{ key }} / {{ value }}
+        <li v-for="(key, value) in playerData.equip" :key="value">
+          {{ value }} / {{ playerData.equip[value] }}
         </li>
       </ul>
     </div>
@@ -27,4 +47,6 @@ import { ref, computed } from 'vue';
 const gameStore = useGameStore();
 
 const playerData = computed(() => gameStore.getPlayer);
+
+const windowWidth = computed(() => gameStore.getWindowWidth);
 </script>
