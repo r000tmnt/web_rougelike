@@ -12,6 +12,7 @@ export const useGameStore = defineStore('game', {
     textContent: '',
     textIcon: '',
     doorIndex: -1,
+    currentScene: 0,
   }),
 
   getters: {
@@ -23,6 +24,7 @@ export const useGameStore = defineStore('game', {
     getTextIcon: (state) => state.textIcon,
     getPlayer: (state) => state.player,
     getDoorIndex: (state) => state.doorIndex,
+    getCurrentScene: (state) => state.currentScene,
   },
 
   actions: {
@@ -52,6 +54,10 @@ export const useGameStore = defineStore('game', {
 
     setDoorIndex(index: number) {
       this.doorIndex = index;
+    },
+
+    setCurrentScene(scene: number) {
+      this.currentScene = scene;
     },
   },
 });
