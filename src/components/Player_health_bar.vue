@@ -104,12 +104,7 @@ const setMeters = () => {
   }
 
   ul {
-    width: 100%;
-    list-style: none;
-    color: white;
-    font-weight: 400;
     li {
-      margin: 2% 0;
       div {
         position: relative;
         span {
