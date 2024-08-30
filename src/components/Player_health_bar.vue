@@ -117,6 +117,7 @@ const setMeters = () => {
 
   .meter {
     width: 100%;
+    background: gray;
   }
 }
 </style>
