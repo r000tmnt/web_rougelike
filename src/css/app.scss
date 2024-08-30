@@ -1,6 +1,8 @@
 // app global css in SCSS form
 body {
   overflow-y: hidden;
+  // font-family: 'pixelify';
+  font-family: 'zpix';
 
   #q-app {
     display: flex;
@@ -16,8 +18,22 @@ body {
     list-style: none;
     color: white;
     font-weight: 400;
+    padding: 0;
     li {
       margin: 2% 0;
+    }
+  }
+
+  section {
+    position: absolute;
+    top: 0;
+    background: black;
+    color: white;
+    width: 100%;
+    height: 100%;
+
+    .grid {
+      border: 1px solid gainsboro;
     }
   }
 }
@@ -26,6 +42,13 @@ body {
 @font-face {
   font-family: 'pixelify';
   src: url('/assets/font/PixelifySans-Regular.ttf');
+  font-weight: 400;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: 'zpix';
+  src: url('/assets/font/zpix.ttf');
   font-weight: 400;
   font-weight: normal;
 }
