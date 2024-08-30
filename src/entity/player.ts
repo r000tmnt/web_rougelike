@@ -235,12 +235,13 @@ export default class Player {
       }
 
       if (this.iKey && this.iKey.isDown) {
+        const gameStore = useGameStore();
+        const openStatus = gameStore.getOpenStatus;
         if (
-          !this.keys[this.iKey.keyCode] ||
-          this.keys[this.iKey.keyCode] === 0
+          (!this.keys[this.iKey.keyCode] && !openStatus) ||
+          (this.keys[this.iKey.keyCode] === 0 && !openStatus)
         ) {
           this.keys[this.iKey.keyCode] = 1;
-          const gameStore = useGameStore();
           const openInventory = gameStore.getOpenInventory;
           gameStore.setOpenInventory(!openInventory);
 
@@ -251,12 +252,13 @@ export default class Player {
       }
 
       if (this.cKey && this.cKey.isDown) {
+        const gameStore = useGameStore();
+        const openInventory = gameStore.getOpenInventory;
         if (
-          !this.keys[this.cKey.keyCode] ||
-          this.keys[this.cKey.keyCode] === 0
+          (!this.keys[this.cKey.keyCode] && !openInventory) ||
+          (this.keys[this.cKey.keyCode] === 0 && !openInventory)
         ) {
           this.keys[this.cKey.keyCode] = 1;
-          const gameStore = useGameStore();
           const openStatus = gameStore.getOpenStatus;
           gameStore.setOpenStatus(!openStatus);
 
