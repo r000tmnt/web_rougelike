@@ -1,5 +1,6 @@
 <template>
   <span id="textLayer" ref="textLayer">{{ textContent }}</span>
+  <Player_health_bar v-if="currentScene === 2" />
 </template>
 
 <script setup lang="ts">
@@ -10,9 +11,14 @@ import PhaserRaycaster from 'phaser-raycaster';
 import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 import Dungeon from '../scene/dungeon';
 
+// Components
+import Player_health_bar from 'src/components/Player_health_bar.vue';
+
 const gameStore = useGameStore();
 
 const textContent = computed(() => gameStore.getTextContent);
+
+const currentScene = computed(() => gameStore.getCurrentScene);
 
 const textLayer = ref<HTMLSpanElement | null>(null);
 
