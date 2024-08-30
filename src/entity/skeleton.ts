@@ -53,7 +53,6 @@ export default class Skeleton {
     this.overlap = false;
     this.collide = false;
     this.inSight = false;
-    this.looking = false;
     this.target = null;
     this.ray = null;
     this.angle = [0, 45, 90, 135, 180, -180, -135, -90, -45, -0];
@@ -303,21 +302,22 @@ export default class Skeleton {
             }
           }
 
-          const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
-          this.facingAngle = Math.RadToDeg(radain);
-          this.ray?.setAngleDeg(this.facingAngle);
+          if (this.target && !this.overlap) {
+            const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
+            this.facingAngle = Math.RadToDeg(radain);
+            this.ray?.setAngleDeg(this.facingAngle);
 
-          console.log(
-            `${this.sprite.name} facing direcion in update`,
-            this.facingAngle
-          );
+            console.log(
+              `${this.sprite.name} facing direcion in update`,
+              this.facingAngle
+            );
 
-          if (!this.overlap)
             this.scene.physics.velocityFromRotation(
               radain,
               this.tileSize,
               this.sprite.body.velocity
             );
+          }
 
           if (!this.ray?.body.embedded) {
             console.log(`${this.sprite.name} lost the player`);
@@ -343,7 +343,7 @@ export default class Skeleton {
           this.overlap = false;
         }
 
-        if (this.ray?.body) {
+        if (this.ray?.body && !this.overlap) {
           this.#startChasing();
         }
       }
@@ -776,6 +776,7 @@ export default class Skeleton {
     // console.log('context :>>>', context);
     // Check if the attack animation finished
     if (context.key.includes('attack')) {
+      this.sprite.body.setVelocity(0);
       this.sprite?.anims.play('enemy_idle');
       setTimeout(() => {
         // release key
