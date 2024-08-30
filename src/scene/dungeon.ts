@@ -629,6 +629,10 @@ export default class Dungeon extends Scene {
       this.groundLayer?.destroy();
       // Store player data
       gameStore.setPlayerStatus(this.player?.data);
+      // Destory ray
+      this.enemies.forEach((e) => {
+        e.ray?.destroy();
+      });
       // Keep enemies if any
       this.#storeEnemyData(gameStore);
       // destroy raycaster
@@ -669,8 +673,6 @@ export default class Dungeon extends Scene {
   #storeEnemyData(gameStore: any) {
     if (this.enemies.length && this.content) {
       const copy = this.enemies.map((e) => {
-        // distory ray
-        e.ray?.destroy();
         if (e.sprite)
           // Update position
           e.data.position = {
