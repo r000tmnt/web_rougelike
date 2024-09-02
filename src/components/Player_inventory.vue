@@ -14,9 +14,7 @@
                 <div
                   class="grid rounded-borders"
                   :data-index="colIndex + rowIndex * 10"
-                  :style="`width: ${
-                    (Math.floor(windowWidth / 100) * 80) / 10
-                  }px;height: ${(Math.floor(windowWidth / 100) * 80) / 10}px`"
+                  :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: -${borderSize}px 0 0 0 gainsboro, ${borderSize}px 0 0 0 gainsboro, 0 -${borderSize}px 0 0 gainsboro, 0 ${borderSize}px 0 0 gainsboro;`"
                 >
                   {{ colIndex + rowIndex * 10 }}
                 </div>
@@ -41,12 +39,18 @@ const windowWidth = computed(() => gameStore.getWindowWidth);
 
 const rows = ref<number>(0);
 
+const dynamicWidth = ref<number>(0);
+
+const borderSize = ref<number>(0);
+
 onMounted(() => {
   rows.value =
     playerData.value.attribute_limit.bag % 10 > 0
       ? playerData.value.attribute_limit.bag / 10 + 1
       : playerData.value.attribute_limit.bag / 10;
 
-  console.log(rows.value);
+  // console.log(rows.value);
+  dynamicWidth.value = (Math.floor(windowWidth.value / 100) * 80) / 10;
+  borderSize.value = Math.floor(dynamicWidth.value / 40);
 });
 </script>
