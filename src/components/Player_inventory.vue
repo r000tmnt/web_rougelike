@@ -3,7 +3,15 @@
     class="q-pa-md"
     :style="`font-size:${Math.floor(windowWidth / 100) * 2}px`"
   >
-    INVENTORY
+    <div class="flex q-mt-md q-mb-lg">
+      <div class="text-h5">INVENTORY</div>
+      <div id="filters" class="q-ml-auto flex">
+        <span>E</span>
+        <span>C</span>
+        <span>M</span>
+        <span>S</span>
+      </div>
+    </div>
 
     <div class="hide-scrollbar scroll" style="height: 90%">
       <table class="q-mx-auto" style="width: 80vw">
@@ -21,6 +29,11 @@
                     (e) => getItemPosition(e, colIndex + rowIndex * 10)
                   "
                   @mouseleave="showDesc = -1"
+                  @contextmenu="
+                    (e) => {
+                      console.log('mouse right click ', e);
+                    }
+                  "
                 >
                   {{ colIndex + rowIndex * 10 }}
                 </div>
@@ -74,6 +87,8 @@ const borderSize = ref<number>(0);
 const descElementPosition = ref<string>('');
 
 const showDesc = ref<number>(-1);
+
+const activeFilter = ref<number[]>([]);
 
 const pixelatedBorder = (size: number, index?: number) => {
   return `-${size}px 0 0 0 ${
