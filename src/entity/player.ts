@@ -21,7 +21,11 @@ export default class Player {
   private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
   private fKey!: Input.Keyboard.Key;
+  private wKey!: Input.Keyboard.Key;
+  private aKey!: Input.Keyboard.Key;
+  private sKey!: Input.Keyboard.Key;
   private dKey!: Input.Keyboard.Key;
+  private pointer!: Input.Pointer;
 
   constructor(
     scene: Phaser.Scene,
@@ -153,7 +157,13 @@ export default class Player {
     if (this.scene.input.keyboard) {
       this.cursor = this.scene.input.keyboard.createCursorKeys();
       this.fKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F);
+      this.wKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.W);
+      this.aKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.A);
+      this.sKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.S);
       this.dKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.D);
+
+      // Mouse event
+      this.pointer = this.scene.input.activePointer;
     }
     this.scene.events.on('update', this.#update, this);
   }
@@ -217,13 +227,24 @@ export default class Player {
         }
       }
 
-      if (this.dKey && this.dKey.isDown) {
-        if (
-          !this.keys[this.dKey.keyCode] ||
-          this.keys[this.dKey.keyCode] === 0
-        ) {
-          console.log('add key');
-          this.keys[this.dKey.keyCode] = 1;
+      // if (this.dKey && this.dKey.isDown) {
+      //   if (
+      //     !this.keys[this.dKey.keyCode] ||
+      //     this.keys[this.dKey.keyCode] === 0
+      //   ) {
+      //     console.log('add key');
+      //     this.keys[this.dKey.keyCode] = 1;
+      //     this.sprite?.anims.play('player-attack', true);
+      //   } else {
+      //     console.log('lock key');
+      //   }
+      // }
+
+      // Mouse left click
+      if (this.pointer.isDown) {
+        console.log('mouse left clicked ', this.pointer);
+        if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
+          this.keys['mouseLeft'] = 1;
           this.sprite?.anims.play('player-attack', true);
         } else {
           console.log('lock key');
@@ -231,7 +252,7 @@ export default class Player {
       }
 
       if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
-        if (this.cursor?.left.isDown) {
+        if (this.cursor?.left.isDown || this.aKey.isDown) {
           this.sprite.setVelocityX(-this.tileSize * 2.5);
           this.sprite.setFlipX(false);
           this.sprite.anims.play('player-walking', true);
@@ -242,7 +263,7 @@ export default class Player {
           );
           // this.zone.setSize(this.tileSize / 2, this.tileSize);
           this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-        } else if (this.cursor?.right.isDown) {
+        } else if (this.cursor?.right.isDown || this.dKey.isDown) {
           this.sprite.setVelocityX(this.tileSize * 2.5);
           this.sprite.setFlipX(true);
           this.sprite.anims.play('player-walking', true);
@@ -253,7 +274,7 @@ export default class Player {
           );
           // this.zone.setSize(this.tileSize / 2, this.tileSize);
           this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-        } else if (this.cursor?.up.isDown) {
+        } else if (this.cursor?.up.isDown || this.wKey.isDown) {
           this.sprite.setVelocityY(-this.tileSize * 2.5);
           // Update zone
           this.zone.setPosition(
@@ -262,7 +283,7 @@ export default class Player {
           );
           // this.zone.setSize(this.tileSize, this.tileSize / 2);
           this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-        } else if (this.cursor?.down.isDown) {
+        } else if (this.cursor?.down.isDown || this.sKey.isDown) {
           this.sprite.setVelocityY(this.tileSize * 2.5);
           // Update zone
           this.zone.setPosition(
@@ -379,8 +400,9 @@ export default class Player {
       this.sprite.anims.play('player-idle');
       setTimeout(() => {
         // release key
-        if (this.dKey) this.keys[this.dKey.keyCode] = 0;
-      }, 500);
+        // if (this.dKey) this.keys[this.dKey.keyCode] = 0;
+        if (this.keys['mouseLeft']) this.keys['mouseLeft'] = 0;
+      }, 300);
     }
   }
 
