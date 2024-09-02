@@ -77,6 +77,29 @@ onMounted(() => {
       gameStore.getWindowHeight - gameStore.tileSize
     }px)`;
   }
+
+  document.addEventListener('keyup', (e: KeyboardEvent) => {
+    console.log(e);
+    // Open or close inventory
+    if (e.key === 'i') {
+      if (gameStore.openInventory) {
+        gameStore.resumeGame();
+      } else {
+        gameStore.pauseGame();
+      }
+      gameStore.setOpenInventory(!gameStore.openInventory);
+    }
+
+    // Open or close character status
+    if (e.key === 'c') {
+      if (gameStore.openStatus) {
+        gameStore.resumeGame();
+      } else {
+        gameStore.pauseGame();
+      }
+      gameStore.setOpenStatus(!gameStore.openStatus);
+    }
+  });
 });
 </script>
 
