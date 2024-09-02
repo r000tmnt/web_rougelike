@@ -28,7 +28,7 @@
                   @mouseover="
                     (e) => getItemPosition(e, colIndex + rowIndex * 10)
                   "
-                  @mouseleave="showDesc = -1"
+                  @mouseleave="(e) => resetPosition(e)"
                   @contextmenu="
                     (e) => {
                       console.log('mouse right click ', e);
@@ -44,33 +44,19 @@
       </table>
     </div>
 
-    <template v-if="showDesc >= 0">
-      <div
-        id="desc"
-        class="absolute bg-dark grid"
-        :style="`width: ${
-          dynamicWidth * 2
-        }px;top:0;box-shadow: ${pixelatedBorder(
-          borderSize
-        )};${descElementPosition}`"
-      >
-        <img
-          class="q-mx-auto"
-          src=""
-          alt="image"
-          :style="`width: ${gameStore.tileSize}px; height: ${gameStore.tileSize}px`"
-        />
-        <ul>
-          <li>DESC</li>
-        </ul>
-      </div>
-    </template>
+    <Item_desc
+      v-if="showDesc >= 0"
+      :dynamic-width="dynamicWidth"
+      :desc-element-position="descElementPosition"
+      :pixelated-border="pixelatedBorder(borderSize, -1)"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import { useGameStore } from '../stores/game';
 import { ref, computed, onMounted } from 'vue';
+import Item_desc from './Item_desc.vue';
 
 const gameStore = useGameStore();
 
@@ -105,7 +91,9 @@ const getItemPosition = (e: MouseEvent, index: number) => {
 
   // Check item index
   if ((index + 1) % 10 > 0) {
-    descElementPosition.value = `transform: translate(${e.clientX}px, ${
+    descElementPosition.value = `transform: translate(${
+      e.clientX - e.offsetX
+    }px, ${
       e.clientY >= 500 ? e.clientY - dynamicWidth.value * 2 : e.clientY
     }px)`;
   } else {
@@ -120,6 +108,11 @@ const getItemPosition = (e: MouseEvent, index: number) => {
 
   // Display the information
   showDesc.value = index;
+};
+
+const resetPosition = (e: MouseEvent) => {
+  const target = e.target as HTMLDivElement;
+  if (!target.closest('.grid')) showDesc.value = -1;
 };
 
 onMounted(() => {
