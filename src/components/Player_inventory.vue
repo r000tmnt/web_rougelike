@@ -87,24 +87,23 @@ const pixelatedBorder = (size: number, index?: number) => {
 };
 
 const getItemPosition = (e: MouseEvent, index: number) => {
-  // console.log(e);
+  console.log(e);
+
+  // Get hovered element position relative to viewport
+  const target = e.target as HTMLDivElement;
+  const el = target.getBoundingClientRect();
+  console.log(target.getBoundingClientRect());
 
   // Check item index
-  if ((index + 1) % 10 > 0) {
+  if ((index + 1) % 10 > 0 && (index + 2) % 10 !== 0) {
     descElementPosition.value = `transform: translate(${
-      e.clientX - e.offsetX
-    }px, ${
-      e.clientY >= 500 ? e.clientY - dynamicWidth.value * 2 : e.clientY
-    }px)`;
+      el.left + dynamicWidth.value
+    }px, ${e.clientY >= 500 ? el.top - dynamicWidth.value : el.top}px)`;
   } else {
     descElementPosition.value = `transform: translate(${
-      e.clientX - dynamicWidth.value * 2
-    }px, ${
-      e.clientY >= 500 ? e.clientY - dynamicWidth.value * 2 : e.clientY
-    }px)`;
+      el.left - dynamicWidth.value * 3
+    }px, ${e.clientY >= 500 ? el.top - dynamicWidth.value : el.top}px)`;
   }
-
-  // Get item data
 
   // Display the information
   showDesc.value = index;
