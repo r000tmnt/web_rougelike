@@ -3,7 +3,7 @@ import { player, enemy, base_attribute } from 'src/model/character';
 
 export const useGameStore = defineStore('game', {
   state: () => ({
-    game: {},
+    game: {} as Phaser.Game,
     player: {} as player,
     enemy: [[], [], [], [], [], [], [], [], []] as enemy[][],
     windowWidth: window.innerWidth,
@@ -70,6 +70,14 @@ export const useGameStore = defineStore('game', {
 
     setOpenStatus(value: boolean) {
       this.openStatus = value;
+    },
+
+    pauseGame() {
+      this.game.pause();
+    },
+
+    resumeGame() {
+      this.game.resume();
     },
   },
 });
