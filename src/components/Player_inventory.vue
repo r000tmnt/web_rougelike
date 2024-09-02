@@ -13,8 +13,13 @@
               <td v-for="(col, colIndex) in 10" :key="col">
                 <div
                   class="grid rounded-borders"
-                  :data-index="colIndex + rowIndex * 10"
-                  :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: -${borderSize}px 0 0 0 gainsboro, ${borderSize}px 0 0 0 gainsboro, 0 -${borderSize}px 0 0 gainsboro, 0 ${borderSize}px 0 0 gainsboro;`"
+                  :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
+                    borderSize
+                  )}`"
+                  @mouseover="
+                    (e) => getItemPosition(e, colIndex + rowIndex * 10)
+                  "
+                  @mouseleave="showDesc = false"
                 >
                   {{ colIndex + rowIndex * 10 }}
                 </div>
@@ -24,6 +29,20 @@
         </tbody>
       </table>
     </div>
+
+    <template v-if="showDesc">
+      <div
+        id="desc"
+        class="absolute bg-dark grid"
+        :style="`width: ${
+          dynamicWidth * 2
+        }px;top:0;box-shadow: ${pixelatedBorder(
+          borderSize
+        )};${descElementPosition}`"
+      >
+        DESC
+      </div>
+    </template>
   </section>
 </template>
 
@@ -42,6 +61,36 @@ const rows = ref<number>(0);
 const dynamicWidth = ref<number>(0);
 
 const borderSize = ref<number>(0);
+
+const descElementPosition = ref<string>('');
+
+const showDesc = ref<boolean>(false);
+
+const pixelatedBorder = (size: number) => {
+  return `-${size}px 0 0 0 gainsboro, ${size}px 0 0 0 gainsboro, 0 -${size}px 0 0 gainsboro, 0 ${size}px 0 0 gainsboro;`;
+};
+
+const getItemPosition = (e: MouseEvent, index: number) => {
+  console.log(e);
+
+  // Check item index
+  if ((index + 1) % 10 > 0) {
+    descElementPosition.value = `transform: translate(${e.clientX}px, ${
+      e.clientY >= 500 ? e.clientY - dynamicWidth.value * 2 : e.clientY
+    }px)`;
+  } else {
+    descElementPosition.value = `transform: translate(${
+      e.clientX - dynamicWidth.value * 2
+    }px, ${
+      e.clientY >= 500 ? e.clientY - dynamicWidth.value * 2 : e.clientY
+    }px)`;
+  }
+
+  // Get item data
+
+  // Display the information
+  showDesc.value = true;
+};
 
 onMounted(() => {
   rows.value =
