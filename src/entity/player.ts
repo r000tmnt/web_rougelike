@@ -21,8 +21,6 @@ export default class Player {
   private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
   private fKey!: Input.Keyboard.Key;
-  private iKey!: Input.Keyboard.Key;
-  private cKey!: Input.Keyboard.Key;
   private dKey!: Input.Keyboard.Key;
 
   constructor(
@@ -156,8 +154,6 @@ export default class Player {
       this.cursor = this.scene.input.keyboard.createCursorKeys();
       this.fKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.F);
       this.dKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.D);
-      this.iKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.I);
-      this.cKey = this.scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.C);
     }
     this.scene.events.on('update', this.#update, this);
   }
@@ -231,40 +227,6 @@ export default class Player {
           this.sprite?.anims.play('player-attack', true);
         } else {
           console.log('lock key');
-        }
-      }
-
-      if (this.iKey && this.iKey.isDown) {
-        const gameStore = useGameStore();
-        const openStatus = gameStore.getOpenStatus;
-        if (
-          (!this.keys[this.iKey.keyCode] && !openStatus) ||
-          (this.keys[this.iKey.keyCode] === 0 && !openStatus)
-        ) {
-          this.keys[this.iKey.keyCode] = 1;
-          const openInventory = gameStore.getOpenInventory;
-          gameStore.setOpenInventory(!openInventory);
-
-          setTimeout(() => {
-            this.keys[this.iKey.keyCode] = 0;
-          }, 500);
-        }
-      }
-
-      if (this.cKey && this.cKey.isDown) {
-        const gameStore = useGameStore();
-        const openInventory = gameStore.getOpenInventory;
-        if (
-          (!this.keys[this.cKey.keyCode] && !openInventory) ||
-          (this.keys[this.cKey.keyCode] === 0 && !openInventory)
-        ) {
-          this.keys[this.cKey.keyCode] = 1;
-          const openStatus = gameStore.getOpenStatus;
-          gameStore.setOpenStatus(!openStatus);
-
-          setTimeout(() => {
-            this.keys[this.cKey.keyCode] = 0;
-          }, 500);
         }
       }
 
