@@ -81,7 +81,7 @@ onMounted(() => {
   document.addEventListener('keyup', (e: KeyboardEvent) => {
     console.log(e);
     // Open or close inventory
-    if (e.key === 'i') {
+    if (e.key === 'i' && gameStore.currentScene > 0) {
       if (gameStore.openInventory) {
         gameStore.resumeGame();
       } else {
@@ -91,7 +91,7 @@ onMounted(() => {
     }
 
     // Open or close character status
-    if (e.key === 'c') {
+    if (e.key === 'c' && gameStore.currentScene > 0) {
       if (gameStore.openStatus) {
         gameStore.resumeGame();
       } else {
