@@ -33,7 +33,11 @@ body {
     height: 100%;
 
     .grid {
-      border: 1px solid gainsboro;
+      // border: 1px solid gainsboro;
+      padding: 1%;
+      // ::after {
+      //   content: '';
+      // }
     }
   }
 }
