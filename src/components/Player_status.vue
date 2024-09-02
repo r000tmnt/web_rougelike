@@ -33,7 +33,11 @@
       <!-- Equip -->
       <ul>
         <li v-for="(key, value) in playerData.equip" :key="value">
-          {{ value }} / {{ playerData.equip[value] }}
+          {{ value }}
+          <template
+            v-if="Object.entries(playerData.equip[value]).length"
+          ></template>
+          <template v-else> EMPTY </template>
         </li>
       </ul>
     </div>
@@ -49,4 +53,11 @@ const gameStore = useGameStore();
 const playerData = computed(() => gameStore.getPlayer);
 
 const windowWidth = computed(() => gameStore.getWindowWidth);
+
+// const dummyItem = ref({
+//   head: {
+//     id: '',
+//     name: ''
+//   }
+// })
 </script>
