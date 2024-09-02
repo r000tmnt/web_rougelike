@@ -14,12 +14,13 @@
                 <div
                   class="grid rounded-borders"
                   :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
-                    borderSize
+                    borderSize,
+                    colIndex + rowIndex * 10
                   )}`"
                   @mouseover="
                     (e) => getItemPosition(e, colIndex + rowIndex * 10)
                   "
-                  @mouseleave="showDesc = false"
+                  @mouseleave="showDesc = -1"
                 >
                   {{ colIndex + rowIndex * 10 }}
                 </div>
@@ -30,7 +31,7 @@
       </table>
     </div>
 
-    <template v-if="showDesc">
+    <template v-if="showDesc >= 0">
       <div
         id="desc"
         class="absolute bg-dark grid"
@@ -40,7 +41,15 @@
           borderSize
         )};${descElementPosition}`"
       >
-        DESC
+        <img
+          class="q-mx-auto"
+          src=""
+          alt="image"
+          :style="`width: ${gameStore.tileSize}px; height: ${gameStore.tileSize}px`"
+        />
+        <ul>
+          <li>DESC</li>
+        </ul>
       </div>
     </template>
   </section>
@@ -64,14 +73,20 @@ const borderSize = ref<number>(0);
 
 const descElementPosition = ref<string>('');
 
-const showDesc = ref<boolean>(false);
+const showDesc = ref<number>(-1);
 
-const pixelatedBorder = (size: number) => {
-  return `-${size}px 0 0 0 gainsboro, ${size}px 0 0 0 gainsboro, 0 -${size}px 0 0 gainsboro, 0 ${size}px 0 0 gainsboro;`;
+const pixelatedBorder = (size: number, index?: number) => {
+  return `-${size}px 0 0 0 ${
+    showDesc.value === index ? 'white' : '#424242'
+  }, ${size}px 0 0 0 ${
+    showDesc.value === index ? 'white' : '#424242'
+  }, 0 -${size}px 0 0 ${
+    showDesc.value === index ? 'white' : '#424242'
+  }, 0 ${size}px 0 0 ${showDesc.value === index ? 'white' : '#424242'};`;
 };
 
 const getItemPosition = (e: MouseEvent, index: number) => {
-  console.log(e);
+  // console.log(e);
 
   // Check item index
   if ((index + 1) % 10 > 0) {
@@ -89,7 +104,7 @@ const getItemPosition = (e: MouseEvent, index: number) => {
   // Get item data
 
   // Display the information
-  showDesc.value = true;
+  showDesc.value = index;
 };
 
 onMounted(() => {
