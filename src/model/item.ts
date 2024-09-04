@@ -1,11 +1,18 @@
 export interface item {
-  id: string; // Encrypted string,
+  id: string;
   name: string;
   type: number;
-  rearity: number;
+  rarity: number;
   desc: string;
   image: string; // Path of the image
-  effect: {
-    [name: string]: number;
+  modifier: string;
+  equip?: boolean;
+  effect: modifier;
+}
+
+export interface modifier {
+  [name: string]: {
+    type: number;
+    value: number;
   };
 }
