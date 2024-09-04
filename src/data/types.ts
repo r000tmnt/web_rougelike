@@ -14,4 +14,10 @@ export default {
     6: 'material',
     7: 'special',
   },
+  rarity: {
+    0: 'Common',
+    1: 'Advance',
+    2: 'Rare',
+    3: 'Unique',
+  },
 };
