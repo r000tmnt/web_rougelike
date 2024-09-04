@@ -1,4 +1,5 @@
 <template>
+  <!-- v-if="Object.entries(itemData).length" -->
   <div
     id="desc"
     class="absolute bg-dark grid"
@@ -13,12 +14,26 @@
       :style="`width: ${gameStore.tileSize}px; height: ${gameStore.tileSize}px`"
     />
     <ul>
-      <li>DESC</li>
+      <div class="item-header flex">
+        <span class="q-mr-sm">{{ itemData.name }}</span>
+        <small>Rarity {{ itemData.rarity }}</small>
+      </div>
+
+      <span>{{ itemData.name }}</span>
+
+      <p>{{ itemData.desc }}</p>
+
+      <ul>
+        <li v-for="(eKey, eVal, index) in itemData.effect" :key="index">
+          {{ eVal }} {{ getEffectValue(eKey) }}
+        </li>
+      </ul>
     </ul>
   </div>
 </template>
 
 <script setup lang="ts">
+import { item } from '../model/item';
 import { useGameStore } from '../stores/game';
 // import { ref, computed, onMounted } from 'vue';
 
@@ -37,7 +52,31 @@ defineProps({
     type: String,
     default: '',
   },
+  itemData: {
+    type: Object,
+    default: {} as item,
+  },
 });
 
 // TODO - Get item data
+const getEffectValue = (effect: { type: number; value: number }) => {
+  let result = '';
+
+  switch (effect.type) {
+    case 0:
+      result += `+ ${effect.value}`;
+      break;
+    case 1:
+      result += `+ ${effect.value}%`;
+      break;
+    case 2:
+      result += `- ${effect.value}`;
+      break;
+    case 3:
+      result += `- ${effect.value}%`;
+      break;
+  }
+
+  return result;
+};
 </script>
