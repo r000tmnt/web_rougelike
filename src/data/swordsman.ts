@@ -34,9 +34,58 @@ export default {
   },
   equip: {
     head: {},
-    body: {},
-    hand: {},
-    feet: {},
+    body: {
+      id: 'b01',
+      name: "Traveler's tunic",
+      rarity: 0,
+      type: 1,
+      image: '',
+      modifier: '',
+      desc: 'Simple outfit with a few pockets',
+      equip: true,
+      effect: {
+        def: {
+          type: 0,
+          value: 2,
+        },
+        bag: {
+          type: 0,
+          value: 5,
+        },
+      },
+    },
+    hand: {
+      id: 'h01',
+      name: 'Wooden sword',
+      rarity: 0,
+      type: 2,
+      image: '',
+      modifier: '',
+      equip: true,
+      desc: 'Used for practice mostly',
+      effect: {
+        str: {
+          type: 0,
+          value: 5,
+        },
+      },
+    },
+    feet: {
+      id: 'f01',
+      name: 'Leather boots',
+      rarity: 0,
+      type: 3,
+      image: '',
+      modifier: '',
+      desc: "Good to protect the wearer's feet",
+      equip: true,
+      effect: {
+        def: {
+          type: 0,
+          value: 1,
+        },
+      },
+    },
     accasory: {},
   },
   exp: 0,
