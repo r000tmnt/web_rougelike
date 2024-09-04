@@ -1,3 +1,5 @@
+import { item } from './item';
+
 export interface position {
   y: number;
   x: number;
@@ -28,13 +30,13 @@ interface unit {
 
 export type player = unit & {
   equip: {
-    head: object;
-    body: object;
-    hand: object;
-    feet: object;
-    accasory: object;
+    head: item;
+    body: item;
+    hand: item;
+    feet: item;
+    accasory: item;
   };
-  bag: Array<object>;
+  bag: Array<item>;
   exp: number;
   pt: number;
   attribute_limit: {
@@ -47,7 +49,7 @@ export type enemy = unit & {
   // theme: string;
   elite: boolean;
   boss: boolean;
-  drop: Array<object>;
+  drop: Array<item>;
   pattern: string;
   base_attribute: {
     vd: number; // view distant
