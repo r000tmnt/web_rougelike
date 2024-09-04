@@ -13,6 +13,8 @@ export const useGameStore = defineStore('game', {
     textIcon: '',
     doorIndex: -1,
     currentScene: 0,
+    dynamicWidth: 0,
+    borderSize: 0,
     openInventory: false,
     openStatus: false,
   }),
@@ -27,6 +29,8 @@ export const useGameStore = defineStore('game', {
     getPlayer: (state) => state.player,
     getDoorIndex: (state) => state.doorIndex,
     getCurrentScene: (state) => state.currentScene,
+    getdynamicWidth: (state) => state.dynamicWidth,
+    getborderSize: (state) => state.borderSize,
     getOpenInventory: (state) => state.openInventory,
     getOpenStatus: (state) => state.openStatus,
   },
@@ -78,6 +82,24 @@ export const useGameStore = defineStore('game', {
 
     resumeGame() {
       this.game.resume();
+    },
+
+    setDynamicWidth(width: number) {
+      this.dynamicWidth = width;
+    },
+
+    setBorderSize(size: number) {
+      this.borderSize = size;
+    },
+
+    pixelatedBorder(size: number, itemIndex: number, hoverIndex: number) {
+      return `-${size}px 0 0 0 ${
+        hoverIndex === itemIndex ? 'white' : '#424242'
+      }, ${size}px 0 0 0 ${
+        hoverIndex === itemIndex ? 'white' : '#424242'
+      }, 0 -${size}px 0 0 ${
+        hoverIndex === itemIndex ? 'white' : '#424242'
+      }, 0 ${size}px 0 0 ${hoverIndex === itemIndex ? 'white' : '#424242'};`;
     },
   },
 });
