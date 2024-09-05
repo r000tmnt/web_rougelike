@@ -161,7 +161,7 @@ export default class Skeleton {
       this.tileSize
     );
     this.zone.setOrigin(0, 0);
-    this.scene.physics.add.existing(this.zone, false);
+    this.scene.physics.world.enable(this.zone);
 
     this.scene.physics.add.overlap(this.zone, player, () => {
       // console.log('overlap with player');
@@ -337,10 +337,6 @@ export default class Skeleton {
               }, 10000);
             }
           }
-        }
-
-        if (!this.zone.body.embedded) {
-          this.overlap = false;
         }
 
         if (this.ray?.body && !this.overlap) {
@@ -759,8 +755,7 @@ export default class Skeleton {
             this.text.setVisible(true);
           }
 
-          this.scene.player.data.base_attribute.hp -= result.value;
-          this.scene.player.updateStatus('hit');
+          this.eventEmitter?.emit('player-take-damage', result.value);
         }
 
         setTimeout(() => {
@@ -780,7 +775,7 @@ export default class Skeleton {
       this.sprite?.anims.play('enemy_idle');
       setTimeout(() => {
         // release key
-        this.keys.d = 0;
+        this.keys['d'] = 0;
       }, 500);
     }
   }
