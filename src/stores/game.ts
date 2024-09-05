@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { player, enemy, base_attribute } from 'src/model/character';
+import { player, enemy } from 'src/model/character';
+import mitt from 'mitt';
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -17,6 +18,7 @@ export const useGameStore = defineStore('game', {
     borderSize: 0,
     openInventory: false,
     openStatus: false,
+    emitter: mitt(),
   }),
 
   getters: {
@@ -46,6 +48,7 @@ export const useGameStore = defineStore('game', {
 
     setPlayerStatus(data: player) {
       this.player = data;
+      this.emitter.emit('player-attribute-change', data);
     },
 
     storeEnemyIntheRoom(enemy: enemy[], index: number) {
