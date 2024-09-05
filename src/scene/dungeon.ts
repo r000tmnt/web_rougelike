@@ -9,6 +9,7 @@ import Player from 'src/entity/player';
 // import { Direction, GridEngine } from 'grid-engine';
 import PhaserRaycaster from 'phaser-raycaster';
 import { PhaserNavMeshPlugin } from 'phaser-navmesh';
+import phaserJuice from '../lib/phaserJuice.min.js';
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
   eventEmitter: Phaser.Events.EventEmitter | null;
@@ -33,6 +34,7 @@ export default class Dungeon extends Scene {
   // private gridEngine!: GridEngine;
   private raycasterPlugin!: PhaserRaycaster;
   private navMeshPlugin!: PhaserNavMeshPlugin;
+  private juice!: phaserJuice;
   raycaster: Raycaster | null;
 
   constructor() {
@@ -114,6 +116,9 @@ export default class Dungeon extends Scene {
       this.content.level[this.content.roomIndex].length
     ) {
       this.physics.resume();
+      this.juice = new phaserJuice(this);
+
+      console.log('phaser juice :>>>', this.juice);
 
       const gameStore = useGameStore();
       const windowWidth = gameStore.getWindowWidth;
@@ -538,7 +543,11 @@ export default class Dungeon extends Scene {
 
           let newEnemyData = JSON.parse(JSON.stringify(skeleton));
 
-          newEnemyData = setInitialStatus(newEnemyData, randomLv);
+          newEnemyData = setInitialStatus(
+            newEnemyData,
+            randomLv,
+            this.player?.data.lv
+          );
 
           // console.log('new enemy entity :>>>', enemy);
           console.log('new enemy data :>>>', newEnemyData);
