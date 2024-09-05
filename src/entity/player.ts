@@ -149,10 +149,6 @@ export default class Player {
       this
     );
 
-    this.eventEmitter?.on('chase-countdown-calling', () => {
-      this.eventEmitter?.emit('chase-countdown-start', this.sprite);
-    });
-
     this.scene.physics.add.collider(
       this.sprite,
       groundLayer,
@@ -160,6 +156,8 @@ export default class Player {
       null,
       this
     );
+    this.#setData();
+    this.#setCustomEvent();
     this.#addContorl();
     this.#setZone();
 
@@ -195,10 +193,55 @@ export default class Player {
         this.tileSize / 2,
         this.tileSize
       );
+
+      this.scene.physics.world.enable(this.zone);
+
       // this.zone.setOrigin(0.5, 0.5);
       // console.log('zone ', this.zone);
-      this.scene.physics.add.existing(this.zone, false);
     }
+  }
+
+  #setData() {
+    Object.entries(this.data.total_attribute).forEach((a) => {
+      const key = a[0];
+      // console.log(key);
+      this.data.total_attribute[key as keyof base_attribute] =
+        this.data.base_attribute[key as keyof base_attribute] +
+        this.data.add_attribute[key as keyof base_attribute];
+    });
+
+    console.log('total ', this.data.total_attribute);
+  }
+
+  #setCustomEvent() {
+    this.eventEmitter?.on('chase-countdown-calling', () => {
+      this.eventEmitter?.emit('chase-countdown-start', this.sprite);
+    });
+
+    this.eventEmitter?.on('player-take-damage', (dmg: number) => {
+      this.status = 'hit';
+      this.sprite.body.setVelocity(0);
+      this.data.total_attribute.hp -= dmg;
+
+      // console.log('current hp ', this.data.base_attribute.hp);
+
+      // Release the attack key if needed
+      if (this.sprite.anims.currentAnim?.key.includes('attack')) {
+        this.keys['mouseLeft'] = 0;
+      }
+
+      // this.sprite.anims.play({ key: 'player-take-damage', duration: 100 });
+      // console.log(this.scene.textures.getTextureKeys(`${texture}_idle`));
+      this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
+      this.scene.juice.shake(this.sprite, { x: 1 });
+      this.scene.time.delayedCall(200, () => {
+        this.status = '';
+        this.sprite.anims.play('player-idle');
+      });
+
+      const gameStore = useGameStore();
+      gameStore.setPlayerStatus(this.data);
+    });
   }
 
   addOverlap(target: any) {
@@ -233,6 +276,9 @@ export default class Player {
           this.data.attribute_limit.bag = 200 + effect[key].value;
           break;
         default:
+          const valueBeforeChange =
+            this.data.add_attribute[key as keyof base_attribute];
+
           switch (effect[key].type) {
             case 0:
               this.data.add_attribute[key as keyof base_attribute] +=
@@ -259,6 +305,11 @@ export default class Player {
           this.data.attribute_limit[key as keyof base_attribute] =
             this.data.base_attribute[key as keyof base_attribute] +
             this.data.add_attribute[key as keyof base_attribute];
+
+          // Update the total attribute by the difference between the old and the new one
+          this.data.total_attribute[key as keyof base_attribute] +=
+            this.data.add_attribute[key as keyof base_attribute] -
+            valueBeforeChange;
           break;
       }
     }
@@ -400,24 +451,6 @@ export default class Player {
           }
         }
       }
-    }
-
-    if (this.status === 'hit') {
-      // TODO: Lock the player at where it is for a while
-      this.sprite.body.setVelocity(0);
-
-      // Release the attack key if needed
-      if (this.sprite.anims.currentAnim?.key.includes('attack')) {
-        this.keys['mouseLeft'] = 0;
-      }
-
-      // this.sprite.anims.play({ key: 'player-take-damage', duration: 100 });
-      // console.log(this.scene.textures.getTextureKeys(`${texture}_idle`));
-      this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
-      this.scene.juice.shake(this.sprite, { x: 1 });
-      this.scene.time.delayedCall(200, () => {
-        this.status = '';
-      });
     }
 
     if (this.status === 'dead') {
