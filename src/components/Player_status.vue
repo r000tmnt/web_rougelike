@@ -18,9 +18,20 @@
     <ul>
       <li v-for="(key, value) in playerData.base_attribute" :key="value">
         {{ value }}:
-        {{ playerData.base_attribute[value] + playerData.add_attribute[value] }}
-        /
-        {{ playerData.attribute_limit[value] }}
+        <template
+          v-if="
+            String(value) === 'hp' ||
+            String(value) === 'mp' ||
+            String(value) === 'exp'
+          "
+        >
+          {{ playerData.total_attribute[value] }}
+          /
+          {{ playerData.attribute_limit[value] }}
+        </template>
+        <template v-else>
+          {{ playerData.total_attribute[value] }}
+        </template>
       </li>
       <li>STAT: {{ playerData.status }}</li>
       <li>EXP: {{ playerData.exp }} / {{ playerData.attribute_limit.exp }}</li>
