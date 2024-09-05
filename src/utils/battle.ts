@@ -18,9 +18,9 @@ export const levelUp = (data: player) => {
   return data;
 };
 
-export const setInitialStatus = (data: enemy, lv: number) => {
-  data.lv = lv;
-  const over = lv - 1;
+export const setInitialStatus = (data: enemy, randomlv: number) => {
+  data.lv = randomlv;
+  const over = randomlv - 1;
 
   for (const [key, value] of Object.entries(data.base_attribute)) {
     data.base_attribute[key as keyof base_attribute] =
@@ -76,7 +76,8 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
         (attacker.base_attribute.int +
           Math.floor(
             attacker.base_attribute.int * (attacker.base_attribute.spd / 100)
-          )) + 100,
+          )) +
+        100,
     },
     {
       name: 'evade',
@@ -96,7 +97,8 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
         (attacker.base_attribute.int +
           Math.floor(
             attacker.base_attribute.int * (attacker.base_attribute.luck / 100)
-          )) + 25,
+          )) +
+        25,
     },
   ];
 
