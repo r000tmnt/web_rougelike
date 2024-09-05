@@ -221,7 +221,12 @@ export default class Player {
     this.eventEmitter?.on('player-take-damage', (dmg: number) => {
       this.status = 'hit';
       this.sprite.body.setVelocity(0);
-      this.data.total_attribute.hp -= dmg;
+      this.data.total_attribute.hp -=
+        dmg > this.data.total_attribute.hp ? this.data.total_attribute.hp : dmg;
+
+      if (this.data.total_attribute.hp === 0) {
+        // TODO - Game over screen
+      }
 
       // console.log('current hp ', this.data.base_attribute.hp);
 
