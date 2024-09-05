@@ -1,7 +1,9 @@
-import { player, action } from 'src/model/character';
+import { modifier } from './../model/item';
+import { player, action, base_attribute } from 'src/model/character';
 import { Input, Events, Animations } from 'phaser';
 import { useGameStore } from 'src/stores/game';
 import { calculateDamage } from 'src/utils/battle';
+import { item } from 'src/model/item';
 
 export default class Player {
   scene: Phaser.Scene;
@@ -108,6 +110,16 @@ export default class Player {
     });
 
     this.scene.anims.create({
+      key: 'player-take-damage',
+      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
+        start: 6,
+        end: 6,
+      }),
+      frameRate: 0,
+      repeat: 0,
+    });
+
+    this.scene.anims.create({
       key: 'player-attack',
       frames: this.scene.anims.generateFrameNames(`${texture}_attack`, {
         start: 0,
@@ -150,6 +162,13 @@ export default class Player {
     );
     this.#addContorl();
     this.#setZone();
+
+    // Check if there's equipment to count
+    Object.entries(this.data.equip).forEach((e) => {
+      if (Object.entries(e[1]).length) {
+        this.applyEquip(e[1]);
+      }
+    });
   }
 
   #addContorl() {
@@ -202,6 +221,88 @@ export default class Player {
         null,
         this
       );
+    }
+  }
+
+  applyEquip(item: item) {
+    const { effect, modifier } = item;
+
+    for (const key in effect) {
+      switch (key) {
+        case 'bag':
+          this.data.attribute_limit.bag = 200 + effect[key].value;
+          break;
+        default:
+          switch (effect[key].type) {
+            case 0:
+              this.data.add_attribute[key as keyof base_attribute] +=
+                effect[key].value;
+              break;
+            case 1:
+              this.data.add_attribute[key as keyof base_attribute] +=
+                this.data.base_attribute[key as keyof base_attribute] *
+                Math.floor(effect[key].value / 100);
+              break;
+            case 2:
+              this.data.add_attribute[key as keyof base_attribute] -=
+                effect[key].value;
+              break;
+            case 3:
+              this.data.add_attribute[key as keyof base_attribute] -=
+                this.data.base_attribute[key as keyof base_attribute] *
+                Math.floor(effect[key].value / 100);
+              break;
+            // and more?
+          }
+
+          // Update the limit of the attribute
+          this.data.attribute_limit[key as keyof base_attribute] =
+            this.data.base_attribute[key as keyof base_attribute] +
+            this.data.add_attribute[key as keyof base_attribute];
+          break;
+      }
+    }
+  }
+
+  unEquip(item: item) {
+    const { effect, modifier } = item;
+
+    for (const key in effect) {
+      switch (key) {
+        case 'bag':
+          this.data.attribute_limit.bag -= effect[key].value;
+          // If the quantity of items are bigger then the size of the bag
+          // Drop items
+          break;
+        default:
+          switch (effect[key].type) {
+            case 0:
+              this.data.add_attribute[key as keyof base_attribute] -=
+                effect[key].value;
+              break;
+            case 1:
+              this.data.add_attribute[key as keyof base_attribute] -=
+                this.data.base_attribute[key as keyof base_attribute] *
+                Math.floor(effect[key].value / 100);
+              break;
+            case 2:
+              this.data.add_attribute[key as keyof base_attribute] +=
+                effect[key].value;
+              break;
+            case 3:
+              this.data.add_attribute[key as keyof base_attribute] +=
+                this.data.base_attribute[key as keyof base_attribute] *
+                Math.floor(effect[key].value / 100);
+              break;
+            // and more?
+          }
+
+          // Update the limit of the attribute
+          this.data.attribute_limit[key as keyof base_attribute] =
+            this.data.base_attribute[key as keyof base_attribute] +
+            this.data.add_attribute[key as keyof base_attribute];
+          break;
+      }
     }
   }
 
@@ -304,6 +405,7 @@ export default class Player {
     if (this.status === 'hit') {
       // TODO: Lock the player at where it is for a while
       this.sprite.body.setVelocity(0);
+      this.sprite.anims.play('player-take-damage', true);
       this.scene.time.delayedCall(200, () => {
         this.status = '';
       });
@@ -342,7 +444,6 @@ export default class Player {
     if (anim.key.includes('attack') && frameKey === '1') {
       // Check overlap
       if (this.overlap) {
-        console.log('PLAYER HIT!');
         this.target.forEach((t) => {
           const enemyIndex = Number(t.name.split('_')[1]);
 
@@ -359,7 +460,7 @@ export default class Player {
             this.text.setText('MISS');
             this.text.setVisible(true);
           } else {
-            console.log('ENEMY HIT!');
+            console.log('PLAYER HIT!');
             if (result.type.includes('crit')) {
               this.text.setText(`${result.value}`);
               this.text.setStyle({ color: '#FFB343' });
