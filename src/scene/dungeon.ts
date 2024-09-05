@@ -194,17 +194,15 @@ export default class Dungeon extends Scene {
 
     const gameStore = useGameStore();
 
-    if (this.content && this.player && this.input.keyboard?.enabled) {
-      const doorIndex = gameStore.getDoorIndex;
+    const doorIndex = gameStore.getDoorIndex;
 
-      if (doorIndex >= 0 && doorIndex < this.doors.length) {
-        // console.log('checking overlap :>>>', doorIndex);
-        if (!this.doors[doorIndex].body.embedded) {
-          // console.log('Not overlapping');
-          gameStore.setTextContent('');
-          gameStore.setDoorIndex(-1);
-          return;
-        }
+    if (doorIndex >= 0 && doorIndex < this.doors.length) {
+      // console.log('checking overlap :>>>', doorIndex);
+      if (!this.doors[doorIndex].body.embedded) {
+        // console.log('Not overlapping');
+        gameStore.setTextContent('');
+        gameStore.setDoorIndex(-1);
+        return;
       }
     }
 
