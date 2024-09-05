@@ -21,6 +21,15 @@ export default {
     spd: 0,
     luck: 0,
   },
+  total_attribute: {
+    hp: 0,
+    mp: 0,
+    str: 0,
+    def: 0,
+    int: 0,
+    spd: 0,
+    luck: 0,
+  },
   attribute_limit: {
     hp: 10,
     mp: 5,
