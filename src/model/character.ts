@@ -25,6 +25,7 @@ interface unit {
   status: string;
   base_attribute: base_attribute;
   add_attribute: base_attribute;
+  total_attribute: base_attribute;
   attribute_limit: base_attribute;
 }
 
