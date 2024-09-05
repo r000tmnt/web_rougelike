@@ -270,7 +270,7 @@ export default class Skeleton {
 
   #update() {
     if (this.sprite && this.ray?.body) {
-      this.overlap = !this.sprite.body.touching.none;
+      this.overlap = this.zone.body.embedded;
 
       if (this.status === 'hit') {
         // TODO: Play get hit animation
