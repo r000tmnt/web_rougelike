@@ -47,14 +47,22 @@
       <div
         class="hide-scrollbar"
         :style="`height: calc(90% - ${
-          dynamicWidth * 13
+          dynamicWidth * (rows - 7)
         }px);overflow-y: scroll;`"
       >
         <table class="q-mx-auto" style="width: 80%">
           <tbody>
             <template v-for="(row, rowIndex) in rows" :key="row">
               <tr>
-                <td v-for="(col, colIndex) in 10" :key="col">
+                <td
+                  v-for="(col, colIndex) in 10"
+                  :key="col"
+                  :class="{
+                    hidden:
+                      colIndex + rowIndex * 10 >
+                      playerData.attribute_limit.bag - 1,
+                  }"
+                >
                   <div
                     class="grid rounded-borders"
                     :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${gameStore.pixelatedBorder(
@@ -147,7 +155,7 @@ const resetPosition = () => {
 onMounted(() => {
   rows.value =
     playerData.value.attribute_limit.bag % 10 > 0
-      ? playerData.value.attribute_limit.bag / 10 + 1
+      ? Math.floor(playerData.value.attribute_limit.bag / 10) + 1
       : playerData.value.attribute_limit.bag / 10;
 
   // console.log(rows.value);
