@@ -67,7 +67,7 @@ export default class Player {
     texture: string,
     groundLayer: Phaser.Tilemaps.TilemapLayer
   ) {
-    this.sprite.name = 'player';
+    this.sprite.name = texture;
     this.sprite.setSize(this.tileSize, this.tileSize);
     this.sprite.setOrigin(0, 0);
     this.sprite.setOffset(0, 0); // Adjust rendering position
@@ -405,7 +405,16 @@ export default class Player {
     if (this.status === 'hit') {
       // TODO: Lock the player at where it is for a while
       this.sprite.body.setVelocity(0);
-      this.sprite.anims.play('player-take-damage', true);
+
+      // Release the attack key if needed
+      if (this.sprite.anims.currentAnim?.key.includes('attack')) {
+        this.keys['mouseLeft'] = 0;
+      }
+
+      // this.sprite.anims.play({ key: 'player-take-damage', duration: 100 });
+      // console.log(this.scene.textures.getTextureKeys(`${texture}_idle`));
+      this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
+      this.scene.juice.shake(this.sprite, { x: 1 });
       this.scene.time.delayedCall(200, () => {
         this.status = '';
       });
