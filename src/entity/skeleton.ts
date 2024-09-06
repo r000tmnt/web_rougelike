@@ -1,12 +1,12 @@
-import { enemy, action } from 'src/model/character';
+import { enemy, action, base_attribute } from 'src/model/character';
 import { Animations, Math } from 'phaser';
 import { getDirection, getPosition } from 'src/utils/path';
 import { calculateDamage } from 'src/utils/battle';
+import { useGameStore } from 'src/stores/game';
 
 export default class Skeleton {
   scene: Phaser.Scene;
   sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-  eventEmitter: Phaser.Events.EventEmitter | null;
   data: enemy;
   index: number;
   facingAngle: number;
@@ -40,7 +40,6 @@ export default class Skeleton {
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     map: number[][],
     tileSize: number,
-    eventEmitter: Events.EventEmitter,
     navMesh: any
   ) {
     this.scene = scene;
@@ -62,7 +61,6 @@ export default class Skeleton {
     this.status = '';
     this.navMesh = navMesh;
     this.keys = {};
-    this.eventEmitter = eventEmitter;
     this.text = this.scene.add
       .text(x, y - tileSize / 2, '', {
         fontSize: tileSize * 0.3,
@@ -123,29 +121,6 @@ export default class Skeleton {
       frameRate: 10,
     });
 
-    // Animation listener
-    this.sprite.on(
-      Animations.Events.ANIMATION_UPDATE,
-      this.#animationUpdate,
-      this
-    );
-
-    // Animation listener
-    this.sprite.on(
-      Animations.Events.ANIMATION_COMPLETE,
-      this.#animationComplete,
-      this
-    );
-
-    if (this.eventEmitter) {
-      this.eventEmitter.on(
-        'chase-countdown-start',
-        (player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
-          this.target = player;
-        }
-      );
-    }
-
     // console.log('setting enemy collision');
 
     this.addCollision(groundLayer);
@@ -190,7 +165,12 @@ export default class Skeleton {
       }
     });
 
-    //Create ray
+    this.#setData();
+
+    // Set event listener
+    this.#setEvents();
+
+    // Create ray
     this.#setRay(this.scene.raycaster, x, y, player);
 
     console.log('enemy? ', this.sprite);
@@ -217,6 +197,43 @@ export default class Skeleton {
 
   updateData(data: enemy) {
     this.data = data;
+  }
+
+  #setEvents() {
+    // Animation listener
+    this.sprite.on(
+      Animations.Events.ANIMATION_UPDATE,
+      this.#animationUpdate,
+      this
+    );
+
+    // Animation listener
+    this.sprite.on(
+      Animations.Events.ANIMATION_COMPLETE,
+      this.#animationComplete,
+      this
+    );
+
+    const gameStore = useGameStore();
+
+    gameStore.emitter.on(
+      'chase-countdown-start',
+      (player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
+        this.target = player;
+      }
+    );
+  }
+
+  #setData() {
+    Object.entries(this.data.total_attribute).forEach((a) => {
+      const key = a[0];
+      // console.log(key);
+      this.data.total_attribute[key as keyof base_attribute] =
+        this.data.base_attribute[key as keyof base_attribute] +
+        this.data.add_attribute[key as keyof base_attribute];
+    });
+
+    console.log('total ', this.data.total_attribute);
   }
 
   #setRay(raycaster: Raycaster, x: number, y: number, player: any) {
@@ -325,7 +342,8 @@ export default class Skeleton {
             if (this.chaseTimer === null) {
               // Keep chasing for 10 second
               // Get the player position again
-              this.eventEmitter?.emit('chase-countdown-calling');
+              const gameStore = useGameStore();
+              gameStore.emitter.emit('chase-countdown-calling');
               this.chaseTimer = setInterval(() => {
                 if (!this.inSight) {
                   console.log(`${this.sprite.name} stop chasing`);
@@ -366,9 +384,25 @@ export default class Skeleton {
   #limitDirection(limiter: any) {
     let done = false;
 
-    let limitAngle = this.angle.filter(
-      (a) => a !== limiter.min || a !== limiter.max
-    );
+    let limitAngle = this.angle.filter((a) => {
+      if (limiter.max === 135) {
+        return a < 135 && a > -135;
+      }
+
+      if (limiter.max === -45) {
+        return a < 1 - 35 || a > -45;
+      }
+
+      if (limiter.min === -45) {
+        return a < -45 || a > 45;
+      }
+
+      if (limiter.min === 45) {
+        return a < 45 || a > 135;
+      }
+    });
+
+    console.log('limited angles :>>>', limitAngle);
 
     const { x, y } = getPosition(
       this.sprite,
@@ -678,10 +712,10 @@ export default class Skeleton {
   }
 
   #onCollide(self: any, target: any) {
+    this.sprite.body.setVelocity(0);
     // console.log('self', self);
     console.log('enemy collide with target', target);
     if (target.name && target.name.includes('enemy')) {
-      this.sprite.body.setVelocity(0);
       this.sprite.anims.play('enemy_idle');
       this.#changeDirection();
     }
@@ -690,7 +724,6 @@ export default class Skeleton {
     else if (target.name && target.name.includes('player')) {
       this.target = target;
       // this.sprite.body.setImmovable(true);
-      this.sprite.setVelocity(0);
       this.collide = true;
     } else {
       // this.sprite.body.setImmovable(false);
@@ -755,7 +788,8 @@ export default class Skeleton {
             this.text.setVisible(true);
           }
 
-          this.eventEmitter?.emit('player-take-damage', result.value);
+          const gameStore = useGameStore();
+          gameStore.emitter.emit('player-take-damage', result.value);
         }
 
         setTimeout(() => {
