@@ -56,7 +56,7 @@
           id="inventory"
           class="col q-mx-auto flex"
           ref="inventoryContent"
-          :style="`margin:${borderSize}px 0 ${borderSize}px ${borderSize}px;`"
+          :style="`margin:${borderSize}px ${borderSize}px ${borderSize}px ${borderSize}px;`"
         >
           <div
             v-for="(space, index) in playerData.attribute_limit.bag"
@@ -131,6 +131,7 @@
 <script setup lang="ts">
 import { useGameStore } from '../stores/game';
 import { ref, computed, onMounted } from 'vue';
+import { item } from '../model/item';
 import Item_desc from './Item_desc.vue';
 import Player_equip from './Player_equip.vue';
 import Player_status from './Player_status.vue';
@@ -260,7 +261,22 @@ onMounted(() => {
         e.target.children[col].innerHTML = `${col} <span style="font-size:${
           Math.floor(windowWidth.value / 100) * 0.5
         }px">${itemData[1].name}</span>`;
-        e.target.setAttribute('data-type', itemData[1].type);
+        e.target.children[col].setAttribute('data-type', itemData[1].type);
+
+        // Put the item into bag
+        if (playerData.value.bag[col]) {
+          const itemToSwap = playerData.value.bag[col];
+          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData));
+          playerData.value.bag[playerData.value.bag.length] = itemToSwap;
+        } else {
+          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData));
+        }
+
+        // Remove the item from equip
+        switch (itemData[1].type) {
+          case 0:
+            playerData.value.equip.head = {} as item;
+        }
       }
     },
   });
