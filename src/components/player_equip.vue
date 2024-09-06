@@ -46,6 +46,7 @@ import { item } from '../model/item';
 import { ref, computed, onMounted } from 'vue';
 import Item_desc from './Item_desc.vue';
 import Sortable from 'sortablejs';
+import types from '../data/types';
 
 const gameStore = useGameStore();
 
@@ -121,11 +122,11 @@ onMounted(() => {
         e.target.removeChild(e.target.children[oldCol]);
         e.target.children[
           oldCol
-        ].innerHTML = `${playerData.value.bag[type].name}`;
+        ].innerHTML = `<label>${types[type]}<div>${playerData.value.bag[type].name}</div></label>`;
       } else {
         // Remove the dropped element
         e.target.removeChild(e.target.children[oldCol]);
-        e.target.children[oldCol].innerHTML = 'EMPTY';
+        e.target.children[oldCol].innerHTML = `${types[type]} EMPTY`;
       }
     },
 
@@ -137,6 +138,32 @@ onMounted(() => {
       const itemData = Object.entries(playerData.value.equip)[oldCol];
       // Remove the clone item
       e.target.children[oldCol].innerHTML = `${itemData[0]} EMPTY`;
+
+      const copy = JSON.parse(JSON.stringify(playerData.value))
+
+      // Remove the item in player data
+      switch(oldCol){
+        case 0:
+          copy.equip.head = {} as item;
+        break;
+        case 1:
+          copy.equip.body = {} as item;
+        break;
+        case 2:
+          copy.equip.hand = {} as item;
+        break;
+        case 3:
+          copy.equip.feet = {} as item;
+        break;
+        case 4:
+          copy.equip.feet = {} as item;
+        break;
+      }
+
+      const gameStore = useGameStore();
+      gameStore.setPlayerStatus(copy);
+      // Deduct the un-equip item attributes
+      gameStore.emitter.emit('player-unequip', itemData[1])
     },
   });
 });
