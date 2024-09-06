@@ -3,22 +3,30 @@
     <ul id="equip" class="q-ma-auto">
       <li
         class="rounded-borders item equip"
-        :style="`box-shadow:${gameStore.pixelatedBorder(
-          borderSize,
-          index,
-          hoveredIndex
-        )}`"
         v-for="(key, value, index) in playerData.equip"
         :key="value"
-        :data-type="index"
-        @mouseover="(e) => getItemPosition(e, playerData.equip[value], index)"
-        @mouseleave="resetPosition"
       >
-        {{ value }}
-        <template v-if="Object.entries(playerData.equip[value]).length">
-          <span>{{ playerData.equip[value].name }}</span>
-        </template>
-        <template v-else> EMPTY </template>
+        <label :for="value">
+          {{ value }}
+          <template v-if="Object.entries(playerData.equip[value]).length">
+            <div
+              class="item"
+              :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${gameStore.pixelatedBorder(
+                borderSize,
+                index,
+                hoveredIndex
+              )}`"
+              :data-type="index"
+              @mouseover="
+                (e) => getItemPosition(e, playerData.equip[value], index)
+              "
+              @mouseleave="resetPosition"
+            >
+              {{ playerData.equip[value].name }}
+            </div>
+          </template>
+          <template v-else> EMPTY </template>
+        </label>
       </li>
     </ul>
 
@@ -80,6 +88,7 @@ onMounted(() => {
 
   new Sortable(equipBlocks, {
     sort: false,
+    handle: '.item', // Need to specify handle to work with dynamic element
     group: {
       name: 'shared',
       put: true,
@@ -97,6 +106,27 @@ onMounted(() => {
     },
     onAdd: (e: any) => {
       console.log('equip dropped ', e);
+      // Get the dragged col
+      const oldCol = e.oldIndex;
+      // Get target
+      const newCol = e.newIndex;
+      // Get the dropped item type
+      const type = e.from.children[oldCol].dataset.type;
+
+      // Get item data from bag
+      // const itemData = playerData.value.bag[oldIndex]
+
+      if (type === newCol) {
+        // Replace the dropped element
+        e.target.removeChild(e.target.children[oldCol]);
+        e.target.children[
+          oldCol
+        ].innerHTML = `${playerData.value.bag[type].name}`;
+      } else {
+        // Remove the dropped element
+        e.target.removeChild(e.target.children[oldCol]);
+        e.target.children[oldCol].innerHTML = 'EMPTY';
+      }
     },
 
     onRemove: (e: any) => {
