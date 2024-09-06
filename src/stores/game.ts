@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { player, enemy } from 'src/model/character';
-import mitt from 'mitt';
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -18,7 +17,7 @@ export const useGameStore = defineStore('game', {
     borderSize: 0,
     openInventory: false,
     openStatus: false,
-    emitter: mitt(),
+    emitter: new Phaser.Events.EventEmitter(),
   }),
 
   getters: {
