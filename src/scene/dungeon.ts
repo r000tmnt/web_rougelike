@@ -625,8 +625,6 @@ export default class Dungeon extends Scene {
       this.physics.world.colliders.destroy();
       //remove mapped objects
       // this.raycaster?.removeMappedObjects(this.groundLayer);
-      // Remove layer
-      this.groundLayer?.destroy();
       // Store player data
       gameStore.setPlayerStatus(this.player?.data);
       // Destory ray
@@ -637,6 +635,10 @@ export default class Dungeon extends Scene {
       this.#storeEnemyData(gameStore);
       // destroy raycaster
       this.raycaster?.destroy();
+      // Remove layer
+      this.groundLayer?.destroy();
+      // Remove all scene event listener
+      gameStore.emitter.destroy();
       // Reset offset
       this.offsetX = 0;
       this.offsetY = 0;
