@@ -697,17 +697,18 @@ export default class Skeleton {
   }
 
   #stopMoving() {
-    // this.looking = true;
-    this.sprite?.anims?.play('enemy_idle', true);
-    this.sprite.body.setVelocity(0);
+    if (this.sprite.body) {
+      this.sprite?.anims?.play('enemy_idle', true);
+      this.sprite.body.setVelocity(0);
 
-    if (!this.inSight) {
-      // Starting moving again
-      setTimeout(() => {
-        this.idleTimer = null;
-        // this.looking = false;
-        this.#getRandomDirection();
-      }, 2000);
+      if (!this.inSight) {
+        // Starting moving again
+        setTimeout(() => {
+          this.idleTimer = null;
+          // this.looking = false;
+          this.#getRandomDirection();
+        }, 2000);
+      }
     }
   }
 
