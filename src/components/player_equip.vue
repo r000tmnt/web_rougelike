@@ -1,37 +1,39 @@
 <template>
-  <ul class="q-ma-auto">
-    <li
-      class="rounded-borders item equip"
-      :style="`box-shadow:${gameStore.pixelatedBorder(
-        borderSize,
-        index,
-        hoveredIndex
-      )}`"
-      v-for="(key, value, index) in playerData.equip"
-      :key="value"
-      @mouseover="(e) => getItemPosition(e, playerData.equip[value], index)"
-      @mouseleave="resetPosition"
-    >
-      {{ value }}
-      <template v-if="Object.entries(playerData.equip[value]).length">
-        <span>{{ playerData.equip[value].name }}</span>
-      </template>
-      <template v-else> EMPTY </template>
-    </li>
-  </ul>
+  <div>
+    <ul id="equip" class="q-ma-auto">
+      <li
+        class="rounded-borders item equip"
+        :style="`box-shadow:${gameStore.pixelatedBorder(
+          borderSize,
+          index,
+          hoveredIndex
+        )}`"
+        v-for="(key, value, index) in playerData.equip"
+        :key="value"
+        @mouseover="(e) => getItemPosition(e, playerData.equip[value], index)"
+        @mouseleave="resetPosition"
+      >
+        {{ value }}
+        <template v-if="Object.entries(playerData.equip[value]).length">
+          <span>{{ playerData.equip[value].name }}</span>
+        </template>
+        <template v-else> EMPTY </template>
+      </li>
+    </ul>
 
-  <Item_desc
-    v-if="Object.entries(hoveredItem).length"
-    :dynamic-width="dynamicWidth"
-    :desc-element-position="descElementPosition"
-    :pixelated-border="gameStore.pixelatedBorder(borderSize, -1, 0)"
-    :item-data="hoveredItem"
-  />
+    <Item_desc
+      v-if="Object.entries(hoveredItem).length"
+      :dynamic-width="dynamicWidth"
+      :desc-element-position="descElementPosition"
+      :pixelated-border="gameStore.pixelatedBorder(borderSize, -1, 0)"
+      :item-data="hoveredItem"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useGameStore } from '../stores/game';
-import { item } from '../model/item.ts';
+import { item } from '../model/item';
 import { ref, computed } from 'vue';
 import Item_desc from './Item_desc.vue';
 
@@ -45,7 +47,7 @@ const descElementPosition = ref<string>('');
 
 const playerData = computed(() => gameStore.getPlayer);
 
-const hoveredItem = ref<item>({});
+const hoveredItem = ref<item | object>({});
 
 const hoveredIndex = ref<number>(-1);
 
@@ -68,5 +70,6 @@ const getItemPosition = (e: MouseEvent, item: item, index: number) => {
 
 const resetPosition = () => {
   hoveredIndex.value = -1;
+  hoveredItem.value = {};
 };
 </script>
