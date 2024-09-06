@@ -33,8 +33,8 @@
       <Player_status v-else :player-data="playerData" />
     </div>
 
-    <div class="col-9">
-      <div class="flex q-mt-md q-mb-lg">
+    <div class="col-9 q-pa-sm">
+      <div class="flex q-mt-md q-mb-lg" ref="inventoryHeader">
         <div class="text-h5">INVENTORY</div>
         <div id="filters" class="q-ml-auto flex">
           <span>E</span>
@@ -45,12 +45,41 @@
       </div>
 
       <div
-        class="hide-scrollbar"
-        :style="`height: calc(90% - ${
-          dynamicWidth * (rows - 7)
-        }px);overflow-y: scroll;`"
+        class="hide-scrollbar row"
+        :style="`max-height:${
+          windowHeight * (90 / 100) - inventoryHeaderHeight
+        }px;height:calc(90% -${
+          dynamicWidth * rows + inventoryHeaderHeight
+        }px);overflow-y: scroll;box-sizing:border-box;`"
       >
-        <table class="q-mx-auto" style="width: 80%">
+        <div
+          id="inventory"
+          class="col q-mx-auto flex"
+          ref="inventoryContent"
+          :style="`margin:${borderSize}px 0 ${borderSize}px ${borderSize}px;`"
+        >
+          <div
+            v-for="(space, index) in playerData.attribute_limit.bag"
+            :key="index"
+            :data-index="index"
+            class="grid rounded-borders"
+            :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${gameStore.pixelatedBorder(
+              borderSize,
+              index,
+              hoveredIndex
+            )}`"
+            @mouseover="(e) => getItemPosition(e, index)"
+            @mouseleave="resetPosition"
+            @contextmenu="
+              (e) => {
+                console.log('mouse right click ', e);
+              }
+            "
+          >
+            {{ index }}
+          </div>
+        </div>
+        <!-- <table class="q-mx-auto" style="width: 80%">
           <tbody>
             <template v-for="(row, rowIndex) in rows" :key="row">
               <tr>
@@ -62,6 +91,7 @@
                       colIndex + rowIndex * 10 >
                       playerData.attribute_limit.bag - 1,
                   }"
+                  :data-index="colIndex + rowIndex * 10"
                 >
                   <div
                     class="grid rounded-borders"
@@ -84,7 +114,7 @@
               </tr>
             </template>
           </tbody>
-        </table>
+        </table> -->
       </div>
 
       <Item_desc
@@ -104,12 +134,15 @@ import { ref, computed, onMounted } from 'vue';
 import Item_desc from './Item_desc.vue';
 import Player_equip from './Player_equip.vue';
 import Player_status from './Player_status.vue';
+import Sortable from 'sortablejs';
 
 const gameStore = useGameStore();
 
 const playerData = computed(() => gameStore.getPlayer);
 
 const windowWidth = computed(() => gameStore.getWindowWidth);
+
+const windowHeight = computed(() => gameStore.getWindowHeight);
 
 const dynamicWidth = computed(() => gameStore.getdynamicWidth);
 
@@ -123,18 +156,27 @@ const hoveredIndex = ref<number>(-1);
 
 const currentSideView = ref<number>(0);
 
+const inventoryHeader = ref<HTMLDivElement>();
+
+const inventoryContent = ref<HTMLDivElement>();
+
+const inventoryHeaderHeight = ref<number>(0);
+
 // const activeFilter = ref<number[]>([]);
 
-const getItemPosition = (e: MouseEvent, colIndex: number, rowIndex: number) => {
-  console.log(e);
+const getItemPosition = (e: MouseEvent, colIndex: number) => {
+  // console.log(e);
 
   // Get hovered element position relative to viewport
   const target = e.target as HTMLDivElement;
   const el = target.getBoundingClientRect();
-  console.log('target element :>>>', el);
+  // console.log('target element :>>>', el);
+
+  const stringify = String(colIndex);
+  const indexInRow = Number(stringify[stringify.length - 1]);
 
   // Check item index
-  if (colIndex < 7) {
+  if (indexInRow < 7) {
     descElementPosition.value = `transform: translate(${
       el.left - Math.floor(windowWidth.value / 4) + dynamicWidth.value
     }px, ${e.clientY >= 500 ? el.top - dynamicWidth.value : el.top}px)`;
@@ -145,7 +187,7 @@ const getItemPosition = (e: MouseEvent, colIndex: number, rowIndex: number) => {
   }
 
   // Display the information
-  hoveredIndex.value = colIndex + rowIndex * 10;
+  hoveredIndex.value = colIndex;
 };
 
 const resetPosition = () => {
@@ -153,14 +195,75 @@ const resetPosition = () => {
 };
 
 onMounted(() => {
+  if (inventoryHeader.value) {
+    inventoryHeaderHeight.value = inventoryHeader.value.clientHeight;
+    console.log(inventoryHeader.value.clientHeight);
+  }
+
   rows.value =
     playerData.value.attribute_limit.bag % 10 > 0
       ? Math.floor(playerData.value.attribute_limit.bag / 10) + 1
       : playerData.value.attribute_limit.bag / 10;
 
-  // console.log(rows.value);
-  gameStore.setDynamicWidth((Math.floor(windowWidth.value / 100) * 75) / 10);
+  console.log(rows.value);
+  console.log(playerData.value);
+
+  if (inventoryContent.value) {
+    gameStore.setDynamicWidth(inventoryContent.value.clientWidth / 10);
+  }
+
   gameStore.setBorderSize(Math.floor(dynamicWidth.value / 40));
+
+  const invnetory = document.getElementById('inventory');
+
+  new Sortable(invnetory, {
+    // disabled: playerData.value.bag.length > 0,
+    group: {
+      name: 'shared',
+      put: true,
+      pull: (to, from) => {
+        console.log('to', to);
+        console.log('from inventory', from);
+        return 'clone';
+      },
+      revertClone: true,
+    },
+    swap: true,
+    direction: function (evt, target, dragEl) {
+      console.log('target to drop', target);
+      console.log('dragEl', dragEl);
+      // if (dragEl.className.includes('equip')) {
+      //   const col = target.dataset.index;
+      //   const dragType = dragEl.dataset.type;
+      //   target.innerHTML = `${col} <span data-type="${dragType}">${dragEl.innerHTML}</span>`;
+      //   gameStore.emitter.emit('drag-from-equip');
+      //   return;
+      // }
+
+      if (target !== null) {
+        return 'horizontal';
+      }
+      return 'vertical';
+    },
+    onAdd: (e: any) => {
+      console.log('table cell dropped ', e);
+      if (e.from.id.includes('equip')) {
+        // Get the column to be drop
+        const col = e.newIndex;
+        const oldCol = e.oldIndex;
+        // Remove the cloned element
+        // e.target.children.splice(col, 1);
+        e.target.removeChild(e.target.children[col]);
+        // Get the dropped item data
+        const itemData = Object.entries(playerData.value.equip)[oldCol];
+        // Set the context of the column
+        e.target.children[col].innerHTML = `${col} <span style="font-size:${
+          Math.floor(windowWidth.value / 100) * 0.5
+        }px">${itemData[1].name}</span>`;
+        e.target.setAttribute('data-type', itemData[1].type);
+      }
+    },
+  });
 });
 </script>
 
