@@ -12,7 +12,6 @@ import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 import phaserJuice from '../lib/phaserJuice.min.js';
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
-  eventEmitter: Phaser.Events.EventEmitter | null;
   theme: string;
   map: Phaser.Tilemaps.Tilemap | null;
   groundLayer: Phaser.Tilemaps.TilemapLayer | null;
@@ -29,18 +28,17 @@ export default class Dungeon extends Scene {
   enemyContact: number;
   limitWidth: number;
   limitHeight: number;
+  raycaster: Raycaster | null;
   navMesh: any;
 
   // private gridEngine!: GridEngine;
   private raycasterPlugin!: PhaserRaycaster;
   private navMeshPlugin!: PhaserNavMeshPlugin;
   private juice!: phaserJuice;
-  raycaster: Raycaster | null;
 
   constructor() {
     super('Dungeon');
     this.content = null;
-    this.eventEmitter = null;
     this.theme = 'demo';
     this.map = null;
     this.groundLayer = null;
@@ -433,7 +431,7 @@ export default class Dungeon extends Scene {
   }
 
   #setPlayer(tileSize: number) {
-    if (this.content && this.map && this.groundLayer && this.eventEmitter) {
+    if (this.content && this.map && this.groundLayer) {
       console.log('player starting position: >>>', this.content.startingPoint);
       const playerX = this.content.startingPoint[1] * tileSize;
       const playerY = this.content.startingPoint[0] * tileSize;
@@ -450,8 +448,7 @@ export default class Dungeon extends Scene {
           playerData,
           this.groundLayer,
           this.content.level[this.content.roomIndex],
-          tileSize,
-          this.eventEmitter
+          tileSize
         );
       } else {
         // Initialize player
@@ -463,8 +460,7 @@ export default class Dungeon extends Scene {
           swordsman,
           this.groundLayer,
           this.content.level[this.content.roomIndex],
-          tileSize,
-          this.eventEmitter
+          tileSize
         );
       }
 
@@ -532,7 +528,6 @@ export default class Dungeon extends Scene {
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize,
-            this.eventEmitter,
             this.navMesh
           );
 
@@ -568,7 +563,6 @@ export default class Dungeon extends Scene {
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize,
-            this.eventEmitter,
             this.navMesh
           );
 
@@ -584,8 +578,7 @@ export default class Dungeon extends Scene {
 
   #setEventEmitter() {
     const gameStore = useGameStore();
-    this.eventEmitter = new Events.EventEmitter();
-    this.eventEmitter.on('open-door', () => {
+    gameStore.emitter.on('open-door', () => {
       this.physics.pause();
       this.#updateContent(gameStore);
     });
@@ -631,7 +624,7 @@ export default class Dungeon extends Scene {
       // Remove collider
       this.physics.world.colliders.destroy();
       //remove mapped objects
-      this.raycaster?.removeMappedObjects(this.groundLayer);
+      // this.raycaster?.removeMappedObjects(this.groundLayer);
       // Remove layer
       this.groundLayer?.destroy();
       // Store player data
