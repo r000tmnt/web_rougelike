@@ -270,7 +270,7 @@ export default class Player {
     for (const key in effect) {
       switch (key) {
         case 'bag':
-          this.data.attribute_limit.bag = 200 + effect[key].value;
+          this.data.attribute_limit.bag += effect[key].value;
           break;
         default:
           const valueBeforeChange =
