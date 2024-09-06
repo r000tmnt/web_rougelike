@@ -227,11 +227,6 @@ export default class Player {
 
       // console.log('current hp ', this.data.base_attribute.hp);
 
-      // Release the attack key if needed
-      if (this.sprite.anims.currentAnim?.key.includes('attack')) {
-        this.keys['mouseLeft'] = 0;
-      }
-
       // this.sprite.anims.play({ key: 'player-take-damage', duration: 100 });
       // console.log(this.scene.textures.getTextureKeys(`${texture}_idle`));
       this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
@@ -239,6 +234,7 @@ export default class Player {
       this.scene.time.delayedCall(200, () => {
         this.status = '';
         this.sprite.anims.play('player-idle');
+        this.keys['mouseLeft'] = 0;
       });
 
       gameStore.setPlayerStatus(this.data);
