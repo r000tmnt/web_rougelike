@@ -35,7 +35,7 @@ export type player = unit & {
     body: item;
     hand: item;
     feet: item;
-    accasory: item;
+    accessory: item;
   };
   bag: Array<item>;
   exp: number;

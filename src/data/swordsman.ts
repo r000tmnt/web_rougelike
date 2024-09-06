@@ -95,7 +95,7 @@ export default {
         },
       },
     },
-    accasory: {},
+    accessory: {},
   },
   exp: 0,
   pt: 0,
