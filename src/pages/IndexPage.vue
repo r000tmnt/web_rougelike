@@ -79,7 +79,7 @@ onMounted(() => {
   }
 
   document.addEventListener('keyup', (e: KeyboardEvent) => {
-    console.log(e);
+    // console.log(e);
     // Open or close inventory
     if (e.key === 'i' && gameStore.currentScene > 0) {
       if (gameStore.openInventory) {
