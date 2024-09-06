@@ -76,7 +76,15 @@
               }
             "
           >
-            {{ index }}
+            <label :for="index">
+              {{ index }}
+
+              <template v-if="playerData.bag[space]">
+                <div class="item" :data-type="playerData.bag[space].type">
+                {{ playerData.bag[space].name }}
+              </div>
+              </template>
+            </label>
           </div>
         </div>
         <!-- <table class="q-mx-auto" style="width: 80%">
@@ -189,6 +197,8 @@ const getItemPosition = (e: MouseEvent, colIndex: number) => {
 
   // Display the information
   hoveredIndex.value = colIndex;
+
+  console.log('hovered :>>>', playerData.value.bag[hoveredIndex.value])
 };
 
 const resetPosition = () => {
@@ -215,10 +225,11 @@ onMounted(() => {
 
   gameStore.setBorderSize(Math.floor(dynamicWidth.value / 40));
 
-  const invnetory = document.getElementById('inventory');
+  const inventory = document.getElementById('inventory');
 
-  new Sortable(invnetory, {
+  new Sortable(inventory, {
     // disabled: playerData.value.bag.length > 0,
+    handle: '.item', // Need this to work with dynamic elements
     group: {
       name: 'shared',
       put: true,
@@ -258,24 +269,18 @@ onMounted(() => {
         // Get the dropped item data
         const itemData = Object.entries(playerData.value.equip)[oldCol];
         // Set the context of the column
-        e.target.children[col].innerHTML = `${col} <span style="font-size:${
-          Math.floor(windowWidth.value / 100) * 0.5
-        }px">${itemData[1].name}</span>`;
+        e.target.children[col].innerHTML = `${col} <div class="item" style="font-size:${
+          Math.floor(windowWidth.value / 100) * 0.75
+        }px">${itemData[1].name}</div>`;
         e.target.children[col].setAttribute('data-type', itemData[1].type);
 
         // Put the item into bag
         if (playerData.value.bag[col]) {
           const itemToSwap = playerData.value.bag[col];
-          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData));
+          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData[1]));
           playerData.value.bag[playerData.value.bag.length] = itemToSwap;
         } else {
-          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData));
-        }
-
-        // Remove the item from equip
-        switch (itemData[1].type) {
-          case 0:
-            playerData.value.equip.head = {} as item;
+          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData[1]));
         }
       }
     },
