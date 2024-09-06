@@ -15,6 +15,14 @@ export const levelUp = (data: player) => {
   data.attribute_limit.exp += data.attribute_limit.exp * 1.5;
   data.pt += 5;
 
+  Object.entries(data.total_attribute).forEach((a) => {
+    const key = a[0];
+    // console.log(key);
+    data.total_attribute[key as keyof base_attribute] =
+      data.base_attribute[key as keyof base_attribute] +
+      data.add_attribute[key as keyof base_attribute];
+  });
+
   return data;
 };
 
