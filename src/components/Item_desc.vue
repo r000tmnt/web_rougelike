@@ -19,8 +19,6 @@
         <small>Rarity {{ itemData.rarity }}</small>
       </div>
 
-      <span>{{ itemData.name }}</span>
-
       <p>{{ itemData.desc }}</p>
 
       <ul>
