@@ -8,7 +8,6 @@ import { item } from 'src/model/item';
 export default class Player {
   scene: Phaser.Scene;
   sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-  eventEmitter: Phaser.Events.EventEmitter | null;
   data: player;
   tileSize: number;
   map: number[][];
@@ -37,8 +36,7 @@ export default class Player {
     data: player,
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     map: number[][],
-    tileSize: number,
-    eventEmitter: Events.EventEmitter
+    tileSize: number
   ) {
     this.scene = scene;
     this.sprite = this.scene.physics.add.sprite(x, y);
@@ -57,7 +55,6 @@ export default class Player {
     this.collide = false;
     this.target = [];
     this.keys = {};
-    this.eventEmitter = eventEmitter;
     this.init(x, y, texture, groundLayer);
   }
 
@@ -214,13 +211,13 @@ export default class Player {
   }
 
   #setCustomEvent() {
-    this.eventEmitter?.on('chase-countdown-calling', () => {
-      this.eventEmitter?.emit('chase-countdown-start', this.sprite);
+    const gameStore = useGameStore();
+    gameStore.emitter.on('chase-countdown-calling', () => {
+      gameStore.emitter.emit('chase-countdown-start', this.sprite);
     });
 
-    this.eventEmitter?.on('player-take-damage', (dmg: number) => {
-      this.status = 'hit';
-      this.sprite.body.setVelocity(0);
+    gameStore.emitter.on('player-take-damage', (dmg: number) => {
+      this.sprite.body?.setVelocity(0);
       this.data.total_attribute.hp -=
         dmg > this.data.total_attribute.hp ? this.data.total_attribute.hp : dmg;
 
@@ -238,13 +235,12 @@ export default class Player {
       // this.sprite.anims.play({ key: 'player-take-damage', duration: 100 });
       // console.log(this.scene.textures.getTextureKeys(`${texture}_idle`));
       this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
-      this.scene.juice.shake(this.sprite, { x: 1 });
+      this.scene.juice.shake(this.sprite, { x: 1, repeat: 2 });
       this.scene.time.delayedCall(200, () => {
         this.status = '';
         this.sprite.anims.play('player-idle');
       });
 
-      const gameStore = useGameStore();
       gameStore.setPlayerStatus(this.data);
     });
   }
@@ -375,13 +371,11 @@ export default class Player {
         this.target.splice(0);
       }
 
-      if (this.fKey && this.eventEmitter) {
-        if (this.fKey.isDown) {
-          const gameStore = useGameStore();
-          const doorIndex = gameStore.getDoorIndex;
+      if (this.fKey && this.fKey.isDown) {
+        const gameStore = useGameStore();
+        const doorIndex = gameStore.getDoorIndex;
 
-          if (doorIndex >= 0) this.eventEmitter.emit('open-door');
-        }
+        if (doorIndex >= 0) gameStore.emitter.emit('open-door');
       }
 
       // if (this.dKey && this.dKey.isDown) {
