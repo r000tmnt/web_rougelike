@@ -239,6 +239,14 @@ export default class Player {
 
       gameStore.setPlayerStatus(this.data);
     });
+
+    gameStore.emitter.on('player-equip', (item: item) => {
+      this.applyEquip(item)
+    })
+
+    gameStore.emitter.on('player-unequip', (item: item) => {
+      this.unEquip(item)
+    })
   }
 
   addOverlap(target: any) {
@@ -323,6 +331,9 @@ export default class Player {
           // Drop items
           break;
         default:
+          const valueBeforeChange =
+          this.data.add_attribute[key as keyof base_attribute];
+
           switch (effect[key].type) {
             case 0:
               this.data.add_attribute[key as keyof base_attribute] -=
@@ -349,6 +360,11 @@ export default class Player {
           this.data.attribute_limit[key as keyof base_attribute] =
             this.data.base_attribute[key as keyof base_attribute] +
             this.data.add_attribute[key as keyof base_attribute];
+
+          // Update the total attribute by the difference between the old and the new one
+          this.data.total_attribute[key as keyof base_attribute] +=
+            this.data.add_attribute[key as keyof base_attribute] -
+            valueBeforeChange;
           break;
       }
     }
