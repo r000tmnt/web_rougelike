@@ -1,34 +1,33 @@
 <template>
   <div>
-    <ul id="equip" class="q-ma-auto">
-      <li
-        class="rounded-borders item equip"
+    <div id="equip" class="q-ma-auto">
+      <div
+        class="rounded-borders equip"
         v-for="(key, value, index) in player.equip"
         :key="value"
+        :data-type="index"
       >
         <label :for="value">
-          {{ value }}
           <template v-if="Object.entries(player.equip[value]).length">
             <div
               class="item"
-              :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
+              :style="`font-size:${
+                Math.floor(windowWidth / 100) * 0.9
+              }px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
                 borderSize,
                 index,
                 hoveredIndex
               )}`"
-              :data-type="index"
-              @mouseover="
-                (e) => getItemPosition(e, player.equip[value], index)
-              "
+              @mouseover="(e) => getItemPosition(e, player.equip[value], index)"
               @mouseleave="resetPosition"
             >
               {{ player.equip[value].name }}
             </div>
           </template>
-          <template v-else> EMPTY </template>
+          <template v-else>{{ value }}</template>
         </label>
-      </li>
-    </ul>
+      </div>
+    </div>
 
     <Item_desc
       v-if="Object.entries(hoveredItem).length"
@@ -53,7 +52,8 @@ const descElementPosition = ref<string>('');
 
 const gameStore = useGameStore();
 
-const {player, dynamicWidth, borderSize} = storeToRefs(gameStore);
+const { player, dynamicWidth, borderSize, windowWidth } =
+  storeToRefs(gameStore);
 
 const { emitter, pixelatedBorder } = gameStore;
 
@@ -114,7 +114,7 @@ onMounted(() => {
       const type = e.from.children[oldCol].dataset.type;
 
       // Get item data from bag
-      const itemData = player.value.bag[oldCol]
+      const itemData = player.value.bag[oldCol];
 
       if (type === newCol) {
         // Replace the dropped element
@@ -129,29 +129,29 @@ onMounted(() => {
       }
 
       // Put the item into player data
-      switch(newCol){
+      switch (newCol) {
         case 0:
           player.value.equip.head = itemData;
-        break;
+          break;
         case 1:
           player.value.equip.body = itemData;
-        break;
+          break;
         case 2:
           player.value.equip.hand = itemData;
-        break;
+          break;
         case 3:
           player.value.equip.feet = itemData;
-        break;
+          break;
         case 4:
           player.value.equip.accessory = itemData;
-        break;
+          break;
       }
 
       // Remove the item from the bag
-      player.value.bag[oldCol] = {} as item
+      player.value.bag[oldCol] = {} as item;
 
       // Apply whatever attributes the item holds
-      emitter.emit('player-equip', itemData)
+      emitter.emit('player-equip', itemData);
     },
 
     onRemove: (e: any) => {
@@ -161,29 +161,29 @@ onMounted(() => {
       // Get the dropped item data
       const itemData = Object.entries(player.value.equip)[oldCol];
       // Remove the clone item
-      e.target.children[oldCol].innerHTML = `${itemData[0]} EMPTY`;
+      e.target.children[oldCol].innerHTML = `${itemData[0]}`;
 
       // Remove the item in player data
-      switch(oldCol){
+      switch (oldCol) {
         case 0:
           player.value.equip.head = {} as item;
-        break;
+          break;
         case 1:
           player.value.equip.body = {} as item;
-        break;
+          break;
         case 2:
           player.value.equip.hand = {} as item;
-        break;
+          break;
         case 3:
           player.value.equip.feet = {} as item;
-        break;
+          break;
         case 4:
           player.value.equip.accessory = {} as item;
-        break;
+          break;
       }
 
       // Deduct the un-equip item attributes
-      emitter.emit('player-unequip', itemData[1])
+      emitter.emit('player-unequip', itemData[1]);
     },
   });
 });
