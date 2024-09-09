@@ -70,22 +70,17 @@
             )}`"
             @mouseover="(e) => getItemPosition(e, index)"
             @mouseleave="resetPosition"
-            @contextmenu="
-              (e) => {
-                console.log('mouse right click ', e);
-              }
-            "
           >
             <label :for="String(index)">
               <!-- {{ index }} -->
 
-              <template v-if="player.bag[space]">
+              <template v-if="player.bag[index]">
                 <div
                   class="item"
-                  :data-type="player.bag[space].type"
+                  :data-type="player.bag[index].type"
                   :style="`font-size:${Math.floor(windowWidth / 100) * 0.9}px`"
                 >
-                  {{ player.bag[space].name }}
+                  {{ player.bag[index].name }}
                 </div>
               </template>
             </label>
@@ -143,7 +138,7 @@
 <script setup lang="ts">
 import { useGameStore } from '../stores/game';
 import { storeToRefs } from 'pinia';
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { item } from '../model/item';
 import Item_desc from './Item_desc.vue';
 import Player_equip from './Player_equip.vue';
@@ -257,39 +252,45 @@ onMounted(() => {
     },
     onAdd: (e: any) => {
       console.log('table cell dropped ', e);
-      if (e.from.id.includes('equip')) {
-        // Get the column to be drop
-        const col = e.newIndex;
-        const oldCol = e.oldIndex;
-        // Remove the cloned element
-        // e.target.children.splice(col, 1);
-        e.target.removeChild(e.target.children[col]);
-        // Get the dropped item data
-        const itemData = Object.entries(player.value.equip)[oldCol];
-        // Set the context of the column
-        e.target.children[
-          col
-        ].innerHTML = `${col} <div class="item" style="font-size:${
-          Math.floor(windowWidth.value / 100) * 0.9
-        }px">${itemData[1].name}</div>`;
-        e.target.children[col].setAttribute('data-type', itemData[1].type);
 
-        // Put the item into bag
-        // If the index exist
-        if (player.value.bag[col]) {
-          // Insert the item to the index
-          player.value.bag.splice(col, 0, itemData[1]);
-          // const itemToSwap = player.value.bag[col];
-          // player.value.bag[col] = JSON.parse(JSON.stringify(itemData[1]));
-          // player.value.bag[player.value.bag.length] = itemToSwap;
-        } else {
-          // Push the item to the last index
-          player.value.bag.push(itemData[1]);
+      // Get the column to be drop
+      const col = e.newIndex;
+      const oldCol = e.oldIndex;
+      // Remove the cloned element
+      // e.target.children.splice(col, 1);
+      e.target.removeChild(e.target.children[col]);
+
+      let itemData = {} as item;
+
+      // If the dropped item is an equipment
+      if (e.from.id.includes('equip')) {
+        // Get the dropped item data
+        itemData = Object.entries(player.value.equip)[oldCol][1];
+        itemData.equip = false;
+      } else {
+        // Get the dropped item data
+        itemData = player.value.bag[oldCol];
+      }
+
+      // Set the context of the column
+      e.target.children[col].innerHTML = `<div class="item" style="font-size:${
+        Math.floor(windowWidth.value / 100) * 0.9
+      }px">${itemData.name}</div>`;
+      e.target.children[col].setAttribute('data-type', itemData.type);
+
+      // Put the item into bag
+      // If the index exist
+      if (player.value.bag[col]) {
+        // Insert the item to the index
+        player.value.bag.splice(col, 0, itemData);
+      } else {
+        // Push the item to the last index
+        if (player.value.bag.length < player.value.attribute_limit.bag) {
+          player.value.bag.push(itemData);
         }
       }
-    },
-    onMove: (e: any) => {
-      console.log('inventory item onMove ', e);
+
+      console.log(player.value.bag);
     },
   });
 });
