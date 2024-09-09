@@ -11,9 +11,7 @@
           <template v-if="Object.entries(player.equip[value]).length">
             <div
               class="item"
-              :style="`font-size:${
-                Math.floor(windowWidth / 100) * 0.9
-              }px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
+              :style="`font-size:${itemFontSize}px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
                 borderSize,
                 index,
                 hoveredIndex
@@ -24,7 +22,19 @@
               {{ player.equip[value].name }}
             </div>
           </template>
-          <template v-else>{{ value }}</template>
+          <template v-else>
+            <div
+              :style="`font-size:${itemFontSize}px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
+                borderSize,
+                index,
+                hoveredIndex
+              )}`"
+              @mouseover="(e) => getItemPosition(e, player.equip[value], index)"
+              @mouseleave="resetPosition"
+            >
+              {{ value }}
+            </div>
+          </template>
         </label>
       </div>
     </div>
@@ -61,6 +71,8 @@ const hoveredItem = ref<item | object>({});
 
 const hoveredIndex = ref<number>(-1);
 
+const itemFontSize = ref<number>(0);
+
 const getItemPosition = (e: MouseEvent, item: item, index: number) => {
   // console.log(e);
 
@@ -84,6 +96,8 @@ const resetPosition = () => {
 };
 
 onMounted(() => {
+  itemFontSize.value = Math.floor(windowWidth.value / 100) * 0.9;
+
   const equipBlocks = document.getElementById('equip');
 
   new Sortable(equipBlocks, {
@@ -111,47 +125,54 @@ onMounted(() => {
       // Get target
       const newCol = e.newIndex;
       // Get the dropped item type
-      const type = e.from.children[oldCol].dataset.type;
+      const type = Number(e.from.children[oldCol].dataset.type);
 
       // Get item data from bag
       const itemData = player.value.bag[oldCol];
 
       if (type === newCol) {
+        // Remove
         // Replace the dropped element
-        e.target.removeChild(e.target.children[oldCol]);
-        e.target.children[
-          oldCol
-        ].innerHTML = `<label>${types[type]}<div>${player.value.bag[type].name}</div></label>`;
+        e.target.removeChild(e.target.children[newCol]);
+        e.target.children[newCol].innerHTML = `<label for="${
+          types.item[newCol]
+        }"><div class="item" style="font-size:${itemFontSize.value}px;width: ${
+          dynamicWidth.value
+        }px;height: ${dynamicWidth.value}px; box-shadow: ${pixelatedBorder(
+          borderSize.value,
+          newCol,
+          hoveredIndex.value
+        )}">${player.value.bag[oldCol].name}</div></label>`;
+
+        // Put the item into player data
+        switch (newCol) {
+          case 0:
+            player.value.equip.head = itemData;
+            break;
+          case 1:
+            player.value.equip.body = itemData;
+            break;
+          case 2:
+            player.value.equip.hand = itemData;
+            break;
+          case 3:
+            player.value.equip.feet = itemData;
+            break;
+          case 4:
+            player.value.equip.accessory = itemData;
+            break;
+        }
+
+        // Remove the item from the bag
+        player.value.bag[oldCol] = {} as item;
+
+        // Apply whatever attributes the item holds
+        emitter.emit('player-equip', itemData);
       } else {
         // Remove the dropped element
         e.target.removeChild(e.target.children[newCol]);
-        e.target.children[oldCol].innerHTML = `${types[newCol]} EMPTY`;
+        e.target.children[newCol].innerHTML = `${types.item[newCol]}`;
       }
-
-      // Put the item into player data
-      switch (newCol) {
-        case 0:
-          player.value.equip.head = itemData;
-          break;
-        case 1:
-          player.value.equip.body = itemData;
-          break;
-        case 2:
-          player.value.equip.hand = itemData;
-          break;
-        case 3:
-          player.value.equip.feet = itemData;
-          break;
-        case 4:
-          player.value.equip.accessory = itemData;
-          break;
-      }
-
-      // Remove the item from the bag
-      player.value.bag[oldCol] = {} as item;
-
-      // Apply whatever attributes the item holds
-      emitter.emit('player-equip', itemData);
     },
 
     onRemove: (e: any) => {
@@ -161,7 +182,15 @@ onMounted(() => {
       // Get the dropped item data
       const itemData = Object.entries(player.value.equip)[oldCol];
       // Remove the clone item
-      e.target.children[oldCol].innerHTML = `${itemData[0]}`;
+      e.target.children[oldCol].innerHTML = `<label for="${
+        types.item[oldCol]
+      }"><div style="font-size:${itemFontSize.value}px;width: ${
+        dynamicWidth.value
+      }px;height: ${dynamicWidth.value}px; box-shadow: ${pixelatedBorder(
+        borderSize.value,
+        oldCol,
+        hoveredIndex.value
+      )}">${itemData[0]}</div></label>`;
 
       // Remove the item in player data
       switch (oldCol) {
@@ -184,6 +213,12 @@ onMounted(() => {
 
       // Deduct the un-equip item attributes
       emitter.emit('player-unequip', itemData[1]);
+    },
+    onMove: (e: any) => {
+      console.log('onMove ', e);
+    },
+    onUnchoose: (e: any) => {
+      console.log('onUnchoose ', e);
     },
   });
 });
