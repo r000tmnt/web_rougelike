@@ -29,8 +29,8 @@
           >
         </div>
       </div>
-      <Player_equip v-if="currentSideView === 0" :player-data="playerData" />
-      <Player_status v-else :player-data="playerData" />
+      <Player_equip v-if="currentSideView === 0" :player-data="player" />
+      <Player_status v-else :player-data="player" />
     </div>
 
     <div class="col-9 q-pa-sm">
@@ -59,7 +59,7 @@
           :style="`margin:${borderSize}px ${borderSize}px ${borderSize}px ${borderSize}px;`"
         >
           <div
-            v-for="(space, index) in playerData.attribute_limit.bag"
+            v-for="(space, index) in player.attribute_limit.bag"
             :key="index"
             :data-index="index"
             class="grid rounded-borders"
@@ -76,13 +76,17 @@
               }
             "
           >
-            <label :for="index">
-              {{ index }}
+            <label :for="String(index)">
+              <!-- {{ index }} -->
 
-              <template v-if="playerData.bag[space]">
-                <div class="item" :data-type="playerData.bag[space].type">
-                {{ playerData.bag[space].name }}
-              </div>
+              <template v-if="player.bag[space]">
+                <div
+                  class="item"
+                  :data-type="player.bag[space].type"
+                  :style="`font-size:${Math.floor(windowWidth / 100) * 0.9}px`"
+                >
+                  {{ player.bag[space].name }}
+                </div>
               </template>
             </label>
           </div>
@@ -97,7 +101,7 @@
                   :class="{
                     hidden:
                       colIndex + rowIndex * 10 >
-                      playerData.attribute_limit.bag - 1,
+                      player.attribute_limit.bag - 1,
                   }"
                   :data-index="colIndex + rowIndex * 10"
                 >
@@ -126,11 +130,11 @@
       </div>
 
       <Item_desc
-        v-if="playerData.bag[hoveredIndex]"
+        v-if="player.bag[hoveredIndex]"
         :dynamic-width="dynamicWidth"
         :desc-element-position="descElementPosition"
         :pixelated-border="gameStore.pixelatedBorder(borderSize, -1, 0)"
-        :item-data="playerData.bag[hoveredIndex] || {}"
+        :item-data="player.bag[hoveredIndex] || {}"
       />
     </div>
   </section>
@@ -138,6 +142,7 @@
 
 <script setup lang="ts">
 import { useGameStore } from '../stores/game';
+import { storeToRefs } from 'pinia';
 import { ref, computed, onMounted } from 'vue';
 import { item } from '../model/item';
 import Item_desc from './Item_desc.vue';
@@ -147,15 +152,8 @@ import Sortable from 'sortablejs';
 
 const gameStore = useGameStore();
 
-const playerData = computed(() => gameStore.getPlayer);
-
-const windowWidth = computed(() => gameStore.getWindowWidth);
-
-const windowHeight = computed(() => gameStore.getWindowHeight);
-
-const dynamicWidth = computed(() => gameStore.getdynamicWidth);
-
-const borderSize = computed(() => gameStore.getborderSize);
+const { player, windowWidth, windowHeight, dynamicWidth, borderSize } =
+  storeToRefs(gameStore);
 
 const rows = ref<number>(0);
 
@@ -198,7 +196,7 @@ const getItemPosition = (e: MouseEvent, colIndex: number) => {
   // Display the information
   hoveredIndex.value = colIndex;
 
-  console.log('hovered :>>>', playerData.value.bag[hoveredIndex.value])
+  console.log('hovered :>>>', player.value.bag[hoveredIndex.value]);
 };
 
 const resetPosition = () => {
@@ -212,12 +210,12 @@ onMounted(() => {
   }
 
   rows.value =
-    playerData.value.attribute_limit.bag % 10 > 0
-      ? Math.floor(playerData.value.attribute_limit.bag / 10) + 1
-      : playerData.value.attribute_limit.bag / 10;
+    player.value.attribute_limit.bag % 10 > 0
+      ? Math.floor(player.value.attribute_limit.bag / 10) + 1
+      : player.value.attribute_limit.bag / 10;
 
   console.log(rows.value);
-  console.log(playerData.value);
+  console.log(player.value);
 
   if (inventoryContent.value) {
     gameStore.setDynamicWidth(inventoryContent.value.clientWidth / 10);
@@ -267,22 +265,31 @@ onMounted(() => {
         // e.target.children.splice(col, 1);
         e.target.removeChild(e.target.children[col]);
         // Get the dropped item data
-        const itemData = Object.entries(playerData.value.equip)[oldCol];
+        const itemData = Object.entries(player.value.equip)[oldCol];
         // Set the context of the column
-        e.target.children[col].innerHTML = `${col} <div class="item" style="font-size:${
-          Math.floor(windowWidth.value / 100) * 0.75
+        e.target.children[
+          col
+        ].innerHTML = `${col} <div class="item" style="font-size:${
+          Math.floor(windowWidth.value / 100) * 0.9
         }px">${itemData[1].name}</div>`;
         e.target.children[col].setAttribute('data-type', itemData[1].type);
 
         // Put the item into bag
-        if (playerData.value.bag[col]) {
-          const itemToSwap = playerData.value.bag[col];
-          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData[1]));
-          playerData.value.bag[playerData.value.bag.length] = itemToSwap;
+        // If the index exist
+        if (player.value.bag[col]) {
+          // Insert the item to the index
+          player.value.bag.splice(col, 0, itemData[1]);
+          // const itemToSwap = player.value.bag[col];
+          // player.value.bag[col] = JSON.parse(JSON.stringify(itemData[1]));
+          // player.value.bag[player.value.bag.length] = itemToSwap;
         } else {
-          playerData.value.bag[col] = JSON.parse(JSON.stringify(itemData[1]));
+          // Push the item to the last index
+          player.value.bag.push(itemData[1]);
         }
       }
+    },
+    onMove: (e: any) => {
+      console.log('inventory item onMove ', e);
     },
   });
 });
