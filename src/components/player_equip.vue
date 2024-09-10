@@ -134,6 +134,8 @@ onMounted(() => {
         // Remove
         // Replace the dropped element
         e.target.removeChild(e.target.children[newCol]);
+        // Display the column
+        e.target.children[newCol].style.display = 'block';
         e.target.children[newCol].innerHTML = `<label for="${
           types.item[newCol]
         }"><div class="item" style="font-size:${itemFontSize.value}px;width: ${
@@ -215,10 +217,14 @@ onMounted(() => {
       emitter.emit('player-unequip', itemData[1]);
     },
     onMove: (e: any) => {
-      console.log('onMove ', e);
+      console.log('equip onMove ', e);
+      const targettedCol = e.related.dataset.index;
+
+      // Hide the target for now
+      e.to.children[targettedCol].style.display = 'none';
     },
     onUnchoose: (e: any) => {
-      console.log('onUnchoose ', e);
+      console.log('equip onUnchoose ', e);
     },
   });
 });

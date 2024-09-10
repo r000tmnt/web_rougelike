@@ -235,8 +235,8 @@ onMounted(() => {
     },
     swap: true,
     direction: function (evt, target, dragEl) {
-      console.log('target to drop', target);
-      console.log('dragEl', dragEl);
+      // console.log('target to drop', target);
+      // console.log('dragEl', dragEl);
       // if (dragEl.className.includes('equip')) {
       //   const col = target.dataset.index;
       //   const dragType = dragEl.dataset.type;
@@ -272,6 +272,8 @@ onMounted(() => {
         itemData = player.value.bag[oldCol];
       }
 
+      // Display the column
+      e.target.children[col].style.display = 'block';
       // Set the context of the column
       e.target.children[col].innerHTML = `<div class="item" style="font-size:${
         Math.floor(windowWidth.value / 100) * 0.9
@@ -291,6 +293,16 @@ onMounted(() => {
       }
 
       console.log(player.value.bag);
+    },
+    onMove: (e: any) => {
+      console.log('inventory onMove ', e);
+      const targettedCol = e.related.dataset.type;
+
+      // Hide the target for now
+      e.to.children[targettedCol].style.display = 'none';
+    },
+    onUnchoose: (e: any) => {
+      console.log('inventory onUnchoose ', e);
     },
   });
 });
