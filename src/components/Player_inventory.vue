@@ -62,6 +62,7 @@
             v-for="(space, index) in player.attribute_limit.bag"
             :key="index"
             :data-index="index"
+            :data-type="player.bag[index] ? player.bag[index].type : -1"
             class="grid rounded-borders"
             :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${gameStore.pixelatedBorder(
               borderSize,
@@ -143,12 +144,19 @@ import { item } from '../model/item';
 import Item_desc from './Item_desc.vue';
 import Player_equip from './Player_equip.vue';
 import Player_status from './Player_status.vue';
-import Sortable from 'sortablejs';
+// import Sortable from 'sortablejs';
+// import { Sortable, Swap } from 'sortablejs/modular/sortable.core.esm';
+import customSortable from 'src/boot/sortable';
 
 const gameStore = useGameStore();
 
-const { player, windowWidth, windowHeight, dynamicWidth, borderSize } =
-  storeToRefs(gameStore);
+const {
+  getPlayer: player,
+  windowWidth,
+  windowHeight,
+  dynamicWidth,
+  borderSize,
+} = storeToRefs(gameStore);
 
 const rows = ref<number>(0);
 
@@ -213,15 +221,17 @@ onMounted(() => {
   console.log(player.value);
 
   if (inventoryContent.value) {
-    gameStore.setDynamicWidth(inventoryContent.value.clientWidth / 10);
+    gameStore.setDynamicWidth(inventoryContent.value.clientWidth / 10.5);
   }
 
   gameStore.setBorderSize(Math.floor(dynamicWidth.value / 40));
 
   const inventory = document.getElementById('inventory');
 
-  new Sortable(inventory, {
+  new customSortable(inventory, {
     // disabled: playerData.value.bag.length > 0,
+    swap: true,
+    swapClass: 'sortable-swap-highlight',
     handle: '.item', // Need this to work with dynamic elements
     group: {
       name: 'shared',
@@ -229,36 +239,38 @@ onMounted(() => {
       pull: (to, from) => {
         console.log('to', to);
         console.log('from inventory', from);
-        return 'clone';
+        return true;
       },
-      revertClone: true,
+      // pull: true,
+      // revertClone: true,
     },
-    swap: true,
-    direction: function (evt, target, dragEl) {
-      // console.log('target to drop', target);
-      // console.log('dragEl', dragEl);
-      // if (dragEl.className.includes('equip')) {
-      //   const col = target.dataset.index;
-      //   const dragType = dragEl.dataset.type;
-      //   target.innerHTML = `${col} <span data-type="${dragType}">${dragEl.innerHTML}</span>`;
-      //   gameStore.emitter.emit('drag-from-equip');
-      //   return;
-      // }
+    // direction: function (evt, target, dragEl) {
+    //   // console.log('target to drop', target);
+    //   // console.log('dragEl', dragEl);
+    //   // if (dragEl.className.includes('equip')) {
+    //   //   const col = target.dataset.index;
+    //   //   const dragType = dragEl.dataset.type;
+    //   //   target.innerHTML = `${col} <span data-type="${dragType}">${dragEl.innerHTML}</span>`;
+    //   //   gameStore.emitter.emit('drag-from-equip');
+    //   //   return;
+    //   // }
 
-      if (target !== null) {
-        return 'horizontal';
-      }
-      return 'vertical';
+    //   if (target !== null) {
+    //     return 'horizontal';
+    //   }
+    //   return 'vertical';
+    // },
+    onStart: () => {
+      hoveredIndex.value = -1;
     },
     onAdd: (e: any) => {
       console.log('table cell dropped ', e);
 
       // Get the column to be drop
-      const col = e.newIndex;
+      const newCol = e.newIndex;
       const oldCol = e.oldIndex;
       // Remove the cloned element
-      // e.target.children.splice(col, 1);
-      e.target.removeChild(e.target.children[col]);
+      // e.target.removeChild(e.target.children[newCol]);
 
       let itemData = {} as item;
 
@@ -267,39 +279,126 @@ onMounted(() => {
         // Get the dropped item data
         itemData = Object.entries(player.value.equip)[oldCol][1];
         itemData.equip = false;
+        // e.target.children[newCol].classList.remove('equip');
+        // e.target.children[newCol].classList.add('grid');
       } else {
         // Get the dropped item data
-        itemData = player.value.bag[oldCol];
+        itemData = JSON.parse(JSON.stringify(player.value.bag[oldCol]));
       }
 
-      // Display the column
-      e.target.children[col].style.display = 'block';
+      // Remove cloned element
+      e.target.removeChild(e.target.children[newCol]);
+      // const pixelatedBorder = gameStore.pixelatedBorder(
+      //   borderSize.value,
+      //   newCol,
+      //   hoveredIndex.value
+      // );
+
+      // Change the style of the column
+      // e.target.children[newCol].style.width = dynamicWidth.value + 'px';
+      // e.target.children[newCol].style.height = dynamicWidth.value + 'px';
+      // e.target.children[newCol].style.boxShadow = pixelatedBorder;
       // Set the context of the column
-      e.target.children[col].innerHTML = `<div class="item" style="font-size:${
-        Math.floor(windowWidth.value / 100) * 0.9
-      }px">${itemData.name}</div>`;
-      e.target.children[col].setAttribute('data-type', itemData.type);
+      // e.target.children[newCol].innerHTML = `<label for="${newCol}">
+      // <div class="item" style="font-size:${
+      //   Math.floor(windowWidth.value / 100) * 0.9
+      // }px">${itemData.name}</div>
+      // </label>`;
+      e.target.children[newCol].setAttribute('data-type', itemData.type);
+      // e.target.children[newCol].setAttribute('data-index', newCol);
+
+      // console.log(e.target.children[newCol].style);
 
       // Put the item into bag
       // If the index exist
-      if (player.value.bag[col]) {
-        // Insert the item to the index
-        player.value.bag.splice(col, 0, itemData);
+      if (player.value.bag[newCol]) {
+        // If the bag is not full
+        if (player.value.bag.length < player.value.attribute_limit.bag) {
+          const itemToSwap = JSON.parse(
+            JSON.stringify(player.value.bag[newCol])
+          );
+          // Insert the item to the index
+          // player.value.bag.splice(col, 0, itemData);
+          player.value.bag[newCol] = itemData;
+          player.value.bag.push(itemToSwap);
+        } else {
+          // Drop the item or Put the item back to where it is
+          // Display warnning message
+        }
       } else {
         // Push the item to the last index
-        if (player.value.bag.length < player.value.attribute_limit.bag) {
-          player.value.bag.push(itemData);
-        }
+        player.value.bag[newCol] = itemData;
       }
 
       console.log(player.value.bag);
     },
-    onMove: (e: any) => {
-      console.log('inventory onMove ', e);
-      const targettedCol = e.related.dataset.type;
+    // onMove: (e: any) => {
+    //   console.log('inventory onMove ', e);
+    //   const targettedCol = e.related.dataset.type | e.related.dataset.index;
 
-      // Hide the target for now
-      e.to.children[targettedCol].style.display = 'none';
+    //   // Hide the target for now
+    //   e.to.children[targettedCol].style.display = 'none';
+    // },
+    onEnd: (e: any) => {
+      console.log('inventory drag end ', e);
+      const oldCol = e.oldIndex;
+      const newCol = e.newIndex;
+      let itemData = {} as item;
+      let itemToSwap = {} as item;
+
+      if (e.to.id.includes('equip')) {
+        // itemData = Object.entries(player.value.equip)[oldCol][1];
+        player.value.bag[oldCol] = {} as item;
+
+        e.target.children[
+          oldCol
+        ].innerHTML = `<div class="item" style="font-size:${
+          Math.floor(windowWidth.value / 100) * 0.9
+        }px"></div>`;
+        e.target.children[oldCol].setAttribute('data-type', -1);
+      } else {
+        if (player.value.bag[newCol]) {
+          itemToSwap = JSON.parse(JSON.stringify(player.value.bag[newCol]));
+        }
+
+        itemData = player.value.bag[oldCol];
+
+        player.value.bag[newCol] = itemData;
+
+        e.target.children[newCol].setAttribute('data-type', itemData.type);
+
+        if (Object.entries(itemToSwap).length) {
+          e.target.children[
+            oldCol
+          ].innerHTML = `<div class="item" style="font-size:${
+            Math.floor(windowWidth.value / 100) * 0.9
+          }px">${itemData.name}</div>`;
+          e.target.children[oldCol].setAttribute('data-type', itemToSwap.type);
+
+          player.value.bag[oldCol] = itemToSwap;
+        }
+      }
+
+      // const pixelatedBorder = gameStore.pixelatedBorder(
+      //   borderSize.value,
+      //   newCol,
+      //   hoveredIndex.value
+      // );
+
+      // // Change the style of the column
+      // e.target.children[newCol].style.width = dynamicWidth.value + 'px';
+      // e.target.children[newCol].style.height = dynamicWidth.value + 'px';
+      // e.target.children[newCol].style.boxShadow = pixelatedBorder;
+      // // Set the context of the column
+      // e.target.children[newCol].innerHTML = `<label for="${newCol}">
+      // <div class="item" style="font-size:${
+      //   Math.floor(windowWidth.value / 100) * 0.9
+      // }px">${itemData.name}</div>
+      // </label>`;
+
+      // e.target.children[newCol].setAttribute('data-index', newCol);
+
+      // console.log(e.target.children[newCol].style);
     },
     onUnchoose: (e: any) => {
       console.log('inventory onUnchoose ', e);

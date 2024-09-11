@@ -55,15 +55,20 @@ import { storeToRefs } from 'pinia';
 import { item } from '../model/item';
 import { ref, onMounted } from 'vue';
 import Item_desc from './Item_desc.vue';
-import Sortable from 'sortablejs';
+// import Sortable from 'sortablejs';
 import types from '../data/types';
+import customSortable from 'src/boot/sortable';
 
 const descElementPosition = ref<string>('');
 
 const gameStore = useGameStore();
 
-const { player, dynamicWidth, borderSize, windowWidth } =
-  storeToRefs(gameStore);
+const {
+  getPlayer: player,
+  dynamicWidth,
+  borderSize,
+  windowWidth,
+} = storeToRefs(gameStore);
 
 const { emitter, pixelatedBorder } = gameStore;
 
@@ -100,7 +105,9 @@ onMounted(() => {
 
   const equipBlocks = document.getElementById('equip');
 
-  new Sortable(equipBlocks, {
+  new customSortable(equipBlocks, {
+    // swap: true,
+    swapClass: 'sortable-swap-highlight',
     sort: false,
     handle: '.item', // Need to specify handle to work with dynamic element
     group: {
@@ -111,12 +118,16 @@ onMounted(() => {
         console.log('from equip', from);
         return 'clone';
       },
+      // pull: true,
       revertClone: true,
     },
-    direction: function (evt, target, dragEl) {
-      console.log('equip target', target);
-      console.log('el drag to equip', dragEl);
-      return 'vertical';
+    // direction: function (evt, target, dragEl) {
+    //   console.log('equip target', target);
+    //   console.log('el drag to equip', dragEl);
+    //   return 'vertical';
+    // },
+    onStart: () => {
+      hoveredIndex.value = -1;
     },
     onAdd: (e: any) => {
       console.log('equip dropped ', e);
@@ -125,17 +136,16 @@ onMounted(() => {
       // Get target
       const newCol = e.newIndex;
       // Get the dropped item type
-      const type = Number(e.from.children[oldCol].dataset.type);
+      // const type = Number(e.from.children[oldCol].dataset.type);
 
       // Get item data from bag
-      const itemData = player.value.bag[oldCol];
+      const itemData = JSON.parse(JSON.stringify(player.value.bag[oldCol]));
 
-      if (type === newCol) {
-        // Remove
-        // Replace the dropped element
+      if (itemData.type === newCol) {
+        // Remove the dropped element
         e.target.removeChild(e.target.children[newCol]);
         // Display the column
-        e.target.children[newCol].style.display = 'block';
+        // e.target.children[newCol].style.display = 'block';
         e.target.children[newCol].innerHTML = `<label for="${
           types.item[newCol]
         }"><div class="item" style="font-size:${itemFontSize.value}px;width: ${
@@ -144,7 +154,7 @@ onMounted(() => {
           borderSize.value,
           newCol,
           hoveredIndex.value
-        )}">${player.value.bag[oldCol].name}</div></label>`;
+        )}">${itemData.name}</div></label>`;
 
         // Put the item into player data
         switch (newCol) {
@@ -172,8 +182,16 @@ onMounted(() => {
         emitter.emit('player-equip', itemData);
       } else {
         // Remove the dropped element
-        e.target.removeChild(e.target.children[newCol]);
-        e.target.children[newCol].innerHTML = `${types.item[newCol]}`;
+        // e.target.removeChild(e.target.children[newCol]);
+        e.target.children[newCol].innerHTML = `<label for="${
+          types.item[newCol]
+        }"><div class="item" style="font-size:${itemFontSize.value}px;width: ${
+          dynamicWidth.value
+        }px;height: ${dynamicWidth.value}px; box-shadow: ${pixelatedBorder(
+          borderSize.value,
+          newCol,
+          hoveredIndex.value
+        )}">${types.item[newCol]}</div></label>`;
       }
     },
 
@@ -213,16 +231,18 @@ onMounted(() => {
           break;
       }
 
+      console.log(player.value.equip);
+
       // Deduct the un-equip item attributes
       emitter.emit('player-unequip', itemData[1]);
     },
-    onMove: (e: any) => {
-      console.log('equip onMove ', e);
-      const targettedCol = e.related.dataset.index;
+    // onMove: (e: any) => {
+    //   console.log('equip onMove ', e);
+    //   const targettedCol = e.related.dataset.index;
 
-      // Hide the target for now
-      e.to.children[targettedCol].style.display = 'none';
-    },
+    //   // Hide the target for now
+    //   e.to.children[targettedCol].style.display = 'none';
+    // },
     onUnchoose: (e: any) => {
       console.log('equip onUnchoose ', e);
     },
