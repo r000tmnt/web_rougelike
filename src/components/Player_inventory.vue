@@ -361,22 +361,34 @@ onMounted(() => {
           itemToSwap = JSON.parse(JSON.stringify(player.value.bag[newCol]));
         }
 
-        itemData = player.value.bag[oldCol];
+        itemData = JSON.parse(JSON.stringify(player.value.bag[oldCol]));
 
         player.value.bag[newCol] = itemData;
 
+        e.target.children[newCol].innerHTML = `<label for="${newCol}">
+          <div class="item" style="font-size:${
+            Math.floor(windowWidth.value / 100) * 0.9
+          }px">${itemData.name}</div>
+          </label>`;
+        e.target.children[newCol].setAttribute('data-index', newCol);
+        e.target.children[oldCol].setAttribute('data-index', oldCol);
         e.target.children[newCol].setAttribute('data-type', itemData.type);
 
         if (Object.entries(itemToSwap).length) {
-          e.target.children[
-            oldCol
-          ].innerHTML = `<div class="item" style="font-size:${
+          e.target.children[oldCol].innerHTML = `<label for="${oldCol}">
+          <div class="item" style="font-size:${
             Math.floor(windowWidth.value / 100) * 0.9
-          }px">${itemData.name}</div>`;
+          }px">${itemToSwap.name}</div>
+          </label>`;
           e.target.children[oldCol].setAttribute('data-type', itemToSwap.type);
-
-          player.value.bag[oldCol] = itemToSwap;
+        } else {
+          e.target.children[oldCol].innerHTML = `<label for="${oldCol}">
+          <div class="item"></div>
+          </label>`;
+          e.target.children[oldCol].setAttribute('data-type', String(-1));
         }
+
+        player.value.bag[oldCol] = itemToSwap;
       }
 
       // const pixelatedBorder = gameStore.pixelatedBorder(
