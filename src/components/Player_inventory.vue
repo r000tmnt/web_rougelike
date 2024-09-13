@@ -69,7 +69,7 @@
               index,
               hoveredIndex
             )}`"
-            @mouseover="(e) => getItemPosition(e, index)"
+            @mouseover="mouseOverEventWrapper"
             @mouseleave="resetPosition"
           >
             <label :for="String(index)">
@@ -199,7 +199,15 @@ const getItemPosition = (e: MouseEvent, colIndex: number) => {
   // Display the information
   hoveredIndex.value = colIndex;
 
-  console.log('hovered :>>>', player.value.bag[hoveredIndex.value]);
+  console.log(
+    `hovered ${hoveredIndex.value} :>>>`,
+    player.value.bag[hoveredIndex.value]
+  );
+};
+
+const mouseOverEventWrapper = (e: MouseEvent) => {
+  // console.log(e);
+  if (e.target) getItemPosition(e, e.target.dataset.index);
 };
 
 const resetPosition = () => {
@@ -390,6 +398,19 @@ onMounted(() => {
 
         player.value.bag[oldCol] = itemToSwap;
       }
+
+      console.log('after alteration ', player.value.bag);
+
+      // Re-binding event
+      // e.target.children[newCol].removeEventListener('mouseover');
+      // e.target.children[newCol].addEventListener('mouseover', (e: MouseEvent) =>
+      //   getItemPosition(e, newCol)
+      // );
+
+      // e.target.children[oldCol].removeEventListener('mouseover');
+      // e.target.children[oldCol].addEventListener('mouseover', (e: MouseEvent) =>
+      //   getItemPosition(e, oldCol)
+      // );
 
       // const pixelatedBorder = gameStore.pixelatedBorder(
       //   borderSize.value,
