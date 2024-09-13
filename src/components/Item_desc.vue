@@ -1,6 +1,7 @@
 <template>
   <!-- v-if="Object.entries(itemData).length" -->
   <div
+    v-if="Object.entries(itemData).length"
     id="desc"
     class="absolute bg-dark grid"
     :style="`width: ${
