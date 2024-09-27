@@ -123,6 +123,20 @@ const resetPosition = () => {
   hoveredItem.value = {};
 };
 
+const checkingEquip = (equip: item, e: DragEvent) => {
+  if (Object.entries(equip).length) {
+    // Deduct the un-equip item attributes
+    emitter.emit('player-unequip', equip);
+    // Trigger dragstart event
+    e.target?.dispatchEvent(
+      new DragEvent('dragstart', {
+        bubbles: false,
+        cancelable: true,
+      })
+    );
+  }
+};
+
 const dragStart = (e: DragEvent, item: item | object) => {
   console.log('equip drag start ', e);
   // console.log('drag item ', item);
@@ -166,18 +180,23 @@ const onDrop = (e: DragEvent, type: number) => {
       // Accept the item
       switch (type) {
         case 0:
+          checkingEquip(player.value.equip.head, e);
           player.value.equip.head = data;
           break;
         case 1:
+          checkingEquip(player.value.equip.body, e);
           player.value.equip.body = data;
           break;
         case 2:
+          checkingEquip(player.value.equip.hand, e);
           player.value.equip.hand = data;
           break;
         case 3:
+          checkingEquip(player.value.equip.feet, e);
           player.value.equip.feet = data;
           break;
         case 4:
+          checkingEquip(player.value.equip.accessory, e);
           player.value.equip.accessory = data;
           break;
       }
