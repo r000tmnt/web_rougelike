@@ -6,6 +6,19 @@
         v-for="(key, value, index) in player.equip"
         :key="value"
         :data-type="index"
+        :draggable="Object.entries(player.equip[value]).length ? true : false"
+        @dragstart="
+          dragStart(
+            $event,
+            Object.entries(player.equip[value]).length
+              ? player.equip[value]
+              : {}
+          )
+        "
+        @drop="onDrop($event, index)"
+        @dragover.prevent
+        @dragenter="dragEnter($event)"
+        @dragleave="dragLeave($event)"
       >
         <label :for="value">
           <template v-if="Object.entries(player.equip[value]).length">
@@ -29,7 +42,7 @@
                 index,
                 hoveredIndex
               )}`"
-              @mouseover="(e) => getItemPosition(e, player.equip[value], index)"
+              @mouseover="mouseOverEventWrapper"
               @mouseleave="resetPosition"
             >
               {{ value }}
@@ -55,9 +68,6 @@ import { storeToRefs } from 'pinia';
 import { item } from '../model/item';
 import { ref, onMounted } from 'vue';
 import Item_desc from './Item_desc.vue';
-// import Sortable from 'sortablejs';
-import types from '../data/types';
-import customSortable from 'src/boot/sortable';
 
 const descElementPosition = ref<string>('');
 
@@ -95,157 +105,91 @@ const getItemPosition = (e: MouseEvent, item: item, index: number) => {
   hoveredIndex.value = index;
 };
 
+const mouseOverEventWrapper = (e: MouseEvent) => {
+  // console.log(e);
+  if (e.target) {
+    const target = e.target as HTMLDivElement;
+    if (target.dataset.type) {
+      const type = Number(target.dataset.type);
+      const equips = Object.entries(player.value.equip).map((e) => e);
+      console.log(equips);
+      getItemPosition(e, equips[type][1], type);
+    }
+  }
+};
+
 const resetPosition = () => {
   hoveredIndex.value = -1;
   hoveredItem.value = {};
 };
 
-onMounted(() => {
-  itemFontSize.value = Math.floor(windowWidth.value / 100) * 0.9;
+const dragStart = (e: DragEvent, item: item | object) => {
+  console.log('equip drag start ', e);
+  // console.log('drag item ', item);
+  if (Object.entries(item).length && e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData(
+      'item',
+      JSON.stringify({ fromEquip: true, data: item })
+    );
+  }
+};
 
-  const equipBlocks = document.getElementById('equip');
+const dragEnter = (e: DragEvent) => {
+  console.log('equip drag enter ', e);
+  if (e.target) {
+    const target = e.target as HTMLDivElement;
+    target.classList.add('drag-highlight');
+  }
+};
 
-  new customSortable(equipBlocks, {
-    // swap: true,
-    swapClass: 'sortable-swap-highlight',
-    sort: false,
-    handle: '.item', // Need to specify handle to work with dynamic element
-    group: {
-      name: 'shared',
-      put: true,
-      pull: (to, from) => {
-        console.log('to', to);
-        console.log('from equip', from);
-        return 'clone';
-      },
-      // pull: true,
-      revertClone: true,
-    },
-    // direction: function (evt, target, dragEl) {
-    //   console.log('equip target', target);
-    //   console.log('el drag to equip', dragEl);
-    //   return 'vertical';
-    // },
-    onStart: () => {
-      hoveredIndex.value = -1;
-    },
-    onAdd: (e: any) => {
-      console.log('equip dropped ', e);
-      // Get the dragged col
-      const oldCol = e.oldIndex;
-      // Get target
-      const newCol = e.newIndex;
-      // Get the dropped item type
-      // const type = Number(e.from.children[oldCol].dataset.type);
+const dragLeave = (e: DragEvent) => {
+  console.log('equip drag leave ', e);
+  if (e.target) {
+    const target = e.target as HTMLDivElement;
+    target.classList.remove('drag-highlight');
+  }
+};
 
-      // Get item data from bag
-      const itemData = JSON.parse(JSON.stringify(player.value.bag[oldCol]));
+const onDrop = (e: DragEvent, type: number) => {
+  console.log('On drop ', e);
+  if (e.target) {
+    const target = e.target as HTMLDivElement;
+    target.classList.remove('drag-highlight');
+  }
 
-      if (itemData.type === newCol) {
-        // Remove the dropped element
-        e.target.removeChild(e.target.children[newCol]);
-        // Display the column
-        // e.target.children[newCol].style.display = 'block';
-        e.target.children[newCol].innerHTML = `<label for="${
-          types.item[newCol]
-        }"><div class="item" style="font-size:${itemFontSize.value}px;width: ${
-          dynamicWidth.value
-        }px;height: ${dynamicWidth.value}px; box-shadow: ${pixelatedBorder(
-          borderSize.value,
-          newCol,
-          hoveredIndex.value
-        )}">${itemData.name}</div></label>`;
-
-        // Put the item into player data
-        switch (newCol) {
-          case 0:
-            player.value.equip.head = itemData;
-            break;
-          case 1:
-            player.value.equip.body = itemData;
-            break;
-          case 2:
-            player.value.equip.hand = itemData;
-            break;
-          case 3:
-            player.value.equip.feet = itemData;
-            break;
-          case 4:
-            player.value.equip.accessory = itemData;
-            break;
-        }
-
-        // Remove the item from the bag
-        player.value.bag[oldCol] = {} as item;
-
-        // Apply whatever attributes the item holds
-        emitter.emit('player-equip', itemData);
-      } else {
-        // Remove the dropped element
-        // e.target.removeChild(e.target.children[newCol]);
-        e.target.children[newCol].innerHTML = `<label for="${
-          types.item[newCol]
-        }"><div class="item" style="font-size:${itemFontSize.value}px;width: ${
-          dynamicWidth.value
-        }px;height: ${dynamicWidth.value}px; box-shadow: ${pixelatedBorder(
-          borderSize.value,
-          newCol,
-          hoveredIndex.value
-        )}">${types.item[newCol]}</div></label>`;
-      }
-    },
-
-    onRemove: (e: any) => {
-      console.log('equip removed ', e);
-      // Get the dragged col
-      const oldCol = e.oldIndex;
-      // Get the dropped item data
-      const itemData = Object.entries(player.value.equip)[oldCol];
-      // Remove the clone item
-      e.target.children[oldCol].innerHTML = `<label for="${
-        types.item[oldCol]
-      }"><div style="font-size:${itemFontSize.value}px;width: ${
-        dynamicWidth.value
-      }px;height: ${dynamicWidth.value}px; box-shadow: ${pixelatedBorder(
-        borderSize.value,
-        oldCol,
-        hoveredIndex.value
-      )}">${itemData[0]}</div></label>`;
-
-      // Remove the item in player data
-      switch (oldCol) {
+  if (e.dataTransfer) {
+    const { data } = JSON.parse(e.dataTransfer.getData('item'));
+    console.log('equip drop ', data);
+    if (data.type === type) {
+      // Accept the item
+      switch (type) {
         case 0:
-          player.value.equip.head = {} as item;
+          player.value.equip.head = data;
           break;
         case 1:
-          player.value.equip.body = {} as item;
+          player.value.equip.body = data;
           break;
         case 2:
-          player.value.equip.hand = {} as item;
+          player.value.equip.hand = data;
           break;
         case 3:
-          player.value.equip.feet = {} as item;
+          player.value.equip.feet = data;
           break;
         case 4:
-          player.value.equip.accessory = {} as item;
+          player.value.equip.accessory = data;
           break;
       }
 
-      console.log(player.value.equip);
+      // Apply whatever attributes the item holds
+      emitter.emit('player-equip', data);
+      emitter.emit('remove-item');
+    }
+  }
+};
 
-      // Deduct the un-equip item attributes
-      emitter.emit('player-unequip', itemData[1]);
-    },
-    // onMove: (e: any) => {
-    //   console.log('equip onMove ', e);
-    //   const targettedCol = e.related.dataset.index;
-
-    //   // Hide the target for now
-    //   e.to.children[targettedCol].style.display = 'none';
-    // },
-    onUnchoose: (e: any) => {
-      console.log('equip onUnchoose ', e);
-    },
-  });
+onMounted(() => {
+  itemFontSize.value = Math.floor(windowWidth.value / 100) * 0.9;
 });
 </script>
