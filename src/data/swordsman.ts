@@ -50,6 +50,7 @@ export default {
       type: 1,
       image: '',
       modifier: '',
+      amount: 1,
       desc: 'Simple outfit with a few pockets',
       equip: true,
       effect: {
@@ -70,6 +71,7 @@ export default {
       type: 2,
       image: '',
       modifier: '',
+      amount: 1,
       equip: true,
       desc: 'Used for practice mostly',
       effect: {
@@ -86,6 +88,7 @@ export default {
       type: 3,
       image: '',
       modifier: '',
+      amount: 1,
       desc: "Good to protect the wearer's feet",
       equip: true,
       effect: {

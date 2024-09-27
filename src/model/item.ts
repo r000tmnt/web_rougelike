@@ -8,6 +8,7 @@ export interface item {
   modifier: string;
   equip?: boolean;
   effect: modifier;
+  amount: number;
 }
 
 export interface modifier {
