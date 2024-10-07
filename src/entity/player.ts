@@ -55,15 +55,10 @@ export default class Player {
     this.collide = false;
     this.target = [];
     this.keys = {};
-    this.init(x, y, texture, groundLayer);
+    this.init(texture, groundLayer);
   }
 
-  init(
-    x: number,
-    y: number,
-    texture: string,
-    groundLayer: Phaser.Tilemaps.TilemapLayer
-  ) {
+  init(texture: string, groundLayer: Phaser.Tilemaps.TilemapLayer) {
     this.sprite.name = texture;
     this.sprite.setSize(this.tileSize, this.tileSize);
     this.sprite.setOrigin(0, 0);
@@ -163,13 +158,7 @@ export default class Player {
       this
     );
 
-    this.scene.physics.add.collider(
-      this.sprite,
-      groundLayer,
-      this.#onCollide,
-      null,
-      this
-    );
+    this.#setCollide(groundLayer);
     this.#setData();
     this.#setCustomEvent();
     this.#addContorl();
@@ -225,6 +214,9 @@ export default class Player {
     });
 
     console.log('total ', this.data.total_attribute);
+
+    const gameStore = useGameStore();
+    gameStore.setPlayerStatus(this.data);
   }
 
   #setCustomEvent() {
@@ -273,6 +265,16 @@ export default class Player {
     gameStore.emitter.on('player-unequip', (item: item) => {
       this.unEquip(item);
     });
+  }
+
+  #setCollide(groundLayer: Phaser.Tilemaps.TilemapLayer) {
+    this.scene.physics.add.collider(
+      this.sprite,
+      groundLayer,
+      this.#onCollide,
+      null,
+      this
+    );
   }
 
   addOverlap(target: any) {
@@ -587,6 +589,10 @@ export default class Player {
       this.sprite.setFrame(
         this.scene.anims.get('player-lose').frames[1].textureFrame
       );
+      // Tint the sprite with Decimal number
+      // this.sprite.setTint(8519680)
+      // this.sprite.setTintFill(8519680)
+
       //FX Wipe
       this.scene.time.delayedCall(500, () => {
         const wipe = this.sprite.preFX?.addWipe(0.1, 0, 0);
@@ -623,5 +629,19 @@ export default class Player {
     // } else {
     //   this.sprite.body.setImmovable(false);
     // }
+  }
+
+  // When the room changes
+  updateScene(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    groundLayer: Phaser.Tilemaps.TilemapLayer,
+    map: number[][]
+  ) {
+    this.scene = scene;
+    this.sprite.setPosition(x, y);
+    this.#setCollide(groundLayer);
+    this.map = map;
   }
 }
