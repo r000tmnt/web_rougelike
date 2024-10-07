@@ -85,6 +85,13 @@ export default class Player {
       frameHeight: 64,
     });
 
+    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_lose`, {
+      atlas: texture,
+      frame: `${texture}_lose`,
+      frameWidth: this.tileSize,
+      frameHeight: this.tileSize,
+    });
+
     // Set animation
     this.scene.anims.create({
       key: 'player-idle',
@@ -123,6 +130,16 @@ export default class Player {
         end: 2,
       }),
       frameRate: 10,
+    });
+
+    this.scene.anims.create({
+      key: 'player-lose',
+      frames: this.scene.anims.generateFrameNames(`${texture}_lose`, {
+        start: 0,
+        end: 1,
+      }),
+      frameRate: 24,
+      repeat: 0,
     });
 
     // Animation event listener
@@ -221,32 +238,41 @@ export default class Player {
       this.data.total_attribute.hp -=
         dmg > this.data.total_attribute.hp ? this.data.total_attribute.hp : dmg;
 
-      if (this.data.total_attribute.hp === 0) {
-        // TODO - Game over screen
-      }
-
       // console.log('current hp ', this.data.base_attribute.hp);
 
       // this.sprite.anims.play({ key: 'player-take-damage', duration: 100 });
       // console.log(this.scene.textures.getTextureKeys(`${texture}_idle`));
       this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
       this.scene.juice.shake(this.sprite, { x: 1, repeat: 2 });
-      this.scene.time.delayedCall(200, () => {
-        this.status = '';
-        this.sprite.anims.play('player-idle');
-        this.keys['mouseLeft'] = 0;
-      });
 
+      // If player lose
+      if (this.data.total_attribute.hp === 0) {
+        // TODO - Death animation
+        // TODO - Game over screen
+        this.status = 'dead';
+        this.scene.camera?.pan(this.sprite.x, this.sprite.y, 200, 'Power2');
+        this.scene.camera?.zoomTo(2, 200);
+        setTimeout(() => {
+          this.sprite.anims.play('player-lose');
+        }, 500);
+      } else {
+        this.status = 'hit';
+        this.scene.time.delayedCall(200, () => {
+          this.status = '';
+          this.sprite.anims.play('player-idle');
+          this.keys['mouseLeft'] = 0;
+        });
+      }
       gameStore.setPlayerStatus(this.data);
     });
 
     gameStore.emitter.on('player-equip', (item: item) => {
-      this.applyEquip(item)
-    })
+      this.applyEquip(item);
+    });
 
     gameStore.emitter.on('player-unequip', (item: item) => {
-      this.unEquip(item)
-    })
+      this.unEquip(item);
+    });
   }
 
   addOverlap(target: any) {
@@ -332,7 +358,7 @@ export default class Player {
           break;
         default:
           const valueBeforeChange =
-          this.data.add_attribute[key as keyof base_attribute];
+            this.data.add_attribute[key as keyof base_attribute];
 
           switch (effect[key].type) {
             case 0:
@@ -439,6 +465,7 @@ export default class Player {
           this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
         } else if (this.cursor?.up.isDown || this.wKey.isDown) {
           this.sprite.setVelocityY(-this.tileSize * 2.5);
+          this.sprite.anims.play('player-walking', true);
           // Update zone
           this.zone.setPosition(
             this.sprite.x + this.tileSize / 2,
@@ -448,6 +475,7 @@ export default class Player {
           this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
         } else if (this.cursor?.down.isDown || this.sKey.isDown) {
           this.sprite.setVelocityY(this.tileSize * 2.5);
+          this.sprite.anims.play('player-walking', true);
           // Update zone
           this.zone.setPosition(
             this.sprite.x + this.tileSize / 2,
@@ -462,10 +490,6 @@ export default class Player {
           }
         }
       }
-    }
-
-    if (this.status === 'dead') {
-      // TODO: Play dead animation
     }
   }
 
@@ -557,6 +581,23 @@ export default class Player {
         // if (this.dKey) this.keys[this.dKey.keyCode] = 0;
         if (this.keys['mouseLeft']) this.keys['mouseLeft'] = 0;
       }, 300);
+    }
+
+    if (context.key.includes('lose')) {
+      // Change sprite color
+      this.sprite.setTint(820000);
+      this.sprite.setFrame(
+        this.scene.anims.get('player-lose').frames[1].textureFrame
+      );
+      // TODO - FX Wipe
+      const wipe = this.sprite.preFX?.addWipe(0.1, 0, 0);
+      this.scene.tweens.add({
+        targets: wipe,
+        progress: 1,
+        repeat: 0,
+        duration: 2000,
+      });
+      // TODO - Show Game over screen
     }
   }
 
