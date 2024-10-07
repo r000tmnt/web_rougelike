@@ -582,6 +582,11 @@ export default class Dungeon extends Scene {
       this.physics.pause();
       this.#updateContent(gameStore);
     });
+
+    gameStore.emitter.on('reset', () => {
+      // this.physics.pause();
+      this.#updateContent(gameStore, true);
+    });
   }
 
   #setCollision(room: number[][], gameStore: any) {
@@ -613,12 +618,8 @@ export default class Dungeon extends Scene {
     }
   }
 
-  #updateContent(gameStore: any) {
+  #updateContent(gameStore: any, restart = false) {
     if (this.content) {
-      const direction = this.content.doors[gameStore.doorIndex].direction;
-      console.log(`Open the door ${direction}`);
-      // Mark the room visited
-      this.content.markRoomVisited(this.content.roomIndex);
       // Clear zones
       this.doors.splice(0);
       // Remove collider
@@ -647,28 +648,36 @@ export default class Dungeon extends Scene {
       // Disable key input event
       if (this.input.keyboard) this.input.keyboard.enabled = false;
 
-      let roomIndex = -1;
+      if (restart) {
+        this.scene.restart();
+      } else {
+        const direction = this.content.doors[gameStore.doorIndex].direction;
+        console.log(`Open the door ${direction}`);
+        // Mark the room visited
+        this.content.markRoomVisited(this.content.roomIndex);
+        let roomIndex = -1;
 
-      switch (direction) {
-        case 'up':
-          roomIndex = this.content.roomIndex - 3;
-          break;
-        case 'right':
-          roomIndex = this.content.roomIndex + 1;
-          break;
-        case 'down':
-          roomIndex = this.content.roomIndex + 3;
-          break;
-        case 'left':
-          roomIndex = this.content.roomIndex - 1;
-          break;
+        switch (direction) {
+          case 'up':
+            roomIndex = this.content.roomIndex - 3;
+            break;
+          case 'right':
+            roomIndex = this.content.roomIndex + 1;
+            break;
+          case 'down':
+            roomIndex = this.content.roomIndex + 3;
+            break;
+          case 'left':
+            roomIndex = this.content.roomIndex - 1;
+            break;
+        }
+
+        this.scene.restart({
+          roomIndex: roomIndex,
+          direction: direction,
+          // And more...
+        });
       }
-
-      this.scene.restart({
-        roomIndex: roomIndex,
-        direction: direction,
-        // And more...
-      });
     }
   }
 
