@@ -1,6 +1,6 @@
-import { modifier } from './../model/item';
+// import { modifier } from './../model/item';
 import { player, action, base_attribute } from 'src/model/character';
-import { Input, Events, Animations } from 'phaser';
+import { Input, Animations } from 'phaser';
 import { useGameStore } from 'src/stores/game';
 import { calculateDamage } from 'src/utils/battle';
 import { item } from 'src/model/item';
@@ -252,9 +252,9 @@ export default class Player {
         this.status = 'dead';
         this.scene.camera?.pan(this.sprite.x, this.sprite.y, 200, 'Power2');
         this.scene.camera?.zoomTo(2, 200);
-        setTimeout(() => {
+        this.scene.time.delayedCall(500, () => {
           this.sprite.anims.play('player-lose');
-        }, 500);
+        });
       } else {
         this.status = 'hit';
         this.scene.time.delayedCall(200, () => {
@@ -553,11 +553,11 @@ export default class Player {
             this.scene.enemies[enemyIndex].updateStatus('hit');
           }
 
-          setTimeout(() => {
+          this.scene.time.delayedCall(500, () => {
             this.text.setVisible(false);
             this.text.setFontSize(this.tileSize * 0.3);
             this.text.setStyle({ color: '#ffffff' });
-          }, 500);
+          });
         });
       }
     }
@@ -576,28 +576,33 @@ export default class Player {
       );
       this.sprite.setOffset(0, 0);
       this.sprite.anims.play('player-idle');
-      setTimeout(() => {
+      this.scene.time.delayedCall(300, () => {
         // release key
         // if (this.dKey) this.keys[this.dKey.keyCode] = 0;
         if (this.keys['mouseLeft']) this.keys['mouseLeft'] = 0;
-      }, 300);
+      });
     }
 
     if (context.key.includes('lose')) {
-      // Change sprite color
-      this.sprite.setTint(820000);
       this.sprite.setFrame(
         this.scene.anims.get('player-lose').frames[1].textureFrame
       );
-      // TODO - FX Wipe
-      const wipe = this.sprite.preFX?.addWipe(0.1, 0, 0);
-      this.scene.tweens.add({
-        targets: wipe,
-        progress: 1,
-        repeat: 0,
-        duration: 2000,
+      //FX Wipe
+      this.scene.time.delayedCall(500, () => {
+        const wipe = this.sprite.preFX?.addWipe(0.1, 0, 0);
+        this.scene.tweens.add({
+          targets: wipe,
+          progress: 1,
+          repeat: 0,
+          duration: 2000,
+        });
+        this.scene.time.delayedCall(2000, () => {
+          //Show Game over screen
+          const gameStore = useGameStore();
+          gameStore.setGameOver(true);
+          this.scene.physics.pause();
+        });
       });
-      // TODO - Show Game over screen
     }
   }
 
