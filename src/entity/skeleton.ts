@@ -157,9 +157,15 @@ export default class Skeleton {
 
         if ((diffX <= 5 && diffX >= 0) || (diffY <= 5 && diffY >= 0)) {
           if (!this.keys['d'] || this.keys['d'] === 0) {
-            this.sprite?.body.stop();
-            this.sprite?.anims.play('enemy_attack', true);
-            this.keys['d'] = 1;
+            const gameStore = useGameStore();
+            // If the player lose
+            if (gameStore.player.total_attribute.hp === 0) {
+              this.sprite.anims.pause();
+            } else {
+              this.sprite?.body.stop();
+              this.sprite?.anims.play('enemy_attack', true);
+              this.keys['d'] = 1;
+            }
           }
         }
       }
@@ -369,10 +375,10 @@ export default class Skeleton {
       const randomNumber = Math.Between(0, this.angle.length - 1);
       this.facingAngle = this.angle[randomNumber];
 
-      console.log(
-        `${this.sprite.name} facing direcion at random`,
-        this.facingAngle
-      );
+      // console.log(
+      //   `${this.sprite.name} facing direcion at random`,
+      //   this.facingAngle
+      // );
 
       this.ray.setAngleDeg(this.facingAngle);
 
@@ -419,7 +425,7 @@ export default class Skeleton {
 
       switch (direction) {
         case 0:
-          if (this.map[y - 1][x] !== 0) {
+          if (y - 1 >= 1 && this.map[y - 1][x] !== 0) {
             limitAngle = limitAngle.filter((a) => a < -135 || a > -45);
           } else {
             this.ray?.setAngleDeg(this.facingAngle);
