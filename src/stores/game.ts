@@ -17,6 +17,7 @@ export const useGameStore = defineStore('game', {
     borderSize: 0,
     openInventory: false,
     openStatus: false,
+    gameOver: false,
     emitter: new Phaser.Events.EventEmitter(),
   }),
 
@@ -34,6 +35,7 @@ export const useGameStore = defineStore('game', {
     getborderSize: (state) => state.borderSize,
     getOpenInventory: (state) => state.openInventory,
     getOpenStatus: (state) => state.openStatus,
+    getGameOver: (state) => state.gameOver,
   },
 
   actions: {
@@ -92,6 +94,10 @@ export const useGameStore = defineStore('game', {
 
     setBorderSize(size: number) {
       this.borderSize = size;
+    },
+
+    setGameOver(over: boolean) {
+      this.gameOver = over;
     },
 
     pixelatedBorder(size: number, itemIndex: number, hoverIndex: number) {
