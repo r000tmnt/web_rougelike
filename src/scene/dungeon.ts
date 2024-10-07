@@ -35,6 +35,7 @@ export default class Dungeon extends Scene {
   private raycasterPlugin!: PhaserRaycaster;
   private navMeshPlugin!: PhaserNavMeshPlugin;
   private juice!: phaserJuice;
+  private eventsToRemove!: string[];
 
   constructor() {
     super('Dungeon');
@@ -56,6 +57,11 @@ export default class Dungeon extends Scene {
     this.limitWidth = 0;
     this.limitHeight = 0;
     this.raycaster = null;
+    this.eventsToRemove = [
+      'chase-countdown-start',
+      'chase-countdown-calling',
+      'reset',
+    ];
   }
 
   setTheme(theme: string) {
@@ -440,15 +446,12 @@ export default class Dungeon extends Scene {
 
       if (Object.entries(playerData).length) {
         // Create player from stored data
-        this.player = new Player(
+        this.player?.updateScene(
           this,
           playerX + this.offsetX,
           playerY + this.offsetY,
-          'demo_player',
-          playerData,
           this.groundLayer,
-          this.content.level[this.content.roomIndex],
-          tileSize
+          this.content.level[this.content.roomIndex]
         );
       } else {
         // Initialize player
@@ -463,8 +466,6 @@ export default class Dungeon extends Scene {
           tileSize
         );
       }
-
-      gameStore.setPlayerStatus(this.player.data);
 
       console.log('player :>>>', this.player);
 
@@ -638,8 +639,16 @@ export default class Dungeon extends Scene {
       this.raycaster?.destroy();
       // Remove layer
       this.groundLayer?.destroy();
-      // Remove all scene event listener
-      gameStore.emitter.destroy();
+      // // Remove all scene event listener
+      // gameStore.emitter.destroy();
+      // // Create a new scene event listener
+      // gameStore.setEmiiter();
+
+      // Remove scene event
+      this.eventsToRemove.forEach((e) => {
+        gameStore.emitter.removeListener(e);
+      });
+
       // Reset offset
       this.offsetX = 0;
       this.offsetY = 0;
