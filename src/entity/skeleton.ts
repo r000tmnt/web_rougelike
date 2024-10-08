@@ -280,99 +280,102 @@ export default class Skeleton {
         this.overlap = this.target !== null;
 
         if (this.target) {
-          const { x, y, flipX } = this.target;
+          // If there is path left, grab the next point. Otherwise, null the target.
+          if (this.path && this.path.length > 0) {
+            console.log('looking to path in update :>>>', this.path);
+            this.target = this.path.shift();
+          } else if (this.target.name && this.target.name.includes('player')) {
+            // this.path = null;
+            // this.target = null;
 
-          const direction = getDirection(this.facingAngle);
+            // Check if player is in the range
+            const { x, y, flipX } = this.target;
 
-          const pointerX =
-            direction === 1 ? this.sprite.x + this.tileSize : this.sprite.x;
+            const direction = getDirection(this.facingAngle);
 
-          const pointerY =
-            direction === 2 ? this.sprite.y + this.tileSize : this.sprite.y;
+            const pointerX =
+              direction === 1 ? this.sprite.x + this.tileSize : this.sprite.x;
 
-          const targetX = flipX ? x + this.tileSize : x;
+            const pointerY =
+              direction === 2 ? this.sprite.y + this.tileSize : this.sprite.y;
 
-          const targetY = y < this.sprite.y ? y + this.tileSize : y;
+            const targetX = flipX ? x + this.tileSize : x;
 
-          distanceX = Math.Difference(pointerX, targetX);
-          distanceY = Math.Difference(pointerY, targetY);
+            const targetY =
+              this.sprite.y - y >= this.tileSize ? y + this.tileSize : y;
 
-          if (distanceX < 5 && distanceY < 5) {
-            this.overlap = true;
+            distanceX = Math.Difference(pointerX, targetX);
+            distanceY = Math.Difference(pointerY, targetY);
 
-            // If there is path left, grab the next point. Otherwise, null the target.
-            if (this.path && this.path.length > 0) {
-              console.log(`${this.sprite.name} looking to path in update`);
-              this.target = this.path.shift();
-            } else {
-              this.path = null;
-              this.target = null;
-            }
-
-            if (!this.keys['d'] || this.keys['d'] === 0) {
-              const gameStore = useGameStore();
-              // If the player lose
-              if (gameStore.player.total_attribute.hp === 0) {
-                this.sprite.anims.pause();
-              } else {
-                this.sprite?.body.stop();
-                this.sprite?.anims.play('enemy_attack', true);
-                this.keys['d'] = 1;
+            if (distanceX < 5 && distanceY < 5) {
+              if (!this.keys['d'] || this.keys['d'] === 0) {
+                const gameStore = useGameStore();
+                // If the player lose
+                if (gameStore.player.total_attribute.hp === 0) {
+                  this.sprite.body.stop();
+                } else {
+                  this.sprite?.body.stop();
+                  this.sprite?.anims.play('enemy_attack', true);
+                  this.keys['d'] = 1;
+                }
               }
+            } else {
+              this.overlap = false;
             }
           } else {
-            this.overlap = false;
+            const { x, y } = this.target;
 
-            if (
-              this.target &&
-              !this.sprite.anims.currentAnim?.key.includes('attack')
-            ) {
-              if (this.target) {
-                const radain = Math.Angle.BetweenPoints(
-                  this.sprite,
-                  this.target
-                );
-                this.facingAngle = Math.RadToDeg(radain);
-                this.ray?.setAngleDeg(this.facingAngle);
+            const distanceX = Math.Difference(this.sprite.x, x);
+            const distanceY = Math.Difference(this.sprite.y, y);
 
-                // console.log(
-                //   `${this.sprite.name} facing direcion in update`,
-                //   this.facingAngle
-                // );
+            if (distanceX < 5 && distanceY < 5) {
+              this.target = null;
+              this.sprite.body.stop();
+            }
+          }
 
-                this.scene.physics.velocityFromRotation(
-                  radain,
-                  this.tileSize,
-                  this.sprite.body.velocity
-                );
-              }
+          if (
+            this.target &&
+            !this.sprite.anims.currentAnim?.key.includes('attack')
+          ) {
+            const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
+            this.facingAngle = Math.RadToDeg(radain);
+            this.ray?.setAngleDeg(this.facingAngle);
 
-              if (!this.ray?.body.embedded) {
-                console.log(`${this.sprite.name} lost the player`);
-                this.inSight = false;
-                if (this.chaseTimer === null) {
-                  // Keep chasing for 10 second
-                  // Get the player position again
-                  const gameStore = useGameStore();
-                  gameStore.emitter.emit('chase-countdown-calling');
-                  this.chaseTimer = setInterval(() => {
-                    if (!this.inSight) {
-                      console.log(`${this.sprite.name} stop chasing`);
-                      this.target = null;
-                      this.sprite?.body?.stop();
-                      this.#getRandomDirection();
-                      clearInterval(Number(this.chaseTimer));
-                    }
-                  }, 10000);
-                }
+            // console.log(
+            //   `${this.sprite.name} facing direcion in update`,
+            //   this.facingAngle
+            // );
+
+            this.scene.physics.velocityFromRotation(
+              radain,
+              this.tileSize,
+              this.sprite.body.velocity
+            );
+
+            if (!this.ray?.body.embedded) {
+              console.log(`${this.sprite.name} lost the player`);
+              this.inSight = false;
+              if (this.chaseTimer === null) {
+                // Keep chasing for 10 second
+                // Get the player position again
+                const gameStore = useGameStore();
+                gameStore.emitter.emit('chase-countdown-calling');
+                this.chaseTimer = setInterval(() => {
+                  if (!this.inSight) {
+                    console.log(`${this.sprite.name} stop chasing`);
+                    this.target = null;
+                    this.sprite?.body?.stop();
+                    this.#getRandomDirection();
+                    clearInterval(Number(this.chaseTimer));
+                  }
+                }, 10000);
               }
             }
           }
         }
 
-        if (this.ray?.body && !this.overlap) {
-          this.#startChasing();
-        }
+        this.#startChasing();
       }
     }
   }
@@ -530,14 +533,7 @@ export default class Skeleton {
   }
 
   #startChasing() {
-    if (
-      !this.sprite.anims.currentAnim?.key.includes('attack') &&
-      !this.overlap
-    ) {
-      // console.log(`${this.sprite.name} on position x:${x} y:${y}`);
-
-      // let playerHide = false;、
-      // console.log('this.facingAngle ', this.facingAngle);
+    if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
       const direction = getDirection(this.facingAngle);
       this.ray?.setAngleDeg(this.facingAngle);
 
@@ -694,10 +690,10 @@ export default class Skeleton {
         p.x += this.scene.offsetX;
         p.y += this.scene.offsetY;
       });
-      console.log(`${this.sprite.name} looking to path in #moveToTarget`);
+      console.log('looking to path in #moveToTarget :>>>', this.path);
       this.target = this.path.shift();
     } else {
-      this.target = null;
+      // this.target = null;
     }
 
     // if (
@@ -745,6 +741,20 @@ export default class Skeleton {
       // Collide with something else (ex. wall)
       if (this.target) {
         // Find another path
+        if (this.path && this.path.length) {
+          this.target = this.path.shift();
+        } else {
+          const { x, y } = this.target;
+
+          const distanceX = Math.Difference(this.sprite.x, x);
+          const distanceY = Math.Difference(this.sprite.y, y);
+
+          if (distanceX < 5 && distanceY < 5) {
+            this.target = null;
+            this.sprite.body.stop();
+            this.#getRandomDirection();
+          }
+        }
       } else {
         // Get facing direction
         const radain = Math.Angle.BetweenPoints(this.sprite, {
@@ -821,10 +831,10 @@ export default class Skeleton {
     if (context.key.includes('attack')) {
       this.sprite.body.setVelocity(0);
       this.sprite?.anims.play('enemy_idle');
-      setTimeout(() => {
+      this.scene.time.delayedCall(500, () => {
         // release key
         this.keys['d'] = 0;
-      }, 500);
+      });
     }
   }
 }
