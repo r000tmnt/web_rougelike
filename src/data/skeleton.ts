@@ -46,7 +46,48 @@ export default {
     luck: 2,
     vd: 3,
   },
-  drop: [],
+  drop: [
+    {
+      id: 'm01',
+      name: 'Bone',
+      rarity: 0,
+      type: 6,
+      image: '',
+      modifier: '',
+      amount: 1,
+      desc: 'The remain of already dead. Can be use as projectile.',
+      equip: false,
+      effect: {
+        hp: {
+          type: 0,
+          value: 1,
+        },
+      },
+    },
+    {
+      id: 'c01',
+      name: 'Gold',
+      rarity: 0,
+      type: 5,
+      amount: 1,
+    },
+    {
+      id: 's01',
+      name: 'The silent song',
+      rarity: 0,
+      type: 7,
+      image: '',
+      modifier: '',
+      amount: 1,
+      desc: 'Lesser enemies in the next room.',
+      effect: {
+        enemy: {
+          type: 2,
+          value: 2,
+        },
+      },
+    },
+  ],
   pattern: '',
   position: {
     x: 0,
