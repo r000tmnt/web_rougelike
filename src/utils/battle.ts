@@ -31,8 +31,10 @@ export const setInitialStatus = (data: enemy, randomlv: number) => {
   const over = randomlv - 1;
 
   for (const [key, value] of Object.entries(data.base_attribute)) {
-    data.base_attribute[key as keyof base_attribute] =
-      value + grows[Math.floor(Math.random() * grows.length)] * over;
+    for (let i = 0; i < over; i++) {
+      data.base_attribute[key as keyof base_attribute] =
+        value + grows[Math.floor(Math.random() * grows.length)];
+    }
   }
 
   data.attribute_limit.hp = data.base_attribute.hp + data.add_attribute.hp;
