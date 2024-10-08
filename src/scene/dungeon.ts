@@ -527,12 +527,19 @@ export default class Dungeon extends Scene {
         console.log('levelRange :>>>', levelRange);
 
         for (let i = 0; i < enemyPosition.length; i++) {
+          const randomLv =
+            levelRange[Math.floor(Math.random() * levelRange.length)];
+
+          let newEnemyData = JSON.parse(JSON.stringify(skeleton));
+
+          newEnemyData = setInitialStatus(newEnemyData, randomLv);
+
           const enemy = new Skeleton(
             this,
             enemyPosition[i].x * tileSize + this.offsetX,
             enemyPosition[i].y * tileSize + this.offsetY,
             'demo_enemy',
-            skeleton,
+            newEnemyData,
             i,
             this.player.sprite,
             this.groundLayer,
@@ -541,21 +548,8 @@ export default class Dungeon extends Scene {
             this.navMesh
           );
 
-          const randomLv =
-            levelRange[Math.floor(Math.random() * levelRange.length)];
-
-          let newEnemyData = JSON.parse(JSON.stringify(skeleton));
-
-          newEnemyData = setInitialStatus(
-            newEnemyData,
-            randomLv,
-            this.player?.data.lv
-          );
-
-          // console.log('new enemy entity :>>>', enemy);
-          console.log('new enemy data :>>>', newEnemyData);
-
-          enemy.updateData(newEnemyData);
+          console.log('new enemy data :>>>', enemy.data);
+          // enemy.updateData(newEnemyData);
 
           this.enemies.push(enemy);
         }
