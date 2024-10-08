@@ -7,7 +7,7 @@ export interface item {
   image: string; // Path of the image
   modifier: string;
   equip?: boolean;
-  effect: modifier;
+  effect?: modifier;
   amount: number;
 }
 
