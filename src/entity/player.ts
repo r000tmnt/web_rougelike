@@ -36,7 +36,8 @@ export default class Player {
     data: player,
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     map: number[][],
-    tileSize: number
+    tileSize: number,
+    reset = true
   ) {
     this.scene = scene;
     this.sprite = this.scene.physics.add.sprite(x, y);
@@ -55,10 +56,14 @@ export default class Player {
     this.collide = false;
     this.target = [];
     this.keys = {};
-    this.init(texture, groundLayer);
+    this.init(texture, groundLayer, reset);
   }
 
-  init(texture: string, groundLayer: Phaser.Tilemaps.TilemapLayer) {
+  init(
+    texture: string,
+    groundLayer: Phaser.Tilemaps.TilemapLayer,
+    reset: boolean
+  ) {
     this.sprite.name = texture;
     this.sprite.setSize(this.tileSize, this.tileSize);
     this.sprite.setOrigin(0, 0);
@@ -159,10 +164,13 @@ export default class Player {
     );
 
     this.#setCollide(groundLayer);
-    this.#setData();
     this.#setCustomEvent();
     this.#addContorl();
     this.#setZone();
+
+    if (reset) {
+      this.#setData();
+    }
 
     // Check if there's equipment to count
     Object.entries(this.data.equip).forEach((e) => {
@@ -214,9 +222,6 @@ export default class Player {
     });
 
     console.log('total ', this.data.total_attribute);
-
-    const gameStore = useGameStore();
-    gameStore.setPlayerStatus(this.data);
   }
 
   #setCustomEvent() {
@@ -234,7 +239,10 @@ export default class Player {
 
       // this.sprite.anims.play({ key: 'player-take-damage', duration: 100 });
       // console.log(this.scene.textures.getTextureKeys(`${texture}_idle`));
-      this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
+      // this.sprite.setTexture(`${this.sprite.name}_idle`, 6);
+      this.sprite.setFrame(
+        this.scene.anims.get('player-take-damage').frames[0].textureFrame
+      );
       this.scene.juice.shake(this.sprite, { x: 1, repeat: 2 });
 
       // If player lose
@@ -251,7 +259,9 @@ export default class Player {
         this.status = 'hit';
         this.scene.time.delayedCall(200, () => {
           this.status = '';
-          this.sprite.anims.play('player-idle');
+          this.sprite.setFrame(
+            this.scene.anims.get('player-idle').frames[0].textureFrame
+          );
           this.keys['mouseLeft'] = 0;
         });
       }
@@ -629,19 +639,5 @@ export default class Player {
     // } else {
     //   this.sprite.body.setImmovable(false);
     // }
-  }
-
-  // When the room changes
-  updateScene(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    groundLayer: Phaser.Tilemaps.TilemapLayer,
-    map: number[][]
-  ) {
-    this.scene = scene;
-    this.sprite.setPosition(x, y);
-    this.#setCollide(groundLayer);
-    this.map = map;
   }
 }
