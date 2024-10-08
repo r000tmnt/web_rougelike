@@ -252,18 +252,16 @@ export default class Player {
         this.status = 'dead';
         this.scene.camera?.pan(this.sprite.x, this.sprite.y, 200, 'Power2');
         this.scene.camera?.zoomTo(2, 200);
-        this.scene.time.delayedCall(500, () => {
+        setTimeout(() => {
           this.sprite.anims.play('player-lose');
-        });
+        }, 500);
       } else {
         this.status = 'hit';
-        this.scene.time.delayedCall(200, () => {
+        setTimeout(() => {
           this.status = '';
-          this.sprite.setFrame(
-            this.scene.anims.get('player-idle').frames[0].textureFrame
-          );
+          this.sprite.anims.play('player-lose');
           this.keys['mouseLeft'] = 0;
-        });
+        }, 200);
       }
       gameStore.setPlayerStatus(this.data);
     });
@@ -453,48 +451,65 @@ export default class Player {
       }
 
       if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
+        const { up, right, down, left } = this.sprite.body.touching;
+
         if (this.cursor?.left.isDown || this.aKey.isDown) {
-          this.sprite.setVelocityX(-this.tileSize * 2.5);
-          this.sprite.setFlipX(false);
           this.sprite.anims.play('player-walking', true);
-          // Update zone
-          this.zone.setPosition(
-            this.sprite.x - this.tileSize / 4,
-            this.sprite.y + this.tileSize / 2
-          );
-          // this.zone.setSize(this.tileSize / 2, this.tileSize);
-          this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+
+          if (!down) {
+            this.sprite.setVelocityX(-this.tileSize * 2.5);
+            this.sprite.setFlipX(false);
+
+            // Update zone
+            this.zone.setPosition(
+              this.sprite.x - this.tileSize / 4,
+              this.sprite.y + this.tileSize / 2
+            );
+            // this.zone.setSize(this.tileSize / 2, this.tileSize);
+            this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+          }
         } else if (this.cursor?.right.isDown || this.dKey.isDown) {
-          this.sprite.setVelocityX(this.tileSize * 2.5);
-          this.sprite.setFlipX(true);
           this.sprite.anims.play('player-walking', true);
-          // Update zone
-          this.zone.setPosition(
-            this.sprite.x + this.tileSize + this.tileSize / 3,
-            this.sprite.y + this.tileSize / 2
-          );
-          // this.zone.setSize(this.tileSize / 2, this.tileSize);
-          this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+
+          if (!right) {
+            this.sprite.setVelocityX(this.tileSize * 2.5);
+            this.sprite.setFlipX(true);
+
+            // Update zone
+            this.zone.setPosition(
+              this.sprite.x + this.tileSize + this.tileSize / 3,
+              this.sprite.y + this.tileSize / 2
+            );
+            // this.zone.setSize(this.tileSize / 2, this.tileSize);
+            this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
+          }
         } else if (this.cursor?.up.isDown || this.wKey.isDown) {
-          this.sprite.setVelocityY(-this.tileSize * 2.5);
           this.sprite.anims.play('player-walking', true);
-          // Update zone
-          this.zone.setPosition(
-            this.sprite.x + this.tileSize / 2,
-            this.sprite.y - this.tileSize / 4
-          );
-          // this.zone.setSize(this.tileSize, this.tileSize / 2);
-          this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+
+          if (!up) {
+            this.sprite.setVelocityY(-this.tileSize * 2.5);
+
+            // Update zone
+            this.zone.setPosition(
+              this.sprite.x + this.tileSize / 2,
+              this.sprite.y - this.tileSize / 4
+            );
+            // this.zone.setSize(this.tileSize, this.tileSize / 2);
+            this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+          }
         } else if (this.cursor?.down.isDown || this.sKey.isDown) {
-          this.sprite.setVelocityY(this.tileSize * 2.5);
           this.sprite.anims.play('player-walking', true);
-          // Update zone
-          this.zone.setPosition(
-            this.sprite.x + this.tileSize / 2,
-            this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
-          );
-          // this.zone.setSize(this.tileSize, this.tileSize / 2);
-          this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+          if (!down) {
+            this.sprite.setVelocityY(this.tileSize * 2.5);
+
+            // Update zone
+            this.zone.setPosition(
+              this.sprite.x + this.tileSize / 2,
+              this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
+            );
+            // this.zone.setSize(this.tileSize, this.tileSize / 2);
+            this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+          }
         } else {
           this.sprite.body.setVelocity(0);
           if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
@@ -634,9 +649,12 @@ export default class Player {
     // console.log('self', self);
     console.log('player collide with target :>>>', target);
 
-    // if (target.name.includes('enemy')) {
-    //   this.sprite.body.setImmovable(true);
-    // } else {
+    if (target.name && target.name.includes('enemy')) {
+      // this.sprite.body.setImmovable(true);
+      // target.setPushable(false)
+      this.sprite.body.stop();
+    }
+    // else {
     //   this.sprite.body.setImmovable(false);
     // }
   }
