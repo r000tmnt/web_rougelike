@@ -575,7 +575,7 @@ export default class Player {
               this.text.setVisible(true);
             }
 
-            this.scene.enemies[enemyIndex].data.base_attribute.hp -=
+            this.scene.enemies[enemyIndex].data.total_attribute.hp -=
               result.value;
             this.scene.enemies[enemyIndex].updateStatus('hit');
             const gameStore = useGameStore();
