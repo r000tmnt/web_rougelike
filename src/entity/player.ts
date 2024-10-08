@@ -578,6 +578,8 @@ export default class Player {
             this.scene.enemies[enemyIndex].data.base_attribute.hp -=
               result.value;
             this.scene.enemies[enemyIndex].updateStatus('hit');
+            const gameStore = useGameStore();
+            gameStore.emitter.emit('chase-countdown-start', this.sprite);
           }
 
           this.scene.time.delayedCall(500, () => {
