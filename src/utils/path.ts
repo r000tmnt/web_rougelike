@@ -17,3 +17,7 @@ export const getDirection = (deg: number) => {
   if (deg <= -135 || deg >= 135) return 3; // left
   else return -1; // Not found
 };
+
+export const getDistance = (pointA: number, pointB: number) => {
+  return Math.abs(pointA - pointB);
+};

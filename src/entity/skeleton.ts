@@ -1,6 +1,6 @@
 import { enemy, action, base_attribute } from 'src/model/character';
 import { Animations, Math } from 'phaser';
-import { getDirection, getPosition } from 'src/utils/path';
+import { getDirection, getPosition, getDistance } from 'src/utils/path';
 import { calculateDamage } from 'src/utils/battle';
 import { useGameStore } from 'src/stores/game';
 
@@ -304,8 +304,8 @@ export default class Skeleton {
             const targetY =
               this.sprite.y - y >= this.tileSize ? y + this.tileSize : y;
 
-            distanceX = Math.Difference(pointerX, targetX);
-            distanceY = Math.Difference(pointerY, targetY);
+            distanceX = getDistance(pointerX, targetX);
+            distanceY = getDistance(pointerY, targetY);
 
             if (distanceX < 5 && distanceY < 5) {
               if (!this.keys['d'] || this.keys['d'] === 0) {
@@ -325,8 +325,8 @@ export default class Skeleton {
           } else {
             const { x, y } = this.target;
 
-            const distanceX = Math.Difference(this.sprite.x, x);
-            const distanceY = Math.Difference(this.sprite.y, y);
+            const distanceX = getDistance(this.sprite.x, x);
+            const distanceY = getDistance(this.sprite.y, y);
 
             if (distanceX < 5 && distanceY < 5) {
               this.target = null;
@@ -375,7 +375,9 @@ export default class Skeleton {
           }
         }
 
-        this.#startChasing();
+        if (!this.keys['d'] || this.keys['d'] === 0) {
+          this.#startChasing();
+        }
       }
     }
   }
@@ -533,48 +535,42 @@ export default class Skeleton {
   }
 
   #startChasing() {
-    if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
-      const direction = getDirection(this.facingAngle);
-      this.ray?.setAngleDeg(this.facingAngle);
+    const direction = getDirection(this.facingAngle);
+    this.ray?.setAngleDeg(this.facingAngle);
 
-      switch (direction) {
-        case 0:
-          this.#goUp();
-          break;
-        case 1:
-          this.#goRight();
-          break;
-        case 2:
-          this.#goDown();
-          break;
-        case 3:
-          this.#goLeft();
-          break;
-        default:
-          this.#getRandomDirection();
-          break;
-      }
+    switch (direction) {
+      case 0:
+        this.#goUp();
+        break;
+      case 1:
+        this.#goRight();
+        break;
+      case 2:
+        this.#goDown();
+        break;
+      case 3:
+        this.#goLeft();
+        break;
+      default:
+        this.#getRandomDirection();
+        break;
+    }
 
-      this.sprite.anims.play('enemy_walking', true);
+    this.sprite.anims.play('enemy_walking', true);
 
-      this.ray?.setOrigin(
-        this.sprite.x + this.tileSize / 2,
-        this.sprite.y + this.tileSize / 2
-      );
+    this.ray?.setOrigin(
+      this.sprite.x + this.tileSize / 2,
+      this.sprite.y + this.tileSize / 2
+    );
 
-      // this.ray?.castCircle();
-      // this.ray?.cast();
-      this.ray?.castCone();
+    // this.ray?.castCircle();
+    // this.ray?.cast();
+    this.ray?.castCone();
 
-      if (
-        !this.inSight &&
-        this.idleTimer === null &&
-        this.chaseTimer === null
-      ) {
-        this.idleTimer = setTimeout(() => {
-          this.#stopMoving();
-        }, Math.Between(1000, 3000));
-      }
+    if (!this.inSight && this.idleTimer === null && this.chaseTimer === null) {
+      this.idleTimer = setTimeout(() => {
+        this.#stopMoving();
+      }, Math.Between(1000, 3000));
     }
   }
 
@@ -697,8 +693,8 @@ export default class Skeleton {
     }
 
     // if (
-    //   Math.Difference(this.sprite.x, destination.x) > 5 ||
-    //   Math.Difference(this.sprite.y, destination.y) > 5
+    //   getDistance(this.sprite.x, destination.x) > 5 ||
+    //   getDistance(this.sprite.y, destination.y) > 5
     // ) {
     //   // Follow player
     //   this.scene.physics.moveToObject(this.sprite, destination, this.tileSize);
@@ -734,25 +730,25 @@ export default class Skeleton {
     else if (target.name && target.name.includes('player')) {
       this.target = target;
       // this.sprite.body.setImmovable(true);
+      this.sprite.body.stop();
       this.collide = true;
     } else {
       // this.sprite.body.setImmovable(false);
-      this.collide = false;
       // Collide with something else (ex. wall)
       if (this.target) {
         // Find another path
         if (this.path && this.path.length) {
           this.target = this.path.shift();
-        } else {
+        } else if (!this.inSight) {
           const { x, y } = this.target;
 
-          const distanceX = Math.Difference(this.sprite.x, x);
-          const distanceY = Math.Difference(this.sprite.y, y);
+          const distanceX = getDistance(this.sprite.x, x);
+          const distanceY = getDistance(this.sprite.y, y);
 
           if (distanceX < 5 && distanceY < 5) {
             this.target = null;
             this.sprite.body.stop();
-            this.#getRandomDirection();
+            // this.#getRandomDirection();
           }
         }
       } else {
