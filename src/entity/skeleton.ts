@@ -274,63 +274,72 @@ export default class Skeleton {
         // TODO: Play dead animation
       } else {
         // Check distance
-        let distanceX = -1;
-        let distanceY = -1;
-
         this.overlap = this.target !== null;
 
         if (this.target) {
           // If there is path left, grab the next point. Otherwise, null the target.
           if (this.path && this.path.length > 0) {
-            console.log('looking to path in update :>>>', this.path);
+            // console.log('looking to path in update :>>>', this.path);
             this.target = this.path.shift();
-          } else if (this.target.name && this.target.name.includes('player')) {
-            // this.path = null;
-            // this.target = null;
+          } else {
+            if (this.target.name) {
+              // Check if player is in the range
+              const { x, y } = this.target;
 
-            // Check if player is in the range
-            const { x, y, flipX } = this.target;
+              const direction = getDirection(this.facingAngle);
 
-            const direction = getDirection(this.facingAngle);
+              const pointerX =
+                direction === 1 ? this.sprite.x + this.tileSize : this.sprite.x;
 
-            const pointerX =
-              direction === 1 ? this.sprite.x + this.tileSize : this.sprite.x;
+              const pointerY =
+                direction === 2 ? this.sprite.y + this.tileSize : this.sprite.y;
 
-            const pointerY =
-              direction === 2 ? this.sprite.y + this.tileSize : this.sprite.y;
+              const targetX = direction === 3 ? x + this.tileSize : x;
 
-            const targetX = flipX ? x + this.tileSize : x;
+              const targetY = direction === 0 ? y + this.tileSize : y;
 
-            const targetY =
-              this.sprite.y - y >= this.tileSize ? y + this.tileSize : y;
+              const distanceX = getDistance(pointerX, targetX);
+              const distanceY = getDistance(pointerY, targetY);
 
-            distanceX = getDistance(pointerX, targetX);
-            distanceY = getDistance(pointerY, targetY);
+              let attackable = false;
 
-            if (distanceX < 5 && distanceY < 5) {
-              if (!this.keys['d'] || this.keys['d'] === 0) {
-                const gameStore = useGameStore();
-                // If the player lose
-                if (gameStore.player.total_attribute.hp === 0) {
-                  this.sprite.body.stop();
-                } else {
-                  this.sprite?.body.stop();
-                  this.sprite?.anims.play('enemy_attack', true);
-                  this.keys['d'] = 1;
+              if ((direction + 1) % 2 === 0) {
+                // right, left
+                if (distanceX < 5 && distanceY <= this.tileSize * 0.75)
+                  attackable = true;
+              } else {
+                // up, down
+                if (distanceY < 5 && distanceX <= this.tileSize * 0.75)
+                  attackable = true;
+              }
+
+              if (attackable) {
+                if (!this.keys['d'] || this.keys['d'] === 0) {
+                  const gameStore = useGameStore();
+                  // If the player lose
+                  if (gameStore.player.total_attribute.hp === 0) {
+                    this.sprite.body.stop();
+                  } else {
+                    this.sprite?.body.stop();
+                    this.sprite?.anims.play('enemy_attack', true);
+                    this.keys['d'] = 1;
+                  }
                 }
+              } else {
+                this.overlap = false;
               }
             } else {
-              this.overlap = false;
-            }
-          } else {
-            const { x, y } = this.target;
+              const { x, y } = this.target;
 
-            const distanceX = getDistance(this.sprite.x, x);
-            const distanceY = getDistance(this.sprite.y, y);
+              const distanceX = getDistance(this.sprite.x, x);
+              const distanceY = getDistance(this.sprite.y, y);
 
-            if (distanceX < 5 && distanceY < 5) {
-              this.target = null;
-              this.sprite.body.stop();
+              if (distanceX < 5 && distanceY < 5) {
+                console.log('The last position of the path');
+
+                this.overlap = false;
+                this.target = null;
+              }
             }
           }
 
@@ -538,18 +547,20 @@ export default class Skeleton {
     const direction = getDirection(this.facingAngle);
     this.ray?.setAngleDeg(this.facingAngle);
 
+    const { up, right, down, left } = this.sprite.body.touching;
+
     switch (direction) {
       case 0:
-        this.#goUp();
+        if (!up) this.#goUp();
         break;
       case 1:
-        this.#goRight();
+        if (!right) this.#goRight();
         break;
       case 2:
-        this.#goDown();
+        if (!down) this.#goDown();
         break;
       case 3:
-        this.#goLeft();
+        if (!left) this.#goLeft();
         break;
       default:
         this.#getRandomDirection();
@@ -686,7 +697,7 @@ export default class Skeleton {
         p.x += this.scene.offsetX;
         p.y += this.scene.offsetY;
       });
-      console.log('looking to path in #moveToTarget :>>>', this.path);
+      // console.log('looking to path in #moveToTarget :>>>', this.path);
       this.target = this.path.shift();
     } else {
       // this.target = null;
@@ -730,7 +741,6 @@ export default class Skeleton {
     else if (target.name && target.name.includes('player')) {
       this.target = target;
       // this.sprite.body.setImmovable(true);
-      this.sprite.body.stop();
       this.collide = true;
     } else {
       // this.sprite.body.setImmovable(false);
@@ -747,8 +757,8 @@ export default class Skeleton {
 
           if (distanceX < 5 && distanceY < 5) {
             this.target = null;
-            this.sprite.body.stop();
-            // this.#getRandomDirection();
+          } else {
+            this.#moveToTarget(new Math.Vector2(this.target.x, this.target.y));
           }
         }
       } else {
