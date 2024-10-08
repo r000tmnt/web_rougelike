@@ -60,32 +60,34 @@ const calculateElementStyle = () => {
   return Math.floor(windowWidth.value / 50);
 };
 
-const setMeters = (data?: player) => {
-  const { total_attribute, attribute_limit } = data ? data : playerData.value;
-  if (hp.value) {
-    hp.value.style.width = `${getPercentage(
-      attribute_limit.hp,
-      total_attribute.hp
-    )}%`;
+const setMeters = (data: player) => {
+  if (Object.entries(data).length) {
+    const { total_attribute, attribute_limit } = data;
+    if (hp.value) {
+      hp.value.style.width = `${getPercentage(
+        attribute_limit.hp,
+        total_attribute.hp
+      )}%`;
 
-    if (hp.value.parentNode) {
-      const textHolder = hp.value.parentNode.querySelector('span');
+      if (hp.value.parentNode) {
+        const textHolder = hp.value.parentNode.querySelector('span');
 
-      if (textHolder)
-        textHolder.innerText = `${total_attribute.hp} / ${attribute_limit.hp}`;
+        if (textHolder)
+          textHolder.innerText = `${total_attribute.hp} / ${attribute_limit.hp}`;
+      }
     }
-  }
-  if (mp.value) {
-    mp.value.style.width = `${getPercentage(
-      attribute_limit.mp,
-      total_attribute.mp
-    )}%`;
+    if (mp.value) {
+      mp.value.style.width = `${getPercentage(
+        attribute_limit.mp,
+        total_attribute.mp
+      )}%`;
 
-    if (mp.value.parentNode) {
-      const textHolder = mp.value.parentNode.querySelector('span');
+      if (mp.value.parentNode) {
+        const textHolder = mp.value.parentNode.querySelector('span');
 
-      if (textHolder)
-        textHolder.innerText = `${total_attribute.mp} / ${attribute_limit.mp}`;
+        if (textHolder)
+          textHolder.innerText = `${total_attribute.mp} / ${attribute_limit.mp}`;
+      }
     }
   }
 };
