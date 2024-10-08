@@ -60,6 +60,9 @@ export default class Dungeon extends Scene {
     this.eventsToRemove = [
       'chase-countdown-start',
       'chase-countdown-calling',
+      'player-equip',
+      'player-unequip',
+      'open-door',
       'reset',
     ];
   }
@@ -446,13 +449,18 @@ export default class Dungeon extends Scene {
 
       if (Object.entries(playerData).length) {
         // Create player from stored data
-        this.player?.updateScene(
+        this.player = new Player(
           this,
           playerX + this.offsetX,
           playerY + this.offsetY,
+          'demo_player',
+          playerData,
           this.groundLayer,
-          this.content.level[this.content.roomIndex]
+          this.content.level[this.content.roomIndex],
+          tileSize,
+          false
         );
+        this.player.data = playerData;
       } else {
         // Initialize player
         this.player = new Player(
@@ -468,6 +476,7 @@ export default class Dungeon extends Scene {
       }
 
       console.log('player :>>>', this.player);
+      gameStore.setPlayerStatus(this.player.data);
 
       // Set the camera to follow the player
       if (this.player.sprite)
@@ -639,6 +648,8 @@ export default class Dungeon extends Scene {
       this.raycaster?.destroy();
       // Remove layer
       this.groundLayer?.destroy();
+      // Destroy navMesh
+      this.navMesh = null;
       // // Remove all scene event listener
       // gameStore.emitter.destroy();
       // // Create a new scene event listener
@@ -658,6 +669,7 @@ export default class Dungeon extends Scene {
       if (this.input.keyboard) this.input.keyboard.enabled = false;
 
       if (restart) {
+        gameStore.setPlayerStatus({});
         this.scene.restart();
       } else {
         const direction = this.content.doors[gameStore.doorIndex].direction;
