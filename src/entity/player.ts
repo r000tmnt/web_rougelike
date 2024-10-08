@@ -649,7 +649,7 @@ export default class Player {
 
   #onCollide(self: any, target: any) {
     // console.log('self', self);
-    console.log('player collide with target :>>>', target);
+    // console.log('player collide with target :>>>', target);
 
     if (target.name && target.name.includes('enemy')) {
       // this.sprite.body.setImmovable(true);
