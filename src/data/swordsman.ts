@@ -102,5 +102,6 @@ export default {
   },
   exp: 0,
   pt: 0,
+  gold: 0,
   bag: [],
 };
