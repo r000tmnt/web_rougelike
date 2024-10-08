@@ -20,4 +20,10 @@ export default {
     2: 'Rare',
     3: 'Unique',
   },
+  effect: {
+    0: 'Increase in solide',
+    1: 'Increase in percentage',
+    2: 'Decrease in soilde',
+    3: 'Decrease in percentage',
+  },
 };
