@@ -64,6 +64,8 @@ export default class Dungeon extends Scene {
       'player-unequip',
       'open-door',
       'reset',
+      'pause',
+      'resume',
     ];
   }
 
@@ -599,6 +601,14 @@ export default class Dungeon extends Scene {
       // this.physics.pause();
       this.#updateContent(gameStore, true);
     });
+
+    gameStore.emitter.on('pause', () => {
+      this.anims.pauseAll();
+    });
+
+    gameStore.emitter.on('resume', () => {
+      this.anims.resumeAll();
+    });
   }
 
   #setCollision(room: number[][], gameStore: any) {
@@ -654,8 +664,6 @@ export default class Dungeon extends Scene {
       this.navMesh = null;
       // // Remove all scene event listener
       // gameStore.emitter.destroy();
-      // // Create a new scene event listener
-      // gameStore.setEmiiter();
 
       // Remove scene event
       this.eventsToRemove.forEach((e) => {

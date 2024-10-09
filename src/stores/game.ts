@@ -81,10 +81,12 @@ export const useGameStore = defineStore('game', {
     },
 
     pauseGame() {
+      this.emitter.emit('pause');
       this.game.pause();
     },
 
     resumeGame() {
+      this.emitter.emit('resume');
       this.game.resume();
     },
 
