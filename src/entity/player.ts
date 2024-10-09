@@ -415,6 +415,7 @@ export default class Player {
       !this.status.includes('dead')
     ) {
       if (!this.zone.body.embedded) {
+        // TODO - need another way to check if overlap
         this.overlap = false;
         this.target.splice(0);
       }
@@ -551,42 +552,52 @@ export default class Player {
         this.target.forEach((t) => {
           const enemyIndex = Number(t.name.split('_')[1]);
 
-          const result = calculateDamage(
-            this.data,
-            this.scene.enemies[enemyIndex].data
-          );
+          if (this.scene.enemies[enemyIndex]) {
+            const result = calculateDamage(
+              this.data,
+              this.scene.enemies[enemyIndex].data
+            );
 
-          this.text.setPosition(t.x, t.y - this.tileSize / 2);
+            this.text.setPosition(t.x, t.y - this.tileSize / 2);
 
-          // Check demage
-          if (result.value === 0) {
-            // Miss!
-            this.text.setText('MISS');
-            this.text.setVisible(true);
-          } else {
-            console.log('PLAYER HIT!');
-            if (result.type.includes('crit')) {
-              this.text.setText(`${result.value}`);
-              this.text.setStyle({ color: '#FFB343' });
-              this.text.setFontSize(this.tileSize * 0.4);
+            // Check demage
+            if (result.value === 0) {
+              // Miss!
+              this.text.setText('MISS');
               this.text.setVisible(true);
             } else {
-              this.text.setText(`${result.value}`);
-              this.text.setVisible(true);
+              console.log('PLAYER HIT!');
+              if (result.type.includes('crit')) {
+                this.text.setText(`${result.value}`);
+                this.text.setStyle({ color: '#FFB343' });
+                this.text.setFontSize(this.tileSize * 0.4);
+                this.text.setVisible(true);
+              } else {
+                this.text.setText(`${result.value}`);
+                this.text.setVisible(true);
+              }
+
+              this.scene.enemies[enemyIndex].updateStatus('hit');
+              const gameStore = useGameStore();
+              gameStore.emitter.emit('enemy-take-damage', {
+                index: enemyIndex,
+                result: result.value,
+              });
+
+              if (
+                this.scene.enemies[enemyIndex] &&
+                this.scene.enemies[enemyIndex].data.total_attribute.hp > 0
+              ) {
+                gameStore.emitter.emit('chase-countdown-start', this.sprite);
+              }
             }
 
-            this.scene.enemies[enemyIndex].data.total_attribute.hp -=
-              result.value;
-            this.scene.enemies[enemyIndex].updateStatus('hit');
-            const gameStore = useGameStore();
-            gameStore.emitter.emit('chase-countdown-start', this.sprite);
+            this.scene.time.delayedCall(500, () => {
+              this.text.setVisible(false);
+              this.text.setFontSize(this.tileSize * 0.3);
+              this.text.setStyle({ color: '#ffffff' });
+            });
           }
-
-          this.scene.time.delayedCall(500, () => {
-            this.text.setVisible(false);
-            this.text.setFontSize(this.tileSize * 0.3);
-            this.text.setStyle({ color: '#ffffff' });
-          });
         });
       }
     }
