@@ -240,6 +240,9 @@ export default class Skeleton {
             this.status = 'dead';
             this.ray?.destroy();
             this.scene.removeEnemyIntheRoom(this.index);
+            // Draw image at the same spot
+            // this.scene.add.image(this.sprite.x, this.sprite.y, 'enemy_lose', 5);
+            this.sprite.disableBody();
           }
         }
       }
