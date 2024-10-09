@@ -216,6 +216,14 @@ export default class Dungeon extends Scene {
     // Check the distance between the player and enemies
   }
 
+  removeEnemyIntheRoom(index: number) {
+    if (this.enemies.length) {
+      this.enemies.splice(index, 1);
+      const gameStore = useGameStore();
+      this.#storeEnemyData(gameStore);
+    }
+  }
+
   #getRoom(tileSize: number) {
     const room = this.content?.level[this.content.roomIndex];
 
@@ -697,7 +705,7 @@ export default class Dungeon extends Scene {
   }
 
   #storeEnemyData(gameStore: any) {
-    if (this.enemies.length && this.content) {
+    if (this.content) {
       const copy = this.enemies.map((e) => {
         if (e.sprite)
           // Update position
