@@ -91,6 +91,20 @@ export default class Skeleton {
       frameHeight: this.tileSize,
     });
 
+    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_attack`, {
+      atlas: texture,
+      frame: `${texture}_attack`,
+      frameWidth: this.tileSize,
+      frameHeight: this.tileSize,
+    });
+
+    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_lose`, {
+      atlas: texture,
+      frame: `${texture}_lose`,
+      frameWidth: this.tileSize,
+      frameHeight: this.tileSize,
+    });
+
     // Set animation
     this.scene.anims.create({
       key: 'enemy_idle',
@@ -114,11 +128,20 @@ export default class Skeleton {
 
     this.scene.anims.create({
       key: 'enemy_attack',
-      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
-        start: 3,
-        end: 7,
+      frames: this.scene.anims.generateFrameNames(`${texture}_attack`, {
+        start: 0,
+        end: 4,
       }),
       frameRate: 10,
+    });
+
+    this.scene.anims.create({
+      key: 'enemy_lose',
+      frames: this.scene.anims.generateFrameNames(`${texture}_lose`, {
+        start: 0,
+        end: 5,
+      }),
+      frameRate: 8,
     });
 
     // console.log('setting enemy collision');
@@ -200,6 +223,27 @@ export default class Skeleton {
         this.target = player;
       }
     );
+
+    gameStore.emitter.on(
+      'enemy-take-damage',
+      (data: { index: number; result: number }) => {
+        const { index, result } = data;
+
+        if (index === this.index) {
+          this.data.total_attribute.hp -=
+            result > this.data.total_attribute.hp
+              ? this.data.total_attribute.hp
+              : result;
+
+          if (this.data.total_attribute.hp === 0) {
+            this.sprite.anims.play('enemy_lose');
+            this.status = 'dead';
+            this.ray?.destroy();
+            this.scene.removeEnemyIntheRoom(this.index);
+          }
+        }
+      }
+    );
   }
 
   #setData() {
@@ -271,7 +315,7 @@ export default class Skeleton {
           this.status = '';
         });
       } else if (this.status === 'dead') {
-        // TODO: Play dead animation
+        // DO NOTHING, just stay dead
       } else {
         // Check distance
         this.overlap = this.target !== null;
@@ -347,40 +391,7 @@ export default class Skeleton {
             this.target &&
             !this.sprite.anims.currentAnim?.key.includes('attack')
           ) {
-            const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
-            this.facingAngle = Math.RadToDeg(radain);
-            this.ray?.setAngleDeg(this.facingAngle);
-
-            // console.log(
-            //   `${this.sprite.name} facing direcion in update`,
-            //   this.facingAngle
-            // );
-
-            this.scene.physics.velocityFromRotation(
-              radain,
-              this.tileSize,
-              this.sprite.body.velocity
-            );
-
-            if (!this.ray?.body.embedded) {
-              console.log(`${this.sprite.name} lost the player`);
-              this.inSight = false;
-              if (this.chaseTimer === null) {
-                // Keep chasing for 10 second
-                // Get the player position again
-                const gameStore = useGameStore();
-                gameStore.emitter.emit('chase-countdown-calling');
-                this.chaseTimer = setInterval(() => {
-                  if (!this.inSight) {
-                    console.log(`${this.sprite.name} stop chasing`);
-                    this.target = null;
-                    this.sprite?.body?.stop();
-                    this.#getRandomDirection();
-                    clearInterval(Number(this.chaseTimer));
-                  }
-                }, 10000);
-              }
-            }
+            this.#alterRayAngle();
           }
         }
 
@@ -405,6 +416,43 @@ export default class Skeleton {
 
       // this.ray?.castCircle();
       // this.#startChasing();
+    }
+  }
+
+  #alterRayAngle() {
+    const radain = Math.Angle.BetweenPoints(this.sprite, this.target);
+    this.facingAngle = Math.RadToDeg(radain);
+    this.ray?.setAngleDeg(this.facingAngle);
+
+    // console.log(
+    //   `${this.sprite.name} facing direcion in update`,
+    //   this.facingAngle
+    // );
+
+    this.scene.physics.velocityFromRotation(
+      radain,
+      this.tileSize,
+      this.sprite.body.velocity
+    );
+
+    if (!this.ray?.body.embedded) {
+      console.log(`${this.sprite.name} lost the player`);
+      this.inSight = false;
+      if (this.chaseTimer === null) {
+        // Keep chasing for 10 second
+        // Get the player position again
+        const gameStore = useGameStore();
+        gameStore.emitter.emit('chase-countdown-calling');
+        this.chaseTimer = setInterval(() => {
+          if (!this.inSight && this.data.total_attribute.hp > 0) {
+            console.log(`${this.sprite.name} stop chasing`);
+            this.target = null;
+            this.sprite?.body?.stop();
+            this.#getRandomDirection();
+            clearInterval(Number(this.chaseTimer));
+          }
+        }, 10000);
+      }
     }
   }
 
@@ -729,61 +777,65 @@ export default class Skeleton {
   }
 
   #onCollide(self: any, target: any) {
-    this.sprite.body.setVelocity(0);
-    // console.log('self', self);
-    console.log('enemy collide with target', target);
-    if (target.name && target.name.includes('enemy')) {
-      this.sprite.anims.play('enemy_idle');
-      this.#changeDirection();
-    }
+    if (this.data.total_attribute.hp > 0) {
+      this.sprite.body.setVelocity(0);
+      // console.log('self', self);
+      console.log('enemy collide with target', target);
+      if (target.name && target.name.includes('enemy')) {
+        this.sprite.anims.play('enemy_idle');
+        this.#changeDirection();
+      }
 
-    // If collide with player but player not in sight
-    else if (target.name && target.name.includes('player')) {
-      this.target = target;
-      // this.sprite.body.setImmovable(true);
-      this.collide = true;
-    } else {
-      // this.sprite.body.setImmovable(false);
-      // Collide with something else (ex. wall)
-      if (this.target) {
-        // Find another path
-        if (this.path && this.path.length) {
-          this.target = this.path.shift();
-        } else if (!this.inSight) {
-          const { x, y } = this.target;
-
-          const distanceX = getDistance(this.sprite.x, x);
-          const distanceY = getDistance(this.sprite.y, y);
-
-          if (distanceX < 5 && distanceY < 5) {
-            this.target = null;
-          } else {
-            this.#moveToTarget(new Math.Vector2(this.target.x, this.target.y));
-          }
-        }
+      // If collide with player but player not in sight
+      else if (target.name && target.name.includes('player')) {
+        this.target = target;
+        this.#alterRayAngle();
+        this.#startChasing();
       } else {
-        // Get facing direction
-        const radain = Math.Angle.BetweenPoints(this.sprite, {
-          x: target.x * this.tileSize,
-          y: target.y * this.tileSize,
-        });
-        this.facingAngle = Math.RadToDeg(radain);
+        // this.sprite.body.setImmovable(false);
+        // Collide with something else (ex. wall)
+        if (this.target) {
+          // Find another path
+          if (this.path && this.path.length) {
+            this.target = this.path.shift();
+          } else if (!this.inSight) {
+            const { x, y } = this.target;
 
-        const direction = getDirection(this.facingAngle);
+            const distanceX = getDistance(this.sprite.x, x);
+            const distanceY = getDistance(this.sprite.y, y);
 
-        switch (direction) {
-          case 0:
-            this.#limitDirection({ min: -135, max: -45 });
-            break;
-          case 1:
-            this.#limitDirection({ min: -45, max: 45 });
-            break;
-          case 2:
-            this.#limitDirection({ min: 45, max: 135 });
-            break;
-          case 3:
-            this.#limitDirection({ min: -135, max: 135 });
-            break;
+            if (distanceX < 5 && distanceY < 5) {
+              this.target = null;
+            } else {
+              this.#alterRayAngle();
+              this.#startChasing();
+              // this.#moveToTarget(new Math.Vector2(this.target.x, this.target.y));
+            }
+          }
+        } else {
+          // Get facing direction
+          const radain = Math.Angle.BetweenPoints(this.sprite, {
+            x: target.x * this.tileSize,
+            y: target.y * this.tileSize,
+          });
+          this.facingAngle = Math.RadToDeg(radain);
+
+          const direction = getDirection(this.facingAngle);
+
+          switch (direction) {
+            case 0:
+              this.#limitDirection({ min: -135, max: -45 });
+              break;
+            case 1:
+              this.#limitDirection({ min: -45, max: 45 });
+              break;
+            case 2:
+              this.#limitDirection({ min: 45, max: 135 });
+              break;
+            case 3:
+              this.#limitDirection({ min: -135, max: 135 });
+              break;
+          }
         }
       }
     }
@@ -834,7 +886,7 @@ export default class Skeleton {
   #animationComplete(context: any) {
     // console.log('context :>>>', context);
     // Check if the attack animation finished
-    if (context.key.includes('attack')) {
+    if (context.key.includes('attack') && this.data.total_attribute.hp > 0) {
       this.sprite.body.setVelocity(0);
       this.sprite?.anims.play('enemy_idle');
       this.scene.time.delayedCall(500, () => {
