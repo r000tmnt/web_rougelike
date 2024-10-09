@@ -1,4 +1,5 @@
 import { player, enemy, base_attribute, rate } from 'src/model/character';
+import { useGameStore } from 'src/stores/game';
 
 const grows = [0, 1, 3];
 
@@ -12,7 +13,7 @@ export const levelUp = (data: player) => {
 
   data.attribute_limit.hp = data.base_attribute.hp + data.add_attribute.hp;
   data.attribute_limit.mp = data.base_attribute.mp + data.add_attribute.mp;
-  data.attribute_limit.exp += data.attribute_limit.exp * 1.5;
+  data.attribute_limit.exp += Math.floor(data.attribute_limit.exp * 1.5);
   data.pt += 5;
 
   Object.entries(data.total_attribute).forEach((a) => {
@@ -157,4 +158,26 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
   }
 
   return result;
+};
+
+export const gainExp = (enemy: enemy) => {
+  const gameStore = useGameStore();
+  const player = gameStore.getPlayer;
+  let exp = (enemy.base_attribute.hp * enemy.base_attribute.mp) / 2;
+
+  if (player.lv < enemy.lv) {
+    // Get lv bonus
+    const over = enemy.lv - player.lv;
+    exp += (exp * over) / 100;
+  }
+
+  player.exp += exp;
+
+  if (player.exp >= player.attribute_limit.exp) {
+    // TODO - Level up animation
+    const newPlayerData = levelUp(player);
+    gameStore.setPlayerStatus(newPlayerData);
+  } else {
+    gameStore.setPlayerStatus(player);
+  }
 };

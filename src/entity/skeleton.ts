@@ -1,7 +1,7 @@
 import { enemy, action, base_attribute } from 'src/model/character';
 import { Animations, Math } from 'phaser';
 import { getDirection, getPosition, getDistance } from 'src/utils/path';
-import { calculateDamage } from 'src/utils/battle';
+import { calculateDamage, gainExp } from 'src/utils/battle';
 import { useGameStore } from 'src/stores/game';
 
 export default class Skeleton {
@@ -243,6 +243,7 @@ export default class Skeleton {
             // Draw image at the same spot
             // this.scene.add.image(this.sprite.x, this.sprite.y, 'enemy_lose', 5);
             this.sprite.disableBody();
+            gainExp(this.data);
           }
         }
       }
