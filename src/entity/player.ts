@@ -414,11 +414,13 @@ export default class Player {
       !this.status.includes('hit') &&
       !this.status.includes('dead')
     ) {
-      if (!this.zone.body.embedded) {
-        // TODO - need another way to check if overlap
-        this.overlap = false;
-        this.target.splice(0);
-      }
+      this.target.forEach((t) => {
+        if (this.scene.physics.overlap(this.zone, t)) {
+          return;
+        } else {
+          this.overlap = false;
+        }
+      });
 
       if (this.fKey && this.fKey.isDown) {
         const gameStore = useGameStore();
@@ -456,60 +458,58 @@ export default class Player {
 
         if (this.cursor?.left.isDown || this.aKey.isDown) {
           this.sprite.anims.play('player-walking', true);
+          this.sprite.setFlipX(false);
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x - this.tileSize / 4,
+            this.sprite.y + this.tileSize / 2
+          );
+          // this.zone.setSize(this.tileSize / 2, this.tileSize);
+          this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
-          if (!down) {
+          if (!left) {
             this.sprite.setVelocityX(-this.tileSize * 2.5);
-            this.sprite.setFlipX(false);
-
-            // Update zone
-            this.zone.setPosition(
-              this.sprite.x - this.tileSize / 4,
-              this.sprite.y + this.tileSize / 2
-            );
-            // this.zone.setSize(this.tileSize / 2, this.tileSize);
-            this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
           }
         } else if (this.cursor?.right.isDown || this.dKey.isDown) {
           this.sprite.anims.play('player-walking', true);
+          this.sprite.setFlipX(true);
+
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x + this.tileSize + this.tileSize / 3,
+            this.sprite.y + this.tileSize / 2
+          );
+          // this.zone.setSize(this.tileSize / 2, this.tileSize);
+          this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
 
           if (!right) {
             this.sprite.setVelocityX(this.tileSize * 2.5);
-            this.sprite.setFlipX(true);
-
-            // Update zone
-            this.zone.setPosition(
-              this.sprite.x + this.tileSize + this.tileSize / 3,
-              this.sprite.y + this.tileSize / 2
-            );
-            // this.zone.setSize(this.tileSize / 2, this.tileSize);
-            this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
           }
         } else if (this.cursor?.up.isDown || this.wKey.isDown) {
           this.sprite.anims.play('player-walking', true);
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x + this.tileSize / 2,
+            this.sprite.y - this.tileSize / 4
+          );
+          // this.zone.setSize(this.tileSize, this.tileSize / 2);
+          this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
 
           if (!up) {
             this.sprite.setVelocityY(-this.tileSize * 2.5);
-
-            // Update zone
-            this.zone.setPosition(
-              this.sprite.x + this.tileSize / 2,
-              this.sprite.y - this.tileSize / 4
-            );
-            // this.zone.setSize(this.tileSize, this.tileSize / 2);
-            this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
           }
         } else if (this.cursor?.down.isDown || this.sKey.isDown) {
           this.sprite.anims.play('player-walking', true);
+          // Update zone
+          this.zone.setPosition(
+            this.sprite.x + this.tileSize / 2,
+            this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
+          );
+          // this.zone.setSize(this.tileSize, this.tileSize / 2);
+          this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
+
           if (!down) {
             this.sprite.setVelocityY(this.tileSize * 2.5);
-
-            // Update zone
-            this.zone.setPosition(
-              this.sprite.x + this.tileSize / 2,
-              this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
-            );
-            // this.zone.setSize(this.tileSize, this.tileSize / 2);
-            this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
           }
         } else {
           this.sprite.body.setVelocity(0);
