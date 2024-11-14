@@ -163,18 +163,19 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
 export const gainExp = (enemy: enemy) => {
   const gameStore = useGameStore();
   const player = gameStore.getPlayer;
-  let exp = (enemy.base_attribute.hp * enemy.base_attribute.mp) / 2;
+  let exp = Math.round((enemy.base_attribute.hp * enemy.base_attribute.mp) / 2);
 
   if (player.lv < enemy.lv) {
     // Get lv bonus
     const over = enemy.lv - player.lv;
-    exp += (exp * over) / 100;
+    exp += Math.round((exp * over) / 100);
   }
 
   player.exp += exp;
 
   if (player.exp >= player.attribute_limit.exp) {
     // TODO - Level up animation
+    gameStore.emitter.emit('player-level-up');
     const newPlayerData = levelUp(player);
     gameStore.setPlayerStatus(newPlayerData);
   } else {
