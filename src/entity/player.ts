@@ -266,6 +266,45 @@ export default class Player {
       gameStore.setPlayerStatus(this.data);
     });
 
+    gameStore.emitter.on('player-level-up', () => {
+      this.text.setText('LEVEL UP');
+      this.text.setStyle({ color: '#FFB343' });
+      this.text.setFontSize(this.tileSize * 0.4);
+
+      const glow = this.text.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24);
+
+      this.text.setVisible(true);
+
+      this.scene.tweens.add({
+        targets: glow,
+        outerStrength: 4,
+        yoyo: true,
+        loop: -1,
+        ease: 'sine.inout',
+      });
+
+      this.scene.tweens.chain({
+        targets: this.text,
+        tweens: [
+          {
+            scaleX: 0.7,
+            duration: 1500,
+            ease: 'quad.out',
+          },
+          {
+            scale: 1.5,
+            duration: 3000,
+            ease: 'sine.inout',
+          },
+        ],
+        loop: 1,
+        loopDelay: 300,
+        onComplete: () => {
+          console.log('tween chains complete');
+        },
+      });
+    });
+
     gameStore.emitter.on('player-equip', (item: item) => {
       this.applyEquip(item);
     });
