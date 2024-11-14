@@ -235,7 +235,8 @@ export default class Skeleton {
               ? this.data.total_attribute.hp
               : result;
 
-          if (this.data.total_attribute.hp === 0) {
+          // Proceed to level up if the enemy is active
+          if (this.data.total_attribute.hp === 0 && this.sprite.active) {
             this.sprite.anims.play('enemy_lose');
             this.status = 'dead';
             this.ray?.destroy();
