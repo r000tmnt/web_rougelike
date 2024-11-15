@@ -16,7 +16,8 @@ export default class Player {
   collide: boolean;
   status: string;
   target: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
-  text: Phaser.GameObjects.Text;
+  dmgText: Phaser.GameObjects.Text;
+  lvText: Phaser.GameObjects.Text;
   keys: action;
 
   private zone!: Phaser.GameObjects.Zone;
@@ -44,12 +45,18 @@ export default class Player {
     this.data = data;
     this.status = '';
     this.tileSize = tileSize;
-    (this.text = this.scene.add
+    (this.dmgText = this.scene.add
       .text(x, y - tileSize / 2, '', {
         fontSize: tileSize * 0.3,
         fontFamily: 'pixelify',
       })
       .setVisible(false)),
+      (this.lvText = this.scene.add
+        .text(x, y - tileSize / 2, '', {
+          fontSize: tileSize * 0.3,
+          fontFamily: 'pixelify',
+        })
+        .setVisible(false)),
       (this.map = map);
     this.ready = false;
     this.overlap = false;
@@ -267,13 +274,15 @@ export default class Player {
     });
 
     gameStore.emitter.on('player-level-up', () => {
-      this.text.setText('LEVEL UP');
-      this.text.setStyle({ color: '#FFB343' });
-      this.text.setFontSize(this.tileSize * 0.4);
+      this.status = 'levelUp';
+      this.lvText.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
+      this.lvText.setText('LEVEL UP');
+      this.lvText.setStyle({ color: '#FFB343' });
+      this.lvText.setFontSize(this.tileSize * 0.4);
 
-      const glow = this.text.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24);
+      const glow = this.lvText.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24);
 
-      this.text.setVisible(true);
+      this.lvText.setVisible(true);
 
       this.scene.tweens.add({
         targets: glow,
@@ -284,26 +293,33 @@ export default class Player {
       });
 
       this.scene.tweens.chain({
-        targets: this.text,
+        targets: this.lvText,
         tweens: [
           {
-            scaleX: 0.7,
+            scale: 1.5,
             duration: 1500,
+            yoyo: true,
             ease: 'quad.out',
           },
           {
-            scale: 1.5,
-            duration: 3000,
+            alpha: { from: 1, to: 0 },
             ease: 'sine.inout',
+            duration: 1500,
           },
         ],
-        loop: 1,
-        loopDelay: 300,
+        loop: 0,
         onComplete: () => {
-          console.log('tween chains complete');
+          this.status = '';
         },
       });
     });
+
+    // Stop the animation after a set duration (optional)
+    // this.scene.time.delayedCall(5000, () => {
+    //   this.dmgText.setVisible(false); // Hide the text
+    //   this.dmgText.scale = 1; // Reset scale after hiding
+    //   console.log('Animation stopped');
+    // });
 
     gameStore.emitter.on('player-equip', (item: item) => {
       this.applyEquip(item);
@@ -453,6 +469,13 @@ export default class Player {
       !this.status.includes('hit') &&
       !this.status.includes('dead')
     ) {
+      if (this.status === 'levelUp') {
+        this.lvText.setPosition(
+          this.sprite.x,
+          this.sprite.y - this.tileSize / 2
+        );
+      }
+
       this.target.forEach((t) => {
         if (this.scene.physics.overlap(this.zone, t)) {
           return;
@@ -591,29 +614,32 @@ export default class Player {
         this.target.forEach((t) => {
           const enemyIndex = Number(t.name.split('_')[1]);
 
-          if (this.scene.enemies[enemyIndex]) {
+          if (
+            this.scene.enemies[enemyIndex] &&
+            this.scene.enemies[enemyIndex].data.total_attribute.hp > 0
+          ) {
             const result = calculateDamage(
               this.data,
               this.scene.enemies[enemyIndex].data
             );
 
-            this.text.setPosition(t.x, t.y - this.tileSize / 2);
+            this.dmgText.setPosition(t.x, t.y - this.tileSize / 2);
 
             // Check demage
             if (result.value === 0) {
               // Miss!
-              this.text.setText('MISS');
-              this.text.setVisible(true);
+              this.dmgText.setText('MISS');
+              this.dmgText.setVisible(true);
             } else {
               console.log('PLAYER HIT!');
               if (result.type.includes('crit')) {
-                this.text.setText(`${result.value}`);
-                this.text.setStyle({ color: '#FFB343' });
-                this.text.setFontSize(this.tileSize * 0.4);
-                this.text.setVisible(true);
+                this.dmgText.setText(`${result.value}`);
+                this.dmgText.setStyle({ color: '#FFB343' });
+                this.dmgText.setFontSize(this.tileSize * 0.4);
+                this.dmgText.setVisible(true);
               } else {
-                this.text.setText(`${result.value}`);
-                this.text.setVisible(true);
+                this.dmgText.setText(`${result.value}`);
+                this.dmgText.setVisible(true);
               }
 
               this.scene.enemies[enemyIndex].updateStatus('hit');
@@ -632,9 +658,9 @@ export default class Player {
             }
 
             this.scene.time.delayedCall(500, () => {
-              this.text.setVisible(false);
-              this.text.setFontSize(this.tileSize * 0.3);
-              this.text.setStyle({ color: '#ffffff' });
+              this.dmgText.setVisible(false);
+              this.dmgText.setFontSize(this.tileSize * 0.3);
+              this.dmgText.setStyle({ color: '#ffffff' });
             });
           }
         });
