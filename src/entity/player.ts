@@ -177,14 +177,14 @@ export default class Player {
 
     if (reset) {
       this.#setData();
-    }
 
-    // Check if there's equipment to count
-    Object.entries(this.data.equip).forEach((e) => {
-      if (Object.entries(e[1]).length) {
-        this.applyEquip(e[1]);
-      }
-    });
+      // Check if there's equipment to count
+      Object.entries(this.data.equip).forEach((e) => {
+        if (Object.entries(e[1]).length) {
+          this.applyEquip(e[1]);
+        }
+      });
+    }
   }
 
   #addContorl() {
