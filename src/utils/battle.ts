@@ -174,7 +174,6 @@ export const gainExp = (enemy: enemy) => {
   player.exp += exp;
 
   if (player.exp >= player.attribute_limit.exp) {
-    // TODO - Level up animation
     gameStore.emitter.emit('player-level-up');
     const newPlayerData = levelUp(player);
     gameStore.setPlayerStatus(newPlayerData);
