@@ -17,7 +17,6 @@
   <div class="status">
     <ul>
       <li v-for="(key, value) in playerData.base_attribute" :key="value">
-        {{ value }}:
         <template
           v-if="
             String(value) === 'hp' ||
@@ -25,12 +24,26 @@
             String(value) === 'exp'
           "
         >
-          {{ playerData.total_attribute[value] }}
-          /
-          {{ playerData.attribute_limit[value] }}
+          <div class="flex edit">
+            <span>
+              {{
+                `${value}: ${playerData.total_attribute[value]}/${playerData.attribute_limit[value]}`
+              }}
+            </span>
+            <span v-if="playerData.pt > 0 && String(value) !== 'exp'">
+              <button @click="addPoint(String(value))">+</button>
+            </span>
+          </div>
         </template>
         <template v-else>
-          {{ playerData.total_attribute[value] }}
+          <div class="flex edit">
+            <span>
+              {{ `${value}: ${playerData.total_attribute[value]}` }}
+            </span>
+            <span v-if="playerData.pt > 0">
+              <button @click="addPoint(String(value))">+</button>
+            </span>
+          </div>
         </template>
       </li>
       <li>STAT: {{ playerData.status }}</li>
@@ -41,11 +54,37 @@
 
 <script setup lang="ts">
 import { player } from '../model/character';
+import { useGameStore } from 'src/stores/game';
 
-defineProps({
+const props = defineProps({
   playerData: {
     type: Object,
     default: {} as player,
   },
 });
+
+const gameStore = useGameStore();
+
+const addPoint = (attribute: string) => {
+  const copy = JSON.parse(JSON.stringify(props.playerData));
+
+  copy.base_attribute[attribute] += 1;
+  copy.total_attribute[attribute] += 1;
+
+  if (attribute === 'hp' || attribute === 'mp') {
+    copy.attribute_limit[attribute] += 1;
+  }
+
+  copy.pt -= 1;
+
+  gameStore.setPlayerStatus(copy);
+};
 </script>
+
+<style scoped lang="scss">
+.edit {
+  span:nth-child(1) {
+    margin-right: auto;
+  }
+}
+</style>
