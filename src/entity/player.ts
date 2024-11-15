@@ -310,6 +310,9 @@ export default class Player {
         loop: 0,
         onComplete: () => {
           this.status = '';
+          this.lvText.setVisible(false);
+          this.lvText.alpha = 1;
+          this.lvText.scale = 1;
         },
       });
     });
