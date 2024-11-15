@@ -78,6 +78,8 @@ const addPoint = (attribute: string) => {
   copy.pt -= 1;
 
   gameStore.setPlayerStatus(copy);
+  // Change the reference of player data object
+  gameStore.emitter.emit('player-update', copy);
 };
 </script>
 

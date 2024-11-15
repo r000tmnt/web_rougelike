@@ -309,6 +309,7 @@ export default class Player {
         ],
         loop: 0,
         onComplete: () => {
+          console.log('tweens chain complete');
           this.status = '';
           this.lvText.setVisible(false);
           this.lvText.alpha = 1;
@@ -317,12 +318,9 @@ export default class Player {
       });
     });
 
-    // Stop the animation after a set duration (optional)
-    // this.scene.time.delayedCall(5000, () => {
-    //   this.dmgText.setVisible(false); // Hide the text
-    //   this.dmgText.scale = 1; // Reset scale after hiding
-    //   console.log('Animation stopped');
-    // });
+    gameStore.emitter.on('player-update', (data: player) => {
+      this.data = data;
+    });
 
     gameStore.emitter.on('player-equip', (item: item) => {
       this.applyEquip(item);
@@ -589,6 +587,7 @@ export default class Player {
   #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
     // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack')) {
+      console.log('scene player data :>>>', this.data);
       // console.log('change sprite position');
       // Stop moving if needed
       this.sprite.body.setSize(this.tileSize, this.tileSize);
@@ -716,10 +715,6 @@ export default class Player {
         });
       });
     }
-  }
-
-  updateData(data: player) {
-    this.data = data;
   }
 
   updateStatus(status: string) {
