@@ -50,12 +50,14 @@ export default class Player {
         fontSize: tileSize * 0.3,
         fontFamily: 'pixelify',
       })
+      .setOrigin(0.5)
       .setVisible(false)),
       (this.lvText = this.scene.add
         .text(x, y - tileSize / 2, '', {
           fontSize: tileSize * 0.3,
           fontFamily: 'pixelify',
         })
+        .setOrigin(0.5)
         .setVisible(false)),
       (this.map = map);
     this.ready = false;
@@ -280,17 +282,17 @@ export default class Player {
       this.lvText.setStyle({ color: '#FFB343' });
       this.lvText.setFontSize(this.tileSize * 0.4);
 
-      const glow = this.lvText.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24);
+      // const glow = this.lvText.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24);
 
       this.lvText.setVisible(true);
 
-      this.scene.tweens.add({
-        targets: glow,
-        outerStrength: 4,
-        yoyo: true,
-        loop: -1,
-        ease: 'sine.inout',
-      });
+      // this.scene.tweens.add({
+      //   targets: glow,
+      //   outerStrength: 4,
+      //   yoyo: true,
+      //   loop: -1,
+      //   ease: 'sine.inout',
+      // });
 
       this.scene.tweens.chain({
         targets: this.lvText,
