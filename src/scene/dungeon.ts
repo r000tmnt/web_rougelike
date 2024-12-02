@@ -30,6 +30,7 @@ export default class Dungeon extends Scene {
   limitHeight: number;
   raycaster: Raycaster | null;
   navMesh: any;
+  walkable: { x: number; y: number }[];
 
   // private gridEngine!: GridEngine;
   private raycasterPlugin!: PhaserRaycaster;
@@ -67,6 +68,7 @@ export default class Dungeon extends Scene {
       'pause',
       'resume',
     ];
+    this.walkable = [];
   }
 
   setTheme(theme: string) {
@@ -134,7 +136,7 @@ export default class Dungeon extends Scene {
       const windowHeight = gameStore.getWindowHeight;
       const tileSize = gameStore.getTileSize;
 
-      const room = this.#getRoom(tileSize);
+      const room = this.#getRoom(tileSize, windowWidth, windowHeight);
       console.log('room :>>>', room);
 
       this.#setEventEmitter();
@@ -142,7 +144,7 @@ export default class Dungeon extends Scene {
       this.#setTileMap(room, tileSize);
       console.log('map :>>>', this.map);
 
-      this.#setCamera(windowWidth, windowHeight);
+      this.#setCamera();
 
       this.#setRayCaster();
 
@@ -226,12 +228,27 @@ export default class Dungeon extends Scene {
     }
   }
 
-  #getRoom(tileSize: number) {
+  #getRoom(tileSize: number, windowWidth: number, windowHeight: number) {
     const room = this.content?.level[this.content.roomIndex];
 
     if (room) {
       this.limitWidth = room[0].length * tileSize;
       this.limitHeight = room.length * tileSize;
+
+      if (this.limitWidth < windowWidth || this.limitHeight < windowHeight) {
+        this.offsetX =
+          this.limitWidth < windowWidth
+            ? Math.floor((windowWidth - this.limitWidth) / 2)
+            : Math.floor((this.limitWidth - windowWidth) / 2);
+
+        this.offsetY =
+          this.limitHeight < windowHeight
+            ? Math.floor((windowHeight - this.limitHeight) / 2)
+            : Math.floor((this.limitHeight - windowHeight) / 2);
+
+        console.log('off set x :>>>', this.offsetX);
+        console.log('off set y :>>>', this.offsetY);
+      }
 
       return room;
     } else {
@@ -252,6 +269,7 @@ export default class Dungeon extends Scene {
 
     // Create a new layer
     this.groundLayer = this.map.createLayer(0, tileset ? tileset : [], 0, 0);
+    this.groundLayer?.setPosition(this.offsetX, this.offsetY);
     // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
 
     this.groundLayer?.setCollisionBetween(
@@ -263,44 +281,35 @@ export default class Dungeon extends Scene {
 
     // console.log('tileset :>>>', tileset);
     console.log('groundLayer :>>>', this.groundLayer);
+
+    this.groundLayer?.layer.data.forEach((l) => {
+      l.forEach((t) => {
+        if (t.index === 0) {
+          this.walkable.push({
+            x: t.pixelX,
+            y: t.pixelY,
+          });
+        }
+      });
+    });
     // console.log('groundLayer tileset :>>>', this.groundLayer?.tileset);
     // console.log('stuffLayer :>>>', this.stuffLayer);
   }
 
-  #setCamera(windowWidth: number, windowHeight: number) {
-    console.log('windowWidth :>>>', windowWidth);
-    console.log('limitWidth :>>>', this.limitWidth);
-    console.log('windowHeight :>>>', windowHeight);
-    console.log('limitHeight :>>>', this.limitHeight);
-
-    // If the map is smaller then the window, move the layer position
-    if (this.limitWidth < windowWidth || this.limitHeight < windowHeight) {
-      this.offsetX =
-        this.limitWidth < windowWidth
-          ? Math.floor((windowWidth - this.limitWidth) / 2)
-          : Math.floor((this.limitWidth - windowWidth) / 2);
-
-      this.offsetY =
-        this.limitHeight < windowHeight
-          ? Math.floor((windowHeight - this.limitHeight) / 2)
-          : Math.floor((this.limitHeight - windowHeight) / 2);
-
-      this.groundLayer?.setPosition(this.offsetX, this.offsetY);
-
-      console.log('off set x :>>>', this.offsetX);
-      console.log('off set y :>>>', this.offsetY);
-    }
-
+  #setCamera() {
     // Initialize camera
     this.camera = this.cameras.main.setBounds(
       0,
       0,
-      this.limitWidth + this.offsetX,
-      this.limitHeight + this.offsetY
+      this.limitWidth,
+      this.limitHeight
     );
 
-    this.camera.scrollX -= this.offsetX;
-    this.camera.scrollY -= this.offsetY;
+    // If the map is smaller then the window, move the layer position
+    // if (this.offsetX > 0 || this.offsetY > 0) {
+    //   this.camera.scrollX -= this.offsetX;
+    //   this.camera.scrollY -= this.offsetY;
+    // }
   }
 
   #setRayCaster() {
@@ -344,51 +353,51 @@ export default class Dungeon extends Scene {
     // const objectLayer = tilemap.getObjectLayer("navmesh");
     // const navMesh = this.navMeshPlugin.buildMeshFromTiled("mesh1", objectLayer, 12.5);
 
-    // this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
-    // this.navMesh.debugDrawClear(); // Clears the overlay
-    // // Visualize the underlying navmesh
-    // this.navMesh.debugDrawMesh({
-    //   drawCentroid: true,
-    //   drawBounds: false,
-    //   drawNeighbors: true,
-    //   drawPortals: true,
-    // });
+    this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
+    this.navMesh.debugDrawClear(); // Clears the overlay
+    // Visualize the underlying navmesh
+    this.navMesh.debugDrawMesh({
+      drawCentroid: true,
+      drawBounds: false,
+      drawNeighbors: true,
+      drawPortals: true,
+    });
 
-    // this.navMesh.debugGraphics.x = this.groundLayer?.x;
-    // this.navMesh.debugGraphics.y = this.groundLayer?.y;
+    this.navMesh.debugGraphics.x = this.groundLayer?.x;
+    this.navMesh.debugGraphics.y = this.groundLayer?.y;
 
     // Adjust the position of nodes and poligons
-    // this.navMesh.graph.nodes.forEach(node => {
-    //   node.centroid.x += this.offsetX
-    //   node.centroid.y += this.offsetY
+    this.navMesh.navMesh.graph.nodes.forEach((node) => {
+      node.centroid.x += this.offsetX;
+      node.centroid.y += this.offsetY;
 
-    //   node.edges.forEach(edge => {
-    //     edge.bottom += this.offsetY
-    //     edge.end.x += this.offsetX
-    //     edge.end.y += this.offsetY
-    //     edge.left += this.offsetX
-    //     edge.right += this.offsetX
-    //     edge.start.x += this.offsetX
-    //     edge.start.y += this.offsetY
-    //     edge.top += this.offsetY
-    //   });
+      node.edges.forEach((edge) => {
+        edge.bottom += this.offsetY;
+        edge.end.x += this.offsetX;
+        edge.end.y += this.offsetY;
+        edge.left += this.offsetX;
+        edge.right += this.offsetX;
+        edge.start.x += this.offsetX;
+        edge.start.y += this.offsetY;
+        edge.top += this.offsetY;
+      });
 
-    //   node.neighbors.forEach(neighbor => {
-    //     neighbor.centroid.x += this.offsetX
-    //     neighbor.centroid.y += this.offsetY
+      node.neighbors.forEach((neighbor) => {
+        neighbor.centroid.x += this.offsetX;
+        neighbor.centroid.y += this.offsetY;
 
-    //     neighbor.edges.forEach(nedge => {
-    //       nedge.bottom += this.offsetY
-    //       nedge.end.x += this.offsetX
-    //       nedge.end.y += this.offsetY
-    //       nedge.left += this.offsetX
-    //       nedge.right += this.offsetX
-    //       nedge.start.x += this.offsetX
-    //       nedge.start.y += this.offsetY
-    //       nedge.top += this.offsetY
-    //     });
-    //   });
-    // });
+        neighbor.edges.forEach((nedge) => {
+          nedge.bottom += this.offsetY;
+          nedge.end.x += this.offsetX;
+          nedge.end.y += this.offsetY;
+          nedge.left += this.offsetX;
+          nedge.right += this.offsetX;
+          nedge.start.x += this.offsetX;
+          nedge.start.y += this.offsetY;
+          nedge.top += this.offsetY;
+        });
+      });
+    });
 
     // this.navMesh.debugGraphics.displayOriginX = this.offsetX;
     // this.navMesh.debugGraphics.displayOriginY = this.offsetY;
