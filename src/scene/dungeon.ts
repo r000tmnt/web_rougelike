@@ -301,8 +301,8 @@ export default class Dungeon extends Scene {
     this.camera = this.cameras.main.setBounds(
       0,
       0,
-      this.limitWidth,
-      this.limitHeight
+      this.limitWidth + this.offsetX,
+      this.limitHeight + this.offsetY
     );
 
     // If the map is smaller then the window, move the layer position
@@ -353,51 +353,51 @@ export default class Dungeon extends Scene {
     // const objectLayer = tilemap.getObjectLayer("navmesh");
     // const navMesh = this.navMeshPlugin.buildMeshFromTiled("mesh1", objectLayer, 12.5);
 
-    this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
-    this.navMesh.debugDrawClear(); // Clears the overlay
-    // Visualize the underlying navmesh
-    this.navMesh.debugDrawMesh({
-      drawCentroid: true,
-      drawBounds: false,
-      drawNeighbors: true,
-      drawPortals: true,
-    });
+    // this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
+    // this.navMesh.debugDrawClear(); // Clears the overlay
+    // // Visualize the underlying navmesh
+    // this.navMesh.debugDrawMesh({
+    //   drawCentroid: true,
+    //   drawBounds: false,
+    //   drawNeighbors: true,
+    //   drawPortals: true,
+    // });
 
-    this.navMesh.debugGraphics.x = this.groundLayer?.x;
-    this.navMesh.debugGraphics.y = this.groundLayer?.y;
+    // this.navMesh.debugGraphics.x = this.groundLayer?.x;
+    // this.navMesh.debugGraphics.y = this.groundLayer?.y;
 
-    // Adjust the position of nodes and poligons
-    this.navMesh.navMesh.graph.nodes.forEach((node) => {
-      node.centroid.x += this.offsetX;
-      node.centroid.y += this.offsetY;
+    // // Adjust the position of nodes and poligons
+    // this.navMesh.navMesh.graph.nodes.forEach((node) => {
+    //   node.centroid.x += this.offsetX;
+    //   node.centroid.y += this.offsetY;
 
-      node.edges.forEach((edge) => {
-        edge.bottom += this.offsetY;
-        edge.end.x += this.offsetX;
-        edge.end.y += this.offsetY;
-        edge.left += this.offsetX;
-        edge.right += this.offsetX;
-        edge.start.x += this.offsetX;
-        edge.start.y += this.offsetY;
-        edge.top += this.offsetY;
-      });
+    //   node.edges.forEach((edge) => {
+    //     edge.bottom += this.offsetY;
+    //     edge.end.x += this.offsetX;
+    //     edge.end.y += this.offsetY;
+    //     edge.left += this.offsetX;
+    //     edge.right += this.offsetX;
+    //     edge.start.x += this.offsetX;
+    //     edge.start.y += this.offsetY;
+    //     edge.top += this.offsetY;
+    //   });
 
-      node.neighbors.forEach((neighbor) => {
-        neighbor.centroid.x += this.offsetX;
-        neighbor.centroid.y += this.offsetY;
+    //   node.neighbors.forEach((neighbor) => {
+    //     neighbor.centroid.x += this.offsetX;
+    //     neighbor.centroid.y += this.offsetY;
 
-        neighbor.edges.forEach((nedge) => {
-          nedge.bottom += this.offsetY;
-          nedge.end.x += this.offsetX;
-          nedge.end.y += this.offsetY;
-          nedge.left += this.offsetX;
-          nedge.right += this.offsetX;
-          nedge.start.x += this.offsetX;
-          nedge.start.y += this.offsetY;
-          nedge.top += this.offsetY;
-        });
-      });
-    });
+    //     neighbor.edges.forEach((nedge) => {
+    //       nedge.bottom += this.offsetY;
+    //       nedge.end.x += this.offsetX;
+    //       nedge.end.y += this.offsetY;
+    //       nedge.left += this.offsetX;
+    //       nedge.right += this.offsetX;
+    //       nedge.start.x += this.offsetX;
+    //       nedge.start.y += this.offsetY;
+    //       nedge.top += this.offsetY;
+    //     });
+    //   });
+    // });
 
     // this.navMesh.debugGraphics.displayOriginX = this.offsetX;
     // this.navMesh.debugGraphics.displayOriginY = this.offsetY;
