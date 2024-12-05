@@ -28,6 +28,8 @@ export default class Skeleton {
   keys: action;
   navMesh: any;
   path: any;
+  lastCheckTime: number;
+  walkingTweens: Phaser.Tweens.Tween;
 
   private zone!: Phaser.GameObjects.Zone;
 
@@ -63,8 +65,10 @@ export default class Skeleton {
     this.status = '';
     this.phase = 'roaming'; // roaming, searching, aggro
     this.step = 0;
+    this.lastCheckTime = 0;
     this.navMesh = navMesh;
     this.keys = {};
+    this.walkingTweens = null;
     this.text = this.scene.add
       .text(x, y - tileSize / 2, '', {
         fontSize: tileSize * 0.3,
@@ -483,11 +487,11 @@ export default class Skeleton {
     // this.ray?.cast();
     this.ray?.castCone();
 
-    if (this.idleTimer === null) {
-      this.idleTimer = setTimeout(() => {
-        if (!this.inSight && this.chaseTimer === null) this.#stopMoving();
-      }, Phaser.Math.Between(1000, 3000));
-    }
+    // if (this.idleTimer === null) {
+    //   this.idleTimer = setTimeout(() => {
+    //     if (!this.inSight && this.chaseTimer === null) this.#stopMoving();
+    //   }, Phaser.Math.Between(1000, 3000));
+    // }
 
     // console.log(
     //   `${this.sprite.name} facing direcion in update`,
@@ -657,12 +661,18 @@ export default class Skeleton {
       console.log('path :>>>', this.path);
 
       // If there is a valid path, grab the first point from the path and set it as the target
-      if (this.path && this.path.length > 0) {
+      if (this.path && this.path.length) {
         // Add the offset back to path
         this.path.forEach((p) => {
           p.x += this.scene.offsetX;
           p.y += this.scene.offsetY;
         });
+
+        // Remove the position that is same as the enemy
+        this.path = this.path.filter(
+          (p) => p.x !== this.sprite.x && p.y !== this.sprite.y
+        );
+
         this.#followThePath();
       } else {
         this.#moveToTarget(theTarget);
@@ -672,18 +682,29 @@ export default class Skeleton {
     }
   }
 
+  #getVisibleObjects() {
+    let visibleObjects = this.ray.overlap();
+
+    // Filter out the enemy itself is exist
+    visibleObjects = visibleObjects.filter(
+      (obj: any) => obj.name !== `enemy_${this.index}`
+    );
+
+    return visibleObjects;
+  }
+
   #moveToTarget(target: Phaser.Math.Vector2) {
     if (this.ray) {
       const angleToTarget = Phaser.Math.Angle.Between(
-        this.sprite.x - this.scene.offsetX,
-        this.sprite.y - this.scene.offsetY,
+        this.sprite.x,
+        this.sprite.y,
         target.x,
         target.y
       );
 
       let avoidAngle = 0;
 
-      const visibleObjects = this.ray.overlap();
+      const visibleObjects = this.#getVisibleObjects();
 
       visibleObjects.forEach((obj: any) => {
         const distance = Phaser.Math.Distance.Between(
@@ -710,10 +731,22 @@ export default class Skeleton {
 
       const finalAngle = angleToTarget + avoidAngle;
 
+      console.log('finalAngle :>>>', finalAngle);
+
       this.sprite.setVelocity(
         Math.cos(finalAngle) * this.tileSize,
         Math.sin(finalAngle) * this.tileSize
       );
+
+      const awaitTimer = setInterval(() => {
+        if (this.sprite.x === target.x && this.sprite.y === target.y) {
+          clearInterval(awaitTimer);
+          if (this.path.length) {
+            this.step += 1;
+            this.#followThePath();
+          }
+        }
+      }, 200);
     }
   }
 
@@ -721,20 +754,42 @@ export default class Skeleton {
     if (this.step < this.path.length) {
       this.sprite.anims.play('enemy_walking', true);
 
-      this.scene.tweens.add({
-        targets: this.path[this.step],
-        x: this.path[this.step].x,
-        y: this.path[this.step].y,
-        duration: this.tileSize * 10,
-        onComplete: () => {
-          this.step += 1;
+      this.target = this.path[this.step];
 
-          if (this.step === this.path.length - 1) {
+      this.scene.tweens.add({
+        targets: this.sprite,
+        x: this.target.x,
+        y: this.target.y,
+        duration: this.tileSize * 100,
+        ease: 'Linear',
+        yoyo: false,
+        onStart: () => {
+          console.log(`enemy ${this.index} start moving`);
+          this.#alterRayAngle();
+        },
+        onUpdate: (tween, target, key, current, previous, param) => {
+          const now = Date.now();
+          this.#alterRayAngle();
+          if (now - this.lastCheckTime > 200) {
+            this.lastCheckTime = now;
+            const visibleObjects = this.#getVisibleObjects();
+
+            if (visibleObjects && visibleObjects.length) {
+              console.log('visibleObjects :>>>', visibleObjects);
+              tween.stop();
+              this.#moveToTarget(this.target);
+            }
+          }
+        },
+        onComplete: () => {
+          console.log(`step ${this.step} complete`);
+          const lastStep = this.path.length - 1;
+          if (this.step === lastStep) {
             const distance = Phaser.Math.Distance.Between(
-              this.sprite.x - this.scene.offsetX,
-              this.sprite.y - this.scene.offsetY,
-              this.target.x,
-              this.target.y
+              this.sprite.x,
+              this.sprite.y,
+              this.scene.player.sprite.x,
+              this.scene.player.sprite.y
             );
 
             this.path = null;
@@ -742,7 +797,7 @@ export default class Skeleton {
 
             if (distance <= 5) {
               // Attack
-              this.phase = 'aggro';
+              if (this.inSight) this.phase = 'aggro';
             } else {
               if (this.inSight) {
                 // Reset the path with the current position of the player
@@ -752,7 +807,7 @@ export default class Skeleton {
             }
           } else {
             // Check if the player position changed
-            const lastStep = this.path.length - 1;
+            this.step += 1;
             // const distance = Phaser.Math.Distance.Between(
             //   this.path[lastStep].x - this.scene.offsetX,
             //   this.path[lastStep].y - this.scene.offsetY,
@@ -760,13 +815,14 @@ export default class Skeleton {
             //   this.scene.player.sprite.y
             // );
 
-            if (
-              this.path[lastStep].x !== this.scene.player.sprite.x ||
-              this.path[lastStep].y !== this.scene.player.sprite.y
-            ) {
-              // Reset the path
-              // this.path = null;
-              this.step = 0;
+            if (this.inSight) {
+              if (
+                this.path[lastStep].x !== this.scene.player.sprite.x ||
+                this.path[lastStep].y !== this.scene.player.sprite.y
+              )
+                // Reset the path
+                // this.path = null;
+                this.step = 0;
             } else {
               this.#followThePath();
             }
@@ -811,6 +867,9 @@ export default class Skeleton {
         this.#alterRayAngle();
         this.#GetPath();
       } else {
+        if (this.path && this.path.length) {
+          this.#moveToTarget(this.path[this.step]);
+        }
         // this.sprite.body.setImmovable(false);
         // Collide with something else (ex. wall)
         // if (this.target) {
