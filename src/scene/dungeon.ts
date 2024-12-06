@@ -501,6 +501,8 @@ export default class Dungeon extends Scene {
       if (this.player.sprite)
         this.camera?.startFollow(this.player.sprite, true);
 
+      this.raycaster?.mapGameObjects(this.player.sprite, true);
+
       // Config grid movement & player
       // try {
       //   this.gridEngine.create(this.map, {
@@ -655,25 +657,28 @@ export default class Dungeon extends Scene {
       this.doors.splice(0);
       // Remove collider
       this.physics.world.colliders.destroy();
-      //remove mapped objects
-      // this.raycaster?.removeMappedObjects(this.groundLayer);
-      // Store player data
-      gameStore.setPlayerStatus(this.player?.data);
       // Destory ray
       this.enemies.forEach((e) => {
+        this.raycaster?.removeMappedObjects(e.sprite);
+        e.sprite.destroy();
         e.ray?.destroy();
       });
       // Keep enemies if any
       this.#storeEnemyData(gameStore);
+      // Remove mapped objects
+      this.raycaster?.removeMappedObjects(this.groundLayer);
+      this.raycaster?.removeMappedObjects(this.player?.sprite);
       // destroy raycaster
       this.raycaster?.destroy();
       // Remove layer
       this.groundLayer?.destroy();
       // Destroy navMesh
-      this.navMesh = null;
-      // // Remove all scene event listener
-      // gameStore.emitter.destroy();
-
+      this.navMesh.destroy();
+      // Store player data
+      gameStore.setPlayerStatus(this.player?.data);
+      // Destroy player
+      this.player?.sprite.destroy();
+      console.log('this.player :>>>', this.player?.sprite);
       // Remove scene event
       this.eventsToRemove.forEach((e) => {
         gameStore.emitter.removeListener(e);
