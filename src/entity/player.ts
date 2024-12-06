@@ -203,6 +203,10 @@ export default class Player {
       this.pointer = this.scene.input.activePointer;
     }
     this.scene.events.on('update', this.#update, this);
+
+    this.sprite.on('destroy', () => {
+      this.scene.events.off('update', this.#update);
+    });
   }
 
   #setZone() {
@@ -518,7 +522,7 @@ export default class Player {
         }
       }
 
-      if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
+      if (this.keys['mouseLeft'] !== 1 && this.sprite.body) {
         const { up, right, down, left } = this.sprite.body.touching;
 
         if (this.cursor?.left.isDown || this.aKey.isDown) {
