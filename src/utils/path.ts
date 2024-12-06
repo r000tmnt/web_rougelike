@@ -19,9 +19,9 @@ export const getDirection = (deg: number) => {
   if (deg === -90) return 0; // up
   if (deg > -90 && deg < 0) return 1; // up right
   if (deg === 0) return 2; // right
-  if (deg <= 45 && deg > 0) return 3; // right down
+  if (deg < 90 && deg > 0) return 3; // right down
   if (deg === 90) return 4; // down
-  if (deg <= 135 && deg > 90) return 5; // left down
+  if (deg < 180 && deg > 90) return 5; // left down
   if (deg === 180 || deg === -180) return 6; // left
   if (deg > -180 && deg < -90) return 7; // left up
   // if (deg <= -45 && deg >= -135) return 0;
