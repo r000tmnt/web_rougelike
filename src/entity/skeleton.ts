@@ -71,16 +71,12 @@ export default class Skeleton {
     this.keys = {};
     this.walkingTweens = null;
     this.intersections = [];
-    (this.graphic = this.scene.add.graphics({
-      lineStyle: { width: 1, color: 0x00ff00 },
-      fillStyle: { color: 0xff00ff },
-    })),
-      (this.text = this.scene.add
-        .text(x, y - tileSize / 2, '', {
-          fontSize: tileSize * 0.3,
-          fontFamily: 'pixelify',
-        })
-        .setVisible(false));
+    this.text = this.scene.add
+      .text(x, y - tileSize / 2, '', {
+        fontSize: tileSize * 0.3,
+        fontFamily: 'pixelify',
+      })
+      .setVisible(false);
     this.init(x, y, texture, player, groundLayer);
   }
 
@@ -354,14 +350,18 @@ export default class Skeleton {
       let tempMap = JSON.parse(JSON.stringify(this.scene.walkable));
 
       tempMap = tempMap.filter(
-        (t: { x: number; y: number; check: boolean }) => t.check
-      ).length
-        ? tempMap.filter(
-            (t: { x: number; y: number; check: boolean }) => t.check
-          )
-        : tempMap;
+        (t: { x: number; y: number; check: boolean }) => !t.check
+      );
+
+      if (!tempMap.length) {
+        tempMap = tempMap.map((t: { x: number; y: number; check: boolean }) => {
+          t.check = false;
+          return t;
+        });
+      }
 
       this.target = tempMap[Phaser.Math.Between(0, tempMap.length - 1)];
+
       this.#alterRayAngle();
       this.#GetPath();
       // const randomNumber = Phaser.Math.Between(0, this.angle.length - 1);
@@ -531,6 +531,15 @@ export default class Skeleton {
     }
   }
 
+  #markTileAsChecked(target: { x: number; y: number; checked: boolean }) {
+    const index = this.scene.walkable.findIndex(
+      (w) => w.x === target.x && w.y === target.y
+    );
+
+    if (index >= 0) this.scene.walkable[index].checked = true;
+    setTimeout(() => this.#getRandomDirection(), 1000);
+  }
+
   #GetPath() {
     const validTarget = this.navMesh.isPointInMesh(this.target);
 
@@ -539,10 +548,10 @@ export default class Skeleton {
     if (validTarget) {
       const half = this.tileSize / 2;
       this.path = this.navMesh.findPath(
-        new Phaser.Math.Vector2(
-          this.sprite.x + half - this.scene.offsetX,
-          this.sprite.y + half - this.scene.offsetY
-        ),
+        {
+          x: this.sprite.x + half - this.scene.offsetX,
+          y: this.sprite.y + half - this.scene.offsetY,
+        },
         this.target
       );
 
@@ -574,18 +583,15 @@ export default class Skeleton {
 
         if (this.path.length) {
           this.target = this.path.shift();
-          // this.#moveToTarget(this.target);
+          this.#moveToTarget(this.target);
         } else {
-          this.target.checked = true;
-          setTimeout(() => this.#getRandomDirection(), 1000);
+          this.#markTileAsChecked(this.target);
         }
       } else {
-        this.target.checked = true;
-        setTimeout(() => this.#getRandomDirection(), 1000);
+        this.#markTileAsChecked(this.target);
       }
     } else {
-      this.target.checked = true;
-      setTimeout(() => this.#getRandomDirection(), 1000);
+      this.#markTileAsChecked(this.target);
     }
   }
 
@@ -651,14 +657,8 @@ export default class Skeleton {
             // this.#followThePath();
             this.#moveToTarget(this.target);
           } else {
-            const { x, y } = getPosition(
-              this.target,
-              this.scene.offsetX,
-              this.scene.offsetY,
-              this.tileSize
-            );
             const index = this.scene.walkable.findIndex(
-              (w) => w.x === x * this.tileSize && w.y === y * this.tileSize
+              (w) => w.x === this.target.x && w.y === this.target.y
             );
 
             if (index >= 0) this.scene.walkable[index].checked = true;
@@ -672,59 +672,59 @@ export default class Skeleton {
             target.y
           );
 
-          this.intersections.forEach((section: any) => {
-            if (section.segment) {
-              const distance = Phaser.Math.Distance.Between(
-                this.sprite.x + half,
-                this.sprite.y + half,
-                section.x,
-                section.y
-              );
+          // this.intersections.forEach((section: any) => {
+          //   if (section.segment) {
+          //     const distance = Phaser.Math.Distance.Between(
+          //       this.sprite.x + half,
+          //       this.sprite.y + half,
+          //       section.x,
+          //       section.y
+          //     );
 
-              if (distance < half) {
-                const avoidanceDirection = this.#getAvoidanceDirection(
-                  this.sprite,
-                  section
-                );
+          //     if (distance < half) {
+          //       const avoidanceDirection = this.#getAvoidanceDirection(
+          //         this.sprite,
+          //         section
+          //       );
 
-                if (avoidanceDirection === 'left') {
-                  this.sprite.body.velocity.x -= this.tileSize;
-                  this.sprite.body.velocity.y -= this.tileSize;
-                } else if (avoidanceDirection === 'right') {
-                  this.sprite.body.velocity.x += this.tileSize;
-                  this.sprite.body.velocity.y += this.tileSize;
-                }
-              }
-            }
-          });
+          //       if (avoidanceDirection === 'left') {
+          //         this.sprite.body.velocity.x -= this.tileSize;
+          //         this.sprite.body.velocity.y -= this.tileSize;
+          //       } else if (avoidanceDirection === 'right') {
+          //         this.sprite.body.velocity.x += this.tileSize;
+          //         this.sprite.body.velocity.y += this.tileSize;
+          //       }
+          //     }
+          //   }
+          // });
 
-          let avoidAngle = 0;
-          if (this.collidedTarget) {
-            const angleToObstacle = Phaser.Math.Angle.Between(
-              this.sprite.x + half,
-              this.sprite.y + half,
-              this.collidedTarget.x,
-              this.collidedTarget.y
-            );
+          // let avoidAngle = 0;
+          // if (this.collidedTarget) {
+          //   const angleToObstacle = Phaser.Math.Angle.Between(
+          //     this.sprite.x + half,
+          //     this.sprite.y + half,
+          //     this.collidedTarget.x,
+          //     this.collidedTarget.y
+          //   );
 
-            avoidAngle +=
-              (angleToObstacle > angleToTarget ? -1 : 1) * this.tileSize;
+          //   avoidAngle +=
+          //     (angleToObstacle > angleToTarget ? -1 : 1) * this.tileSize * 0.2;
 
-            // Remove collided target
-            this.collidedTarget = null;
-          }
+          //   // Remove collided target
+          //   this.collidedTarget = null;
+          // }
 
-          const finalAngle = angleToTarget + avoidAngle;
+          // const finalAngle = angleToTarget + avoidAngle;
 
-          console.log('avoidAngle :>>>', avoidAngle);
-          console.log('finalAngle :>>>', finalAngle);
-          console.log('cos :>>>', Math.cos(finalAngle));
-          console.log('sin :>>>', Math.sin(finalAngle));
+          // console.log('avoidAngle :>>>', avoidAngle);
+          // console.log('finalAngle :>>>', finalAngle);
+          // console.log('cos :>>>', Math.cos(finalAngle));
+          // console.log('sin :>>>', Math.sin(finalAngle));
 
           if (this.sprite && this.sprite.active)
             this.sprite.setVelocity(
-              Math.cos(finalAngle) * this.tileSize,
-              Math.sin(finalAngle) * this.tileSize
+              Math.cos(angleToTarget) * this.tileSize,
+              Math.sin(angleToTarget) * this.tileSize
             );
         }
       }, 200);
