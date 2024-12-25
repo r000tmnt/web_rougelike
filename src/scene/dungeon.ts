@@ -149,7 +149,7 @@ export default class Dungeon extends Scene {
 
       this.#setRayCaster();
 
-      this.#setNavMesh();
+      this.#setNavMesh(tileSize);
 
       // Set collision on doors
       this.#setDoorZones(tileSize);
@@ -288,7 +288,9 @@ export default class Dungeon extends Scene {
     console.log('groundLayer :>>>', this.groundLayer);
     this.groundLayer?.layer.data.forEach((l) => {
       l.forEach((t) => {
+        // If the tile is walkable
         if (t.index === 0) {
+          // Push the point to the center of the tile
           this.walkable.push({
             x: t.pixelX + 24,
             y: t.pixelY + 24,
@@ -343,18 +345,21 @@ export default class Dungeon extends Scene {
     });
   }
 
-  #setNavMesh() {
+  #setNavMesh(tileSize: number) {
     // Automatically generate mesh from colliding tiles in a layer or layers:
+    // Shrink the polygons by half of the tileSize
+    const half = tileSize / 2;
     this.navMesh = this.navMeshPlugin.buildMeshFromTilemap(
       'mesh',
       this.map,
       [this.groundLayer],
       null,
-      24
+      half
     );
-
-    this.navMesh.navMesh.meshShrinkAmount = 24;
+    // Keep the number
+    this.navMesh.navMesh.meshShrinkAmount = half;
     console.log('navMesh :>>>', this.navMesh);
+    // this.#drawNavMeshDebug();
     // const path = navMesh.findPath({ x: 0, y: 0 }, { x: 300, y: 400 });
     // ⮡  path will either be null or an array of Phaser.Geom.Point objects
 
@@ -363,56 +368,58 @@ export default class Dungeon extends Scene {
     // const objectLayer = tilemap.getObjectLayer("navmesh");
     // const navMesh = this.navMeshPlugin.buildMeshFromTiled("mesh1", objectLayer, 12.5);
 
-    // this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
-    // this.navMesh.debugDrawClear(); // Clears the overlay
-    // // Visualize the underlying navmesh
-    // this.navMesh.debugDrawMesh({
-    //   drawCentroid: true,
-    //   drawBounds: false,
-    //   drawNeighbors: true,
-    //   drawPortals: true,
-    // });
-
-    // this.navMesh.debugGraphics.x = this.groundLayer?.x;
-    // this.navMesh.debugGraphics.y = this.groundLayer?.y;
-
-    // // Adjust the position of nodes and poligons
-    // this.navMesh.navMesh.graph.nodes.forEach((node) => {
-    //   node.centroid.x += this.offsetX;
-    //   node.centroid.y += this.offsetY;
-
-    //   node.edges.forEach((edge) => {
-    //     edge.bottom += this.offsetY;
-    //     edge.end.x += this.offsetX;
-    //     edge.end.y += this.offsetY;
-    //     edge.left += this.offsetX;
-    //     edge.right += this.offsetX;
-    //     edge.start.x += this.offsetX;
-    //     edge.start.y += this.offsetY;
-    //     edge.top += this.offsetY;
-    //   });
-
-    //   node.neighbors.forEach((neighbor) => {
-    //     neighbor.centroid.x += this.offsetX;
-    //     neighbor.centroid.y += this.offsetY;
-
-    //     neighbor.edges.forEach((nedge) => {
-    //       nedge.bottom += this.offsetY;
-    //       nedge.end.x += this.offsetX;
-    //       nedge.end.y += this.offsetY;
-    //       nedge.left += this.offsetX;
-    //       nedge.right += this.offsetX;
-    //       nedge.start.x += this.offsetX;
-    //       nedge.start.y += this.offsetY;
-    //       nedge.top += this.offsetY;
-    //     });
-    //   });
-    // });
-
     // this.navMesh.debugGraphics.displayOriginX = this.offsetX;
     // this.navMesh.debugGraphics.displayOriginY = this.offsetY;
     // Visualize an individual path
     // this.navMesh.debugDrawPath(path, 0xffd900);
+  }
+
+  #drawNavMeshDebug() {
+    this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
+    // this.navMesh.debugDrawClear(); // Clears the overlay
+    // Visualize the underlying navmesh
+    this.navMesh.debugDrawMesh({
+      drawCentroid: true,
+      drawBounds: false,
+      drawNeighbors: true,
+      drawPortals: true,
+    });
+
+    this.navMesh.debugGraphics.x = this.groundLayer?.x;
+    this.navMesh.debugGraphics.y = this.groundLayer?.y;
+
+    // Adjust the position of nodes and poligons
+    this.navMesh.navMesh.graph.nodes.forEach((node) => {
+      node.centroid.x += this.offsetX;
+      node.centroid.y += this.offsetY;
+
+      node.edges.forEach((edge) => {
+        edge.bottom += this.offsetY;
+        edge.end.x += this.offsetX;
+        edge.end.y += this.offsetY;
+        edge.left += this.offsetX;
+        edge.right += this.offsetX;
+        edge.start.x += this.offsetX;
+        edge.start.y += this.offsetY;
+        edge.top += this.offsetY;
+      });
+
+      node.neighbors.forEach((neighbor) => {
+        neighbor.centroid.x += this.offsetX;
+        neighbor.centroid.y += this.offsetY;
+
+        neighbor.edges.forEach((nedge) => {
+          nedge.bottom += this.offsetY;
+          nedge.end.x += this.offsetX;
+          nedge.end.y += this.offsetY;
+          nedge.left += this.offsetX;
+          nedge.right += this.offsetX;
+          nedge.start.x += this.offsetX;
+          nedge.start.y += this.offsetY;
+          nedge.top += this.offsetY;
+        });
+      });
+    });
   }
 
   #setDoorZones(tileSize: number) {
