@@ -144,7 +144,6 @@ export default class Dungeon extends Scene {
       this.#setEventEmitter();
 
       this.#setTileMap(room, tileSize);
-      console.log('map :>>>', this.map);
 
       this.#setCamera();
 
@@ -276,7 +275,6 @@ export default class Dungeon extends Scene {
       this.offsetX,
       this.offsetY
     );
-    // this.groundLayer?.setPosition(this.offsetX, this.offsetY);
     // this.stuffLayer = this.map.createBlankLayer('Stuff', tileset);
 
     this.groundLayer?.setCollisionBetween(
@@ -288,7 +286,6 @@ export default class Dungeon extends Scene {
 
     // console.log('tileset :>>>', tileset);
     console.log('groundLayer :>>>', this.groundLayer);
-
     this.groundLayer?.layer.data.forEach((l) => {
       l.forEach((t) => {
         if (t.index === 0) {
@@ -297,10 +294,6 @@ export default class Dungeon extends Scene {
             y: t.pixelY + 24,
             checked: false,
           });
-        } else {
-          const bounds = t.getBounds();
-          console.log('bounds :>>>', bounds);
-          console.log('rect :>>>', this.#inflateRectangles(bounds, 24));
         }
       }, this.groundLayer?.layer.data);
     });
@@ -350,45 +343,17 @@ export default class Dungeon extends Scene {
     });
   }
 
-  #inflateRectangles(rect: any, padding: number) {
-    return new Phaser.Geom.Rectangle(
-      rect.x - padding,
-      rect.y - padding,
-      rect.width + padding * 2,
-      rect.height + padding * 2
-    );
-  }
-
-  #optionalFunction(tile: Phaser.Tilemaps.Tile) {
-    return tile.collides;
-  }
-
   #setNavMesh() {
-    // const infatedRects = this.collidedTiles.map((tile) => {
-    //   const bounds = tile.getBounds();
-    //   return this.#inflateRectangles(bounds, 24);
-    // });
-
-    // const inflatedPolygons = infatedRects.map((rect) => {
-    //   return new Phaser.Geom.Polygon([
-    //     { x: rect.left, y: rect.top },
-    //     { x: rect.right, y: rect.top },
-    //     { x: rect.right, y: rect.bottom },
-    //     { x: rect.left, y: rect.bottom },
-    //   ]);
-    // });
-
     // Automatically generate mesh from colliding tiles in a layer or layers:
-    this.navMesh = this.navMeshPlugin.buildMeshFromTilemap('mesh', this.map, [
-      this.groundLayer,
-    ]);
-    // this.navMesh = new PhaserNavMesh(
-    //   this.navMeshPlugin,
-    //   this,
-    //   'mesh',
-    //   inflatedPolygons
-    // );
+    this.navMesh = this.navMeshPlugin.buildMeshFromTilemap(
+      'mesh',
+      this.map,
+      [this.groundLayer],
+      null,
+      24
+    );
 
+    this.navMesh.navMesh.meshShrinkAmount = 24;
     console.log('navMesh :>>>', this.navMesh);
     // const path = navMesh.findPath({ x: 0, y: 0 }, { x: 300, y: 400 });
     // ⮡  path will either be null or an array of Phaser.Geom.Point objects
@@ -398,51 +363,51 @@ export default class Dungeon extends Scene {
     // const objectLayer = tilemap.getObjectLayer("navmesh");
     // const navMesh = this.navMeshPlugin.buildMeshFromTiled("mesh1", objectLayer, 12.5);
 
-    this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
-    this.navMesh.debugDrawClear(); // Clears the overlay
+    // this.navMesh.enableDebug(); // Creates a Phaser.Graphics overlay on top of the screen
+    // this.navMesh.debugDrawClear(); // Clears the overlay
     // // Visualize the underlying navmesh
-    this.navMesh.debugDrawMesh({
-      drawCentroid: true,
-      drawBounds: false,
-      drawNeighbors: true,
-      drawPortals: true,
-    });
+    // this.navMesh.debugDrawMesh({
+    //   drawCentroid: true,
+    //   drawBounds: false,
+    //   drawNeighbors: true,
+    //   drawPortals: true,
+    // });
 
-    this.navMesh.debugGraphics.x = this.groundLayer?.x;
-    this.navMesh.debugGraphics.y = this.groundLayer?.y;
+    // this.navMesh.debugGraphics.x = this.groundLayer?.x;
+    // this.navMesh.debugGraphics.y = this.groundLayer?.y;
 
     // // Adjust the position of nodes and poligons
-    this.navMesh.navMesh.graph.nodes.forEach((node) => {
-      node.centroid.x += this.offsetX;
-      node.centroid.y += this.offsetY;
+    // this.navMesh.navMesh.graph.nodes.forEach((node) => {
+    //   node.centroid.x += this.offsetX;
+    //   node.centroid.y += this.offsetY;
 
-      node.edges.forEach((edge) => {
-        edge.bottom += this.offsetY;
-        edge.end.x += this.offsetX;
-        edge.end.y += this.offsetY;
-        edge.left += this.offsetX;
-        edge.right += this.offsetX;
-        edge.start.x += this.offsetX;
-        edge.start.y += this.offsetY;
-        edge.top += this.offsetY;
-      });
+    //   node.edges.forEach((edge) => {
+    //     edge.bottom += this.offsetY;
+    //     edge.end.x += this.offsetX;
+    //     edge.end.y += this.offsetY;
+    //     edge.left += this.offsetX;
+    //     edge.right += this.offsetX;
+    //     edge.start.x += this.offsetX;
+    //     edge.start.y += this.offsetY;
+    //     edge.top += this.offsetY;
+    //   });
 
-      node.neighbors.forEach((neighbor) => {
-        neighbor.centroid.x += this.offsetX;
-        neighbor.centroid.y += this.offsetY;
+    //   node.neighbors.forEach((neighbor) => {
+    //     neighbor.centroid.x += this.offsetX;
+    //     neighbor.centroid.y += this.offsetY;
 
-        neighbor.edges.forEach((nedge) => {
-          nedge.bottom += this.offsetY;
-          nedge.end.x += this.offsetX;
-          nedge.end.y += this.offsetY;
-          nedge.left += this.offsetX;
-          nedge.right += this.offsetX;
-          nedge.start.x += this.offsetX;
-          nedge.start.y += this.offsetY;
-          nedge.top += this.offsetY;
-        });
-      });
-    });
+    //     neighbor.edges.forEach((nedge) => {
+    //       nedge.bottom += this.offsetY;
+    //       nedge.end.x += this.offsetX;
+    //       nedge.end.y += this.offsetY;
+    //       nedge.left += this.offsetX;
+    //       nedge.right += this.offsetX;
+    //       nedge.start.x += this.offsetX;
+    //       nedge.start.y += this.offsetY;
+    //       nedge.top += this.offsetY;
+    //     });
+    //   });
+    // });
 
     // this.navMesh.debugGraphics.displayOriginX = this.offsetX;
     // this.navMesh.debugGraphics.displayOriginY = this.offsetY;
@@ -600,10 +565,12 @@ export default class Dungeon extends Scene {
 
           newEnemyData = setInitialStatus(newEnemyData, randomLv);
 
+          const enemyX = enemyPosition[i].x * tileSize;
+          const enemyY = enemyPosition[i].y * tileSize;
           const enemy = new Skeleton(
             this,
-            enemyPosition[i].x * tileSize + this.offsetX,
-            enemyPosition[i].y * tileSize + this.offsetY,
+            enemyX + this.offsetX,
+            enemyY + this.offsetY,
             'demo_enemy',
             newEnemyData,
             i,
@@ -622,10 +589,12 @@ export default class Dungeon extends Scene {
       } else {
         // Create enemy from stored data
         for (let i = 0; i < enemyPosition.length; i++) {
+          const enemyX = enemyPosition[i].x * tileSize;
+          const enemyY = enemyPosition[i].y * tileSize;
           const enemy = new Skeleton(
             this,
-            enemyPosition[i].x * tileSize + this.offsetX,
-            enemyPosition[i].y * tileSize + this.offsetY,
+            enemyX + this.offsetX,
+            enemyY + this.offsetY,
             'demo_enemy',
             storedEnemy[i],
             i,
