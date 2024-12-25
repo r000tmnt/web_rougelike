@@ -1,14 +1,16 @@
+import { enemy } from './../model/character';
 import { player, enemy, base_attribute, rate } from 'src/model/character';
 import { useGameStore } from 'src/stores/game';
 
-const grows = [0, 1, 3];
+const playerGrows = [0, 1, 3];
+const enemyGrows = [2, 4, 6];
 
 export const levelUp = (data: player) => {
   data.lv += 1;
 
   for (const [key, value] of Object.entries(data.base_attribute)) {
     data.base_attribute[key as keyof base_attribute] =
-      value + grows[Math.floor(Math.random() * grows.length)];
+      value + playerGrows[Math.floor(Math.random() * playerGrows.length)];
   }
 
   data.attribute_limit.hp = data.base_attribute.hp + data.add_attribute.hp;
@@ -34,13 +36,14 @@ export const setInitialStatus = (data: enemy, randomlv: number) => {
   for (const [key, value] of Object.entries(data.base_attribute)) {
     for (let i = 0; i < over; i++) {
       data.base_attribute[key as keyof base_attribute] =
-        value + grows[Math.floor(Math.random() * grows.length)];
+        value + enemyGrows[Math.floor(Math.random() * enemyGrows.length)];
     }
   }
 
-  data.attribute_limit.hp = data.base_attribute.hp + data.add_attribute.hp;
-  data.attribute_limit.mp = data.base_attribute.mp + data.add_attribute.mp;
-  data.base_attribute.vd = data.attribute_limit.vd;
+  // Update total attribute
+  for (const [key, value] of Object.entries(data.base_attribute)) {
+    data.attribute_limit[key as keyof base_attribute] = value;
+  }
 
   return data;
 };
