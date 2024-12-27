@@ -343,9 +343,11 @@ export default class Skeleton {
          * What to do with game objects in line of sight.
          */
         // console.log('rayFoVCircle :>>>', rayFoVCircle);
-        this.#markPlayerInSight(target);
-        this.inSight = true;
-        this.phase = 'chasing';
+        if (this.scene.player.data.total_attribute.hp > 0) {
+          this.#markPlayerInSight(target);
+          this.inSight = true;
+          this.phase = 'chasing';
+        }
       },
       this.ray.processOverlap.bind(this.ray)
     );
