@@ -697,6 +697,7 @@ export default class Player {
     }
 
     if (context.key.includes('lose')) {
+      this.sprite.active = false;
       this.sprite.setFrame(
         this.scene.anims.get('player-lose').frames[1].textureFrame
       );
