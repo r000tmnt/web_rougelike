@@ -11,7 +11,7 @@ export default class Skeleton {
   index: number;
   facingAngle: number;
   tileSize: number;
-  chaseTimer: NodeJS.Timeout | null;
+  awaitTimer: NodeJS.Timeout | null;
   map: number[][];
   angle: number[];
   ready: boolean;
@@ -32,6 +32,8 @@ export default class Skeleton {
   lastCheckTime: number;
   walkingTweens: Phaser.Tweens.Tween | null;
   intersections: Phaser.Geom.Point[];
+
+  private zone!: Phaser.GameObjects.Zone;
 
   constructor(
     scene: Phaser.Scene,
@@ -62,7 +64,7 @@ export default class Skeleton {
     this.angle = [0, 45, 90, 135, 180, -180, -135, -90, -45, -0];
     this.facingAngle = 0;
     this.idleTimer = null;
-    this.chaseTimer = null;
+    this.awaitTimer = null;
     this.status = '';
     this.phase = 'roaming'; // roaming, searching, aggro
     this.step = 0;
@@ -166,22 +168,8 @@ export default class Skeleton {
       this.scene.events.off('update', this.#update);
     });
 
-    // this.zone = this.scene.add.zone(
-    //   this.sprite.x - this.tileSize / 2,
-    //   this.sprite.y,
-    //   this.tileSize / 2,
-    //   this.tileSize
-    // );
-    // this.zone.setOrigin(0, 0);
-    // this.scene.physics.world.enable(this.zone);
-
-    // this.scene.physics.add.overlap(this.zone, player, () => {
-    //   // console.log('overlap with player');
-    //   this.overlap = true;
-    // });
-
     this.#setData();
-
+    this.#setZone(player);
     // Set event listener
     this.#setEvents();
 
@@ -216,6 +204,43 @@ export default class Skeleton {
     this.data = data;
   }
 
+  #setZone(player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) {
+    const half = this.tileSize / 2;
+    this.zone = this.scene.add.zone(
+      this.sprite.flipX ? this.sprite.x + this.tileSize : this.sprite.x - half,
+      this.sprite.y,
+      half,
+      this.tileSize
+    );
+    this.zone.setOrigin(0, 0);
+    this.scene.physics.world.enable(this.zone);
+
+    this.scene.physics.add.overlap(this.zone, player, () => {
+      // console.log('overlap with player');
+      this.overlap = true;
+    });
+  }
+
+  #markPlayerInSight(
+    target: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
+  ) {
+    const gameStore = useGameStore();
+    const half = gameStore.tileSize / 2;
+    this.target = {
+      x: target.x + half - this.scene.offsetX,
+      y: target.y + half - this.scene.offsetY,
+    };
+    // Clear current path if exist
+    if (this.path && this.path.length) this.path = null;
+    // if (this.awaitTimer) {
+    //   clearInterval(this.awaitTimer);
+    //   this.awaitTimer = null;
+    // }
+    // this.sprite.body.setVelocity(0);
+    // Get a new path
+    this.#GetPath();
+  }
+
   #setEvents() {
     // Animation listener
     this.sprite.on(
@@ -236,7 +261,7 @@ export default class Skeleton {
     gameStore.emitter.on(
       'chase-countdown-start',
       (player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
-        this.target = player;
+        this.#markPlayerInSight(player);
       }
     );
 
@@ -318,13 +343,9 @@ export default class Skeleton {
          * What to do with game objects in line of sight.
          */
         // console.log('rayFoVCircle :>>>', rayFoVCircle);
-        // console.log('target :>>>', target);
+        this.#markPlayerInSight(target);
         this.inSight = true;
-        // this.looking = false;
-        this.target = {
-          x: target.x - this.scene.offsetX,
-          y: target.y - this.scene.offsetY,
-        };
+        this.phase = 'chasing';
       },
       this.ray.processOverlap.bind(this.ray)
     );
@@ -341,6 +362,13 @@ export default class Skeleton {
         // DO NOTHING, just stay dead
       } else {
         this.#alterRayAngle();
+
+        // If the ray doesn't hit anything and the player were in sight
+        if (!this.ray?.body.embedded && this.inSight) {
+          console.log(`${this.sprite.name} lost the player`);
+          this.inSight = false;
+          this.phase = 'searching';
+        }
       }
     }
   }
@@ -375,27 +403,66 @@ export default class Skeleton {
 
   #alterRayAngle() {
     if (this.ray && this.ray.origin && this.target) {
-      const radain = Phaser.Math.Angle.BetweenPoints(this.sprite, this.target);
+      const half = this.tileSize / 2;
+      const radain = Phaser.Math.Angle.BetweenPoints(
+        this.sprite,
+        this.phase === 'aggro' || this.phase === 'chasing'
+          ? this.scene.player.sprite
+          : this.target
+      );
       this.facingAngle = Phaser.Math.RadToDeg(radain);
 
       this.ray.setAngleDeg(this.facingAngle);
 
-      this.ray.setOrigin(
-        this.sprite.x + this.tileSize / 2,
-        this.sprite.y + this.tileSize / 2
-      );
+      this.ray.setOrigin(this.sprite.x + half, this.sprite.y + half);
 
       const facingDirection = getDirection(this.facingAngle);
 
+      this.zone.setAngle(this.facingAngle);
+
       switch (facingDirection) {
-        case 1:
-        case 2:
-        case 3:
+        case 0: // up
+          this.zone.setPosition(this.sprite.x, this.sprite.y - half);
+          this.zone.setDisplaySize(this.tileSize, half);
+          break;
+        case 1: // up right
+          this.zone.setPosition(this.sprite.x + half, this.sprite.y - half);
+          this.zone.setDisplaySize(this.tileSize, half);
           this.sprite.setFlipX(true);
           break;
-        case 5:
-        case 6:
-        case 7:
+        case 2: // right
+          this.zone.setPosition(this.sprite.x + half, this.sprite.y);
+          this.zone.setDisplaySize(half, this.tileSize);
+          this.sprite.setFlipX(true);
+          break;
+        case 3: // right down
+          this.zone.setPosition(
+            this.sprite.x + half,
+            this.sprite.y + this.tileSize
+          );
+          this.zone.setDisplaySize(this.tileSize, half);
+          this.sprite.setFlipX(true);
+          break;
+        case 4: // down
+          this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
+          this.zone.setDisplaySize(this.tileSize, half);
+          break;
+        case 5: // left down
+          this.zone.setPosition(
+            this.sprite.x - half,
+            this.sprite.y + this.tileSize
+          );
+          this.zone.setDisplaySize(this.tileSize, half);
+          this.sprite.setFlipX(false);
+          break;
+        case 6: // left
+          this.zone.setPosition(this.sprite.x - half, this.sprite.y);
+          this.zone.setDisplaySize(half, this.tileSize);
+          this.sprite.setFlipX(false);
+          break;
+        case 7: // left up
+          this.zone.setPosition(this.sprite.x - half, this.sprite.y - half);
+          this.zone.setDisplaySize(this.tileSize, half);
           this.sprite.setFlipX(false);
           break;
       }
@@ -581,12 +648,8 @@ export default class Skeleton {
 
         this.navMesh.debugDrawPath(this.path, 0xffd900);
 
-        if (this.path.length) {
-          this.target = this.path.shift();
-          this.#moveToTarget(this.target);
-        } else {
-          this.#markTileAsChecked(this.target);
-        }
+        this.target = this.path.shift();
+        this.#moveToTarget(this.target);
       } else {
         this.#markTileAsChecked(this.target);
       }
@@ -640,23 +703,52 @@ export default class Skeleton {
   }
 
   #moveToTarget(target: Phaser.Geom.Point) {
-    if (this.ray && target) {
+    if (this.ray && target && this.awaitTimer === null) {
       this.sprite.anims.play('enemy_walking');
       const half = this.tileSize / 2;
-      const awaitTimer = setInterval(() => {
+      this.awaitTimer = setInterval(() => {
         const distance = Phaser.Math.Distance.Between(
           this.sprite.x + half,
           this.sprite.y + half,
           target.x,
           target.y
         );
-        if (distance <= 5) {
-          clearInterval(awaitTimer);
+
+        if (this.inSight) {
+          const distanceToPlayer = Phaser.Math.Distance.Between(
+            this.sprite.x + half,
+            this.sprite.y + half,
+            this.scene.player.sprite.x + half,
+            this.scene.player.sprite.y + half
+          );
+          // If the player is in the range of attack
+          if (
+            distanceToPlayer <= this.tileSize + 5 &&
+            !this.keys['mouseLeft']
+          ) {
+            // Attack
+            this.phase = 'aggro';
+            this.path = null;
+            this.sprite.body.setVelocity(0);
+            this.#alterRayAngle();
+            this.sprite?.anims.play('enemy_attack', true);
+            this.keys['mouseLeft'] = 1;
+            // this.#setZone(this.scene.player.sprite);
+          }
+        }
+
+        if (distance <= 5 && !this.keys['mouseLeft']) {
+          if (this.awaitTimer !== null) {
+            clearInterval(this.awaitTimer);
+            this.awaitTimer = null;
+          }
+          // If there are path to go
           if (this.path.length) {
             this.target = this.path.shift();
             // this.#followThePath();
             this.#moveToTarget(this.target);
           } else {
+            // Mark the point as checked
             const index = this.scene.walkable.findIndex(
               (w) => w.x === this.target.x && w.y === this.target.y
             );
@@ -701,8 +793,8 @@ export default class Skeleton {
           // let avoidAngle = 0;
           // if (this.collidedTarget) {
           //   const angleToObstacle = Phaser.Math.Angle.Between(
-          //     this.sprite.x + half,
-          //     this.sprite.y + half,
+          //     this.sprite.x,
+          //     this.sprite.y,
           //     this.collidedTarget.x,
           //     this.collidedTarget.y
           //   );
@@ -754,17 +846,14 @@ export default class Skeleton {
       console.log('enemy collide with target', target);
       if (target.name && target.name.includes('enemy')) {
         this.sprite.anims.play('enemy_idle');
-        this.#changeDirection();
+        // this.#changeDirection();
       }
 
       // If collide with player but player not in sight
       else if (target.name && target.name.includes('player')) {
-        this.target = {
-          x: target.x - this.scene.offsetX,
-          y: target.y - this.scene.offsetY,
-        };
-        this.#alterRayAngle();
-        this.#GetPath();
+        if (this.phase !== 'chasing') {
+          this.#markPlayerInSight(target);
+        }
       } else {
         this.collidedTarget = {
           x: target.pixelX + this.scene.offsetX,
@@ -870,7 +959,7 @@ export default class Skeleton {
       this.sprite?.anims.play('enemy_idle');
       this.scene.time.delayedCall(500, () => {
         // release key
-        this.keys['d'] = 0;
+        this.keys['mouseLeft'] = 0;
       });
     }
   }
