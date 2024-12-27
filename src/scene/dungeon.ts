@@ -518,8 +518,6 @@ export default class Dungeon extends Scene {
       if (this.player.sprite)
         this.camera?.startFollow(this.player.sprite, true);
 
-      this.raycaster?.mapGameObjects(this.player.sprite, true);
-
       // Config grid movement & player
       // try {
       //   this.gridEngine.create(this.map, {
