@@ -11,6 +11,7 @@ export default class Skeleton {
   index: number;
   facingAngle: number;
   tileSize: number;
+  half: number;
   awaitTimer: NodeJS.Timeout | null;
   map: number[][];
   angle: number[];
@@ -53,6 +54,7 @@ export default class Skeleton {
     this.data = data;
     this.index = index;
     this.tileSize = tileSize;
+    this.half = tileSize / 2;
     this.map = map;
     this.ready = false;
     this.overlap = false;
@@ -205,11 +207,12 @@ export default class Skeleton {
   }
 
   #setZone(player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) {
-    const half = this.tileSize / 2;
     this.zone = this.scene.add.zone(
-      this.sprite.flipX ? this.sprite.x + this.tileSize : this.sprite.x - half,
+      this.sprite.flipX
+        ? this.sprite.x + this.tileSize
+        : this.sprite.x - this.half,
       this.sprite.y,
-      half,
+      this.half,
       this.tileSize
     );
     this.zone.setOrigin(0, 0);
@@ -224,21 +227,43 @@ export default class Skeleton {
   #markPlayerInSight(
     target: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
   ) {
-    const gameStore = useGameStore();
-    const half = gameStore.tileSize / 2;
     this.target = {
-      x: target.x + half - this.scene.offsetX,
-      y: target.y + half - this.scene.offsetY,
+      x: target.x + this.half - this.scene.offsetX,
+      y: target.y + this.half - this.scene.offsetY,
     };
     // Clear current path if exist
     if (this.path && this.path.length) this.path = null;
+
+    let obstacleInRange = false;
+
+    for (let i = 0; i < this.intersections.length; i++) {
+      const section: any = this.intersections[i];
+      if (section.segment) {
+        const distance = Phaser.Math.Distance.Between(
+          this.sprite.x + this.half,
+          this.sprite.y + this.half,
+          section.x,
+          section.y
+        );
+
+        if (distance < this.tileSize) {
+          obstacleInRange = true;
+          break;
+        }
+      }
+    }
+
+    if (obstacleInRange) {
+      this.#GetPath();
+    } else {
+      this.#moveToTarget(this.target);
+    }
     // if (this.awaitTimer) {
     //   clearInterval(this.awaitTimer);
     //   this.awaitTimer = null;
     // }
     // this.sprite.body.setVelocity(0);
     // Get a new path
-    this.#GetPath();
   }
 
   #setEvents() {
@@ -308,7 +333,7 @@ export default class Skeleton {
   #setRay(raycaster: Raycaster, x: number, y: number, player: any) {
     this.ray = raycaster.createRay();
     //set ray position to the center of the object
-    this.ray.setOrigin(x + this.tileSize / 2, y + this.tileSize / 2);
+    this.ray.setOrigin(x + this.half, y + this.half);
     //set ray direction (in radians)
     // this.ray.setAngle(2);
     //set ray direction (in degrees)
@@ -320,12 +345,13 @@ export default class Skeleton {
     //enable arcade physics body
     this.ray.enablePhysics();
     //set collision (field of view) range
-    this.ray.setCollisionRange(this.tileSize * this.data.base_attribute.vd);
-    this.ray.setDetectionRange(this.tileSize * this.data.base_attribute.vd);
+    const range = this.tileSize * this.data.base_attribute.vd;
+    this.ray.setCollisionRange(range);
+    this.ray.setDetectionRange(range);
     //cast ray
     // this.ray.castCircle();
     // this.ray.cast();
-    this.ray.setConeDeg(this.tileSize);
+    this.ray.setConeDeg(this.tileSize * 3);
     this.ray.castCone();
 
     //get objects in field of view
@@ -370,6 +396,11 @@ export default class Skeleton {
           console.log(`${this.sprite.name} lost the player`);
           this.inSight = false;
           this.phase = 'searching';
+          // Set the last known position
+          this.target = {
+            x: this.scene.player.x + this.half - this.scene.offsetX,
+            y: this.scene.player.y + this.half - this.scene.offsetY,
+          };
         }
       }
     }
@@ -405,7 +436,6 @@ export default class Skeleton {
 
   #alterRayAngle() {
     if (this.ray && this.ray.origin && this.target) {
-      const half = this.tileSize / 2;
       const radain = Phaser.Math.Angle.BetweenPoints(
         this.sprite,
         this.phase === 'aggro' || this.phase === 'chasing'
@@ -416,7 +446,7 @@ export default class Skeleton {
 
       this.ray.setAngleDeg(this.facingAngle);
 
-      this.ray.setOrigin(this.sprite.x + half, this.sprite.y + half);
+      this.ray.setOrigin(this.sprite.x + this.half, this.sprite.y + this.half);
 
       const facingDirection = getDirection(this.facingAngle);
 
@@ -424,47 +454,53 @@ export default class Skeleton {
 
       switch (facingDirection) {
         case 0: // up
-          this.zone.setPosition(this.sprite.x, this.sprite.y - half);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(this.sprite.x, this.sprite.y - this.half);
+          this.zone.setDisplaySize(this.tileSize, this.half);
           break;
         case 1: // up right
-          this.zone.setPosition(this.sprite.x + half, this.sprite.y - half);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(
+            this.sprite.x + this.half,
+            this.sprite.y - this.half
+          );
+          this.zone.setDisplaySize(this.tileSize, this.half);
           this.sprite.setFlipX(true);
           break;
         case 2: // right
-          this.zone.setPosition(this.sprite.x + half, this.sprite.y);
-          this.zone.setDisplaySize(half, this.tileSize);
+          this.zone.setPosition(this.sprite.x + this.half, this.sprite.y);
+          this.zone.setDisplaySize(this.half, this.tileSize);
           this.sprite.setFlipX(true);
           break;
         case 3: // right down
           this.zone.setPosition(
-            this.sprite.x + half,
+            this.sprite.x + this.half,
             this.sprite.y + this.tileSize
           );
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setDisplaySize(this.tileSize, this.half);
           this.sprite.setFlipX(true);
           break;
         case 4: // down
           this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setDisplaySize(this.tileSize, this.half);
           break;
         case 5: // left down
           this.zone.setPosition(
-            this.sprite.x - half,
+            this.sprite.x - this.half,
             this.sprite.y + this.tileSize
           );
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setDisplaySize(this.tileSize, this.half);
           this.sprite.setFlipX(false);
           break;
         case 6: // left
-          this.zone.setPosition(this.sprite.x - half, this.sprite.y);
-          this.zone.setDisplaySize(half, this.tileSize);
+          this.zone.setPosition(this.sprite.x - this.half, this.sprite.y);
+          this.zone.setDisplaySize(this.half, this.tileSize);
           this.sprite.setFlipX(false);
           break;
         case 7: // left up
-          this.zone.setPosition(this.sprite.x - half, this.sprite.y - half);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(
+            this.sprite.x - this.half,
+            this.sprite.y - this.half
+          );
+          this.zone.setDisplaySize(this.tileSize, this.half);
           this.sprite.setFlipX(false);
           break;
       }
@@ -593,7 +629,10 @@ export default class Skeleton {
       const newX = direction[i][1];
       const newY = direction[i][0];
       if (this.map[newY] && this.map[newY][newX] === 0) {
-        this.target = { x: newX * this.tileSize, y: newY * this.tileSize };
+        this.target = {
+          x: newX * this.tileSize + this.half + this.scene.offsetX,
+          y: newY * this.tileSize + this.half + this.scene.offsetY,
+        };
         this.#GetPath();
         break;
       }
@@ -615,11 +654,10 @@ export default class Skeleton {
     console.log('validTarget :>>>', validTarget);
 
     if (validTarget) {
-      const half = this.tileSize / 2;
       this.path = this.navMesh.findPath(
         {
-          x: this.sprite.x + half - this.scene.offsetX,
-          y: this.sprite.y + half - this.scene.offsetY,
+          x: this.sprite.x + this.half - this.scene.offsetX,
+          y: this.sprite.y + this.half - this.scene.offsetY,
         },
         this.target
       );
@@ -633,18 +671,6 @@ export default class Skeleton {
           p.x += this.scene.offsetX;
           p.y += this.scene.offsetY;
         });
-
-        // Remove the position that is on the wall
-        // this.path = this.path.filter((p) => {
-        //   const { x, y } = getPosition(
-        //     p,
-        //     this.scene.offsetX,
-        //     this.scene.offsetY,
-        //     this.tileSize
-        //   );
-
-        //   return this.map[y][x] === 0;
-        // });
 
         console.log('path :>>>', this.path);
 
@@ -707,26 +733,28 @@ export default class Skeleton {
   #moveToTarget(target: Phaser.Geom.Point) {
     if (this.ray && target && this.awaitTimer === null) {
       this.sprite.anims.play('enemy_walking');
-      const half = this.tileSize / 2;
+
       this.awaitTimer = setInterval(() => {
         const distance = Phaser.Math.Distance.Between(
-          this.sprite.x + half,
-          this.sprite.y + half,
+          this.sprite.x + this.half,
+          this.sprite.y + this.half,
           target.x,
           target.y
         );
 
         if (this.inSight) {
           const distanceToPlayer = Phaser.Math.Distance.Between(
-            this.sprite.x + half,
-            this.sprite.y + half,
-            this.scene.player.sprite.x + half,
-            this.scene.player.sprite.y + half
+            this.sprite.x + this.half,
+            this.sprite.y + this.half,
+            this.scene.player.sprite.x + this.half,
+            this.scene.player.sprite.y + this.half
           );
           // If the player is in the range of attack
           if (
             distanceToPlayer <= this.tileSize + 5 &&
-            !this.keys['mouseLeft']
+            !this.keys['mouseLeft'] &&
+            this.scene.player.sprite.active &&
+            this.status !== 'dead'
           ) {
             // Attack
             this.phase = 'aggro';
@@ -745,7 +773,7 @@ export default class Skeleton {
             this.awaitTimer = null;
           }
           // If there are path to go
-          if (this.path.length) {
+          if (this.path && this.path.length) {
             this.target = this.path.shift();
             // this.#followThePath();
             this.#moveToTarget(this.target);
@@ -760,8 +788,8 @@ export default class Skeleton {
           }
         } else {
           const angleToTarget = Phaser.Math.Angle.Between(
-            this.sprite.x + half,
-            this.sprite.y + half,
+            this.sprite.x + this.half,
+            this.sprite.y + this.half,
             target.x,
             target.y
           );
@@ -769,13 +797,13 @@ export default class Skeleton {
           // this.intersections.forEach((section: any) => {
           //   if (section.segment) {
           //     const distance = Phaser.Math.Distance.Between(
-          //       this.sprite.x + half,
-          //       this.sprite.y + half,
+          //       this.sprite.x + this.half,
+          //       this.sprite.y + this.half,
           //       section.x,
           //       section.y
           //     );
 
-          //     if (distance < half) {
+          //     if (distance < this.half) {
           //       const avoidanceDirection = this.#getAvoidanceDirection(
           //         this.sprite,
           //         section
@@ -841,72 +869,63 @@ export default class Skeleton {
     }
   }
 
+  #beforeChangeDirection() {
+    this.sprite.body.setVelocity(0);
+    this.sprite.anims.play('enemy_idle');
+    this.#changeDirection();
+  }
+
   #onCollide(self: any, target: any) {
     if (this.data.total_attribute.hp > 0) {
-      // this.sprite.body.setVelocity(0);
       // console.log('self', self);
       console.log('enemy collide with target', target);
-      if (target.name && target.name.includes('enemy')) {
-        this.sprite.anims.play('enemy_idle');
-        // this.#changeDirection();
-      }
 
       // If collide with player but player not in sight
-      else if (target.name && target.name.includes('player')) {
+      if (target.name && target.name.includes('player')) {
         if (this.phase !== 'chasing') {
           this.#markPlayerInSight(target);
         }
       } else {
-        this.collidedTarget = {
-          x: target.pixelX + this.scene.offsetX,
-          y: target.pixelY + this.scene.offsetY,
-        };
+        // this.collidedTarget = {
+        //   x: target.pixelX + this.scene.offsetX,
+        //   y: target.pixelY + this.scene.offsetY,
+        // };
 
-        // const avoidAngel
-        // if (this.path && this.path.length) {
-        //   this.#moveToTarget(this.path[this.step]);
-        // }
-        // this.sprite.body.setImmovable(false);
-        // Collide with something else (ex. wall)
-        // if (this.target) {
-        //   // Find another path
-        //   if (this.path && this.path.length) {
-        //     this.target = this.path.shift();
-        //   } else if (!this.inSight) {
-        //     const { x, y } = this.target;
-        //     const distanceX = getDistance(this.sprite.x, x);
-        //     const distanceY = getDistance(this.sprite.y, y);
-        //     if (distanceX < 5 && distanceY < 5) {
-        //       this.target = null;
-        //     } else {
-        //       this.#alterRayAngle();
-        //       this.#startChasing();
-        //       // this.#GetPath(new Phaser.Math.Vector2(this.target.x, this.target.y));
-        //     }
-        //   }
-        // } else {
-        //   // Get facing direction
-        //   const radain = Phaser.Math.Angle.BetweenPoints(this.sprite, {
-        //     x: target.x * this.tileSize,
-        //     y: target.y * this.tileSize,
-        //   });
-        //   this.facingAngle = Phaser.Math.RadToDeg(radain);
-        //   const direction = getDirection(this.facingAngle);
-        // switch (direction) {
-        //   case 0:
-        //     this.#limitDirection({ min: -135, max: -45 });
-        //     break;
-        //   case 1:
-        //     this.#limitDirection({ min: -45, max: 45 });
-        //     break;
-        //   case 2:
-        //     this.#limitDirection({ min: 45, max: 135 });
-        //     break;
-        //   case 3:
-        //     this.#limitDirection({ min: -135, max: 135 });
-        //     break;
-        // }
-        // }
+        // Get moveing Direction
+        const movingVector = new Phaser.Math.Vector2(
+          this.sprite.body.velocity.x,
+          this.sprite.body.velocity.y
+        );
+
+        console.log('movingVector :>>>', movingVector);
+
+        const { down, left, right, up } = this.sprite.body.touching;
+
+        switch (true) {
+          case movingVector.x === 0 && movingVector.y < 0:
+            if (up) this.#beforeChangeDirection();
+            break;
+          case movingVector.x > 0 && movingVector.y < 0:
+            if (up || right) this.#beforeChangeDirection();
+            break;
+          case movingVector.x > 0 && movingVector.y === 0:
+            if (right) this.#beforeChangeDirection();
+            break;
+          case movingVector.x > 0 && movingVector.y > 0:
+            if (right || down) this.#beforeChangeDirection();
+            break;
+          case movingVector.x === 0 && movingVector.y > 0:
+            if (down) this.#beforeChangeDirection();
+            break;
+          case movingVector.x < 0 && movingVector.y > 0:
+            if (left || down) this.#beforeChangeDirection();
+          case movingVector.x < 0 && movingVector.y === 0:
+            if (left) this.#beforeChangeDirection();
+            break;
+          case movingVector.x < 0 && movingVector.y < 0:
+            if (left || up) this.#beforeChangeDirection();
+            break;
+        }
       }
     }
   }
