@@ -260,13 +260,38 @@ export default class Player {
 
       // If player lose
       if (this.data.total_attribute.hp === 0) {
-        // TODO - Death animation
-        // TODO - Game over screen
+        this.sprite.active = false;
         this.status = 'dead';
         this.scene.camera?.pan(this.sprite.x, this.sprite.y, 200, 'Power2');
         this.scene.camera?.zoomTo(2, 200);
         setTimeout(() => {
           this.sprite.anims.play('player-lose');
+
+          setTimeout(() => {
+            this.sprite.setFrame(
+              this.scene.anims.get('player-lose').frames[1].textureFrame
+            );
+            // Tint the sprite with Decimal number
+            // this.sprite.setTint(8519680)
+            // this.sprite.setTintFill(8519680)
+
+            //FX Wipe
+            this.scene.time.delayedCall(500, () => {
+              const wipe = this.sprite.preFX?.addWipe(0.1, 0, 0);
+              this.scene.tweens.add({
+                targets: wipe,
+                progress: 1,
+                repeat: 0,
+                duration: 2000,
+              });
+              this.scene.time.delayedCall(2000, () => {
+                //Show Game over screen
+                const gameStore = useGameStore();
+                gameStore.setGameOver(true);
+                this.scene.physics.pause();
+              });
+            });
+          }, 500);
         }, 500);
       } else {
         this.status = 'hit';
@@ -485,11 +510,15 @@ export default class Player {
 
       this.target.forEach((t) => {
         if (this.scene.physics.overlap(this.zone, t)) {
+          this.overlap = true;
           return;
         } else {
           this.overlap = false;
         }
       });
+
+      // Reset target
+      if (!this.overlap) this.target.splice(0);
 
       if (this.fKey && this.fKey.isDown) {
         const gameStore = useGameStore();
@@ -619,6 +648,7 @@ export default class Player {
     if (anim.key.includes('attack') && frameKey === '1') {
       // Check overlap
       if (this.overlap) {
+        console.log('zoon overlap with the enemy');
         this.target.forEach((t) => {
           const enemyIndex = Number(t.name.split('_')[1]);
 
@@ -672,6 +702,8 @@ export default class Player {
             });
           }
         });
+      } else {
+        console.log('zoon not overlap with the enemy');
       }
     }
   }
@@ -693,33 +725,6 @@ export default class Player {
         // release key
         // if (this.dKey) this.keys[this.dKey.keyCode] = 0;
         if (this.keys['mouseLeft']) this.keys['mouseLeft'] = 0;
-      });
-    }
-
-    if (context.key.includes('lose')) {
-      this.sprite.active = false;
-      this.sprite.setFrame(
-        this.scene.anims.get('player-lose').frames[1].textureFrame
-      );
-      // Tint the sprite with Decimal number
-      // this.sprite.setTint(8519680)
-      // this.sprite.setTintFill(8519680)
-
-      //FX Wipe
-      this.scene.time.delayedCall(500, () => {
-        const wipe = this.sprite.preFX?.addWipe(0.1, 0, 0);
-        this.scene.tweens.add({
-          targets: wipe,
-          progress: 1,
-          repeat: 0,
-          duration: 2000,
-        });
-        this.scene.time.delayedCall(2000, () => {
-          //Show Game over screen
-          const gameStore = useGameStore();
-          gameStore.setGameOver(true);
-          this.scene.physics.pause();
-        });
       });
     }
   }
