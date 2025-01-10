@@ -643,7 +643,11 @@ export default class DungeonGenerator {
           const exist = this.enemyPositions[this.roomIndex].findIndex(
             (ep) => ep.x === eCol && ep.y === eRow
           );
-          if (exist === -1) {
+          if (
+            exist === -1 &&
+            (Math.abs(this.startingPoint[0] - eRow) > 4 ||
+              Math.abs(this.startingPoint[1] - eCol) > 4)
+          ) {
             console.log('mark enemy position');
             this.enemyPositions[this.roomIndex].push({
               y: eRow,
