@@ -232,17 +232,20 @@ export default class Skeleton {
     };
     // Clear current path if exist
     if (this.path && this.path.length) this.path = null;
-    // if (this.awaitTimer) {
-    //   clearInterval(this.awaitTimer);
-    //   this.awaitTimer = null;
-    // }
-    // this.sprite.body.setVelocity(0);
-    // Get a new path
-    this.#GetPath();
+
+    if (this.status !== 'dead')
+      // Get a new path
+      this.#GetPath();
   }
 
   #setEvents() {
     // Animation listener
+    this.sprite.on(
+      Animations.Events.ANIMATION_START,
+      this.#animationStart,
+      this
+    );
+
     this.sprite.on(
       Animations.Events.ANIMATION_UPDATE,
       this.#animationUpdate,
@@ -281,11 +284,18 @@ export default class Skeleton {
             this.sprite.anims.play('enemy_lose');
             this.status = 'dead';
             this.ray?.destroy();
-            this.scene.removeEnemyIntheRoom(this.index);
+            this.zone?.destroy();
+            if (this.path) this.path = null;
+            this.target = null;
+            if (this.awaitTimer) {
+              clearInterval(this.awaitTimer);
+              this.awaitTimer = null;
+            }
+            // this.scene.removeEnemyIntheRoom(this.index);
             // Draw image at the same spot
             // this.scene.add.image(this.sprite.x, this.sprite.y, 'enemy_lose', 5);
             this.sprite.disableBody();
-            this.scene.events.off('update', this.#update);
+            // this.scene.events.off('update', this.#update);
             gainExp(this.data);
           }
         }
@@ -626,8 +636,8 @@ export default class Skeleton {
 
       // If there is a valid path, grab the first point from the path and set it as the target
       if (this.path && this.path.length) {
-        const debugGraphics = this.scene.add.graphics(0, 0).setAlpha(0.5);
-        this.navMesh.enableDebug(debugGraphics);
+        // const debugGraphics = this.scene.add.graphics(0, 0).setAlpha(0.5);
+        // this.navMesh.enableDebug(debugGraphics);
         // Add the offset back to path
         this.path.forEach((p) => {
           p.x += this.scene.offsetX;
@@ -648,7 +658,7 @@ export default class Skeleton {
 
         console.log('path :>>>', this.path);
 
-        this.navMesh.debugDrawPath(this.path, 0xffd900);
+        // this.navMesh.debugDrawPath(this.path, 0xffd900);
 
         this.target = this.path.shift();
         this.#moveToTarget(this.target);
@@ -709,117 +719,121 @@ export default class Skeleton {
       this.sprite.anims.play('enemy_walking');
       const half = this.tileSize / 2;
       this.awaitTimer = setInterval(() => {
-        const distance = Phaser.Math.Distance.Between(
-          this.sprite.x + half,
-          this.sprite.y + half,
-          target.x,
-          target.y
-        );
-
-        if (this.inSight) {
-          const distanceToPlayer = Phaser.Math.Distance.Between(
-            this.sprite.x + half,
-            this.sprite.y + half,
-            this.scene.player.sprite.x + half,
-            this.scene.player.sprite.y + half
-          );
-          // If the player is in the range of attack
-          if (
-            distanceToPlayer <= this.tileSize + 5 &&
-            !this.keys['mouseLeft']
-          ) {
-            // Attack
-            this.phase = 'aggro';
-            this.path = null;
-            this.sprite.body.setVelocity(0);
-            this.#alterRayAngle();
-            this.sprite?.anims.play('enemy_attack', true);
-            this.keys['mouseLeft'] = 1;
-            // this.#setZone(this.scene.player.sprite);
-          }
-        }
-
-        if (distance <= 5 && !this.keys['mouseLeft']) {
-          if (this.awaitTimer !== null) {
-            clearInterval(this.awaitTimer);
-            this.awaitTimer = null;
-          }
-          // If there are path to go
-          if (this.path.length) {
-            this.target = this.path.shift();
-            // this.#followThePath();
-            this.#moveToTarget(this.target);
-          } else {
-            // Mark the point as checked
-            const index = this.scene.walkable.findIndex(
-              (w) => w.x === this.target.x && w.y === this.target.y
-            );
-
-            if (index >= 0) this.scene.walkable[index].checked = true;
-            this.#stopMoving();
-          }
-        } else {
-          const angleToTarget = Phaser.Math.Angle.Between(
+        if (this.status !== 'dead') {
+          const distance = Phaser.Math.Distance.Between(
             this.sprite.x + half,
             this.sprite.y + half,
             target.x,
             target.y
           );
 
-          // this.intersections.forEach((section: any) => {
-          //   if (section.segment) {
-          //     const distance = Phaser.Math.Distance.Between(
-          //       this.sprite.x + half,
-          //       this.sprite.y + half,
-          //       section.x,
-          //       section.y
-          //     );
-
-          //     if (distance < half) {
-          //       const avoidanceDirection = this.#getAvoidanceDirection(
-          //         this.sprite,
-          //         section
-          //       );
-
-          //       if (avoidanceDirection === 'left') {
-          //         this.sprite.body.velocity.x -= this.tileSize;
-          //         this.sprite.body.velocity.y -= this.tileSize;
-          //       } else if (avoidanceDirection === 'right') {
-          //         this.sprite.body.velocity.x += this.tileSize;
-          //         this.sprite.body.velocity.y += this.tileSize;
-          //       }
-          //     }
-          //   }
-          // });
-
-          // let avoidAngle = 0;
-          // if (this.collidedTarget) {
-          //   const angleToObstacle = Phaser.Math.Angle.Between(
-          //     this.sprite.x,
-          //     this.sprite.y,
-          //     this.collidedTarget.x,
-          //     this.collidedTarget.y
-          //   );
-
-          //   avoidAngle +=
-          //     (angleToObstacle > angleToTarget ? -1 : 1) * this.tileSize * 0.2;
-
-          //   // Remove collided target
-          //   this.collidedTarget = null;
-          // }
-
-          // const finalAngle = angleToTarget + avoidAngle;
-
-          // console.log('avoidAngle :>>>', avoidAngle);
-          // console.log('finalAngle :>>>', finalAngle);
-          // console.log('cos :>>>', Math.cos(finalAngle));
-          // console.log('sin :>>>', Math.sin(finalAngle));
-
-          if (this.sprite && this.sprite.active)
-            this.sprite.setVelocity(
-              Math.cos(angleToTarget) * this.tileSize,
-              Math.sin(angleToTarget) * this.tileSize
+          if (this.inSight) {
+            const distanceToPlayer = Phaser.Math.Distance.Between(
+              this.sprite.x + half,
+              this.sprite.y + half,
+              this.scene.player.sprite.x + half,
+              this.scene.player.sprite.y + half
             );
+            // If the player is in the range of attack
+            if (
+              distanceToPlayer <= this.tileSize + 5 &&
+              !this.keys['mouseLeft']
+            ) {
+              // Attack
+              if (this.scene.player.sprite.active) {
+                this.phase = 'aggro';
+                this.path = null;
+                this.sprite.body.setVelocity(0);
+                this.#alterRayAngle();
+                this.sprite?.anims.play('enemy_attack', true);
+                this.keys['mouseLeft'] = 1;
+                // this.#setZone(this.scene.player.sprite);
+              }
+            }
+          }
+
+          if (distance <= 5 && !this.keys['mouseLeft']) {
+            if (this.awaitTimer !== null) {
+              clearInterval(this.awaitTimer);
+              this.awaitTimer = null;
+            }
+            // If there are path to go
+            if (this.path.length) {
+              this.target = this.path.shift();
+              // this.#followThePath();
+              this.#moveToTarget(this.target);
+            } else {
+              // Mark the point as checked
+              const index = this.scene.walkable.findIndex(
+                (w) => w.x === this.target.x && w.y === this.target.y
+              );
+
+              if (index >= 0) this.scene.walkable[index].checked = true;
+              this.#stopMoving();
+            }
+          } else {
+            const angleToTarget = Phaser.Math.Angle.Between(
+              this.sprite.x + half,
+              this.sprite.y + half,
+              target.x,
+              target.y
+            );
+
+            // this.intersections.forEach((section: any) => {
+            //   if (section.segment) {
+            //     const distance = Phaser.Math.Distance.Between(
+            //       this.sprite.x + half,
+            //       this.sprite.y + half,
+            //       section.x,
+            //       section.y
+            //     );
+
+            //     if (distance < half) {
+            //       const avoidanceDirection = this.#getAvoidanceDirection(
+            //         this.sprite,
+            //         section
+            //       );
+
+            //       if (avoidanceDirection === 'left') {
+            //         this.sprite.body.velocity.x -= this.tileSize;
+            //         this.sprite.body.velocity.y -= this.tileSize;
+            //       } else if (avoidanceDirection === 'right') {
+            //         this.sprite.body.velocity.x += this.tileSize;
+            //         this.sprite.body.velocity.y += this.tileSize;
+            //       }
+            //     }
+            //   }
+            // });
+
+            // let avoidAngle = 0;
+            // if (this.collidedTarget) {
+            //   const angleToObstacle = Phaser.Math.Angle.Between(
+            //     this.sprite.x,
+            //     this.sprite.y,
+            //     this.collidedTarget.x,
+            //     this.collidedTarget.y
+            //   );
+
+            //   avoidAngle +=
+            //     (angleToObstacle > angleToTarget ? -1 : 1) * this.tileSize * 0.2;
+
+            //   // Remove collided target
+            //   this.collidedTarget = null;
+            // }
+
+            // const finalAngle = angleToTarget + avoidAngle;
+
+            // console.log('avoidAngle :>>>', avoidAngle);
+            // console.log('finalAngle :>>>', finalAngle);
+            // console.log('cos :>>>', Math.cos(finalAngle));
+            // console.log('sin :>>>', Math.sin(finalAngle));
+
+            if (this.sprite && this.sprite.active)
+              this.sprite.setVelocity(
+                Math.cos(angleToTarget) * this.tileSize,
+                Math.sin(angleToTarget) * this.tileSize
+              );
+          }
         }
       }, 200);
     }
@@ -834,8 +848,7 @@ export default class Skeleton {
         // Starting moving again
         setTimeout(() => {
           this.idleTimer = null;
-          // this.looking = false;
-          this.#getRandomDirection();
+          if (this.status !== 'dead') this.#getRandomDirection();
         }, 2000);
       }
     }
@@ -852,62 +865,19 @@ export default class Skeleton {
       }
 
       // If collide with player but player not in sight
-      else if (target.name && target.name.includes('player')) {
+      if (target.name && target.name.includes('player')) {
         if (this.phase !== 'chasing') {
+          this.phase = 'chasing';
           this.#markPlayerInSight(target);
         }
-      } else {
-        this.collidedTarget = {
-          x: target.pixelX + this.scene.offsetX,
-          y: target.pixelY + this.scene.offsetY,
-        };
-
-        // const avoidAngel
-        // if (this.path && this.path.length) {
-        //   this.#moveToTarget(this.path[this.step]);
-        // }
-        // this.sprite.body.setImmovable(false);
-        // Collide with something else (ex. wall)
-        // if (this.target) {
-        //   // Find another path
-        //   if (this.path && this.path.length) {
-        //     this.target = this.path.shift();
-        //   } else if (!this.inSight) {
-        //     const { x, y } = this.target;
-        //     const distanceX = getDistance(this.sprite.x, x);
-        //     const distanceY = getDistance(this.sprite.y, y);
-        //     if (distanceX < 5 && distanceY < 5) {
-        //       this.target = null;
-        //     } else {
-        //       this.#alterRayAngle();
-        //       this.#startChasing();
-        //       // this.#GetPath(new Phaser.Math.Vector2(this.target.x, this.target.y));
-        //     }
-        //   }
-        // } else {
-        //   // Get facing direction
-        //   const radain = Phaser.Math.Angle.BetweenPoints(this.sprite, {
-        //     x: target.x * this.tileSize,
-        //     y: target.y * this.tileSize,
-        //   });
-        //   this.facingAngle = Phaser.Math.RadToDeg(radain);
-        //   const direction = getDirection(this.facingAngle);
-        // switch (direction) {
-        //   case 0:
-        //     this.#limitDirection({ min: -135, max: -45 });
-        //     break;
-        //   case 1:
-        //     this.#limitDirection({ min: -45, max: 45 });
-        //     break;
-        //   case 2:
-        //     this.#limitDirection({ min: 45, max: 135 });
-        //     break;
-        //   case 3:
-        //     this.#limitDirection({ min: -135, max: 135 });
-        //     break;
-        // }
-        // }
       }
+    }
+  }
+
+  #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
+    if (!anim.key.includes('attack') && this.keys['mouseLeft'] === 1) {
+      // Release key
+      this.keys['mouseLeft'] = 0;
     }
   }
 
