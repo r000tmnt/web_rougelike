@@ -631,14 +631,6 @@ export default class Dungeon extends Scene {
       // this.physics.pause();
       this.#updateContent(gameStore, true);
     });
-
-    gameStore.emitter.on('pause', () => {
-      this.anims.pauseAll();
-    });
-
-    gameStore.emitter.on('resume', () => {
-      this.anims.resumeAll();
-    });
   }
 
   #setCollision(room: number[][], gameStore: any) {
