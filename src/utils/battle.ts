@@ -35,8 +35,9 @@ export const setInitialStatus = (data: enemy, randomlv: number) => {
 
   for (const [key, value] of Object.entries(data.base_attribute)) {
     for (let i = 0; i < over; i++) {
-      data.base_attribute[key as keyof base_attribute] =
-        value + enemyGrows[Math.floor(Math.random() * enemyGrows.length)];
+      if (key !== 'vd')
+        data.base_attribute[key as keyof base_attribute] =
+          value + enemyGrows[Math.floor(Math.random() * enemyGrows.length)];
     }
   }
 
