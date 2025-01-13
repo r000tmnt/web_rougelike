@@ -305,48 +305,55 @@ export default class Player {
     });
 
     gameStore.emitter.on('player-level-up', () => {
-      this.status = 'levelUp';
-      this.lvText.setPosition(this.sprite.x, this.sprite.y - this.tileSize / 2);
-      this.lvText.setText('LEVEL UP');
-      this.lvText.setStyle({ color: '#FFB343' });
-      this.lvText.setFontSize(this.tileSize * 0.4);
+      try {
+        this.status = 'levelUp';
+        this.lvText.setPosition(
+          this.sprite.x,
+          this.sprite.y - this.tileSize / 2
+        );
+        this.lvText.setText('LEVEL UP');
+        this.lvText.setStyle({ color: '#FFB343' });
+        this.lvText.setFontSize(this.tileSize * 0.4);
 
-      // const glow = this.lvText.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24);
+        // const glow = this.lvText.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24);
 
-      this.lvText.setVisible(true);
+        this.lvText.setVisible(true);
 
-      // this.scene.tweens.add({
-      //   targets: glow,
-      //   outerStrength: 4,
-      //   yoyo: true,
-      //   loop: -1,
-      //   ease: 'sine.inout',
-      // });
+        // this.scene.tweens.add({
+        //   targets: glow,
+        //   outerStrength: 4,
+        //   yoyo: true,
+        //   loop: -1,
+        //   ease: 'sine.inout',
+        // });
 
-      this.scene.tweens.chain({
-        targets: this.lvText,
-        tweens: [
-          {
-            scale: 1.5,
-            duration: 1500,
-            yoyo: true,
-            ease: 'quad.out',
+        this.scene.tweens.chain({
+          targets: this.lvText,
+          tweens: [
+            {
+              scale: 1.5,
+              duration: 1500,
+              yoyo: true,
+              ease: 'quad.out',
+            },
+            {
+              alpha: { from: 1, to: 0 },
+              ease: 'sine.inout',
+              duration: 1500,
+            },
+          ],
+          loop: 0,
+          onComplete: () => {
+            console.log('tweens chain complete');
+            this.status = '';
+            this.lvText.setVisible(false);
+            this.lvText.alpha = 1;
+            this.lvText.scale = 1;
           },
-          {
-            alpha: { from: 1, to: 0 },
-            ease: 'sine.inout',
-            duration: 1500,
-          },
-        ],
-        loop: 0,
-        onComplete: () => {
-          console.log('tweens chain complete');
-          this.status = '';
-          this.lvText.setVisible(false);
-          this.lvText.alpha = 1;
-          this.lvText.scale = 1;
-        },
-      });
+        });
+      } catch (error) {
+        console.log(error);
+      }
     });
 
     gameStore.emitter.on('player-update', (data: player) => {
