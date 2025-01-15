@@ -8,8 +8,9 @@ import Skeleton from 'src/entity/skeleton';
 import Player from 'src/entity/player';
 // import { Direction, GridEngine } from 'grid-engine';
 import PhaserRaycaster from 'phaser-raycaster';
-import { PhaserNavMeshPlugin, PhaserNavMesh } from 'phaser-navmesh';
+import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 import phaserJuice from '../lib/phaserJuice.min.js';
+import { resetParams } from 'src/model/dungeon.js';
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
   theme: string;
@@ -77,17 +78,17 @@ export default class Dungeon extends Scene {
     this.theme = theme;
   }
 
-  init(data: any | undefined) {
+  init(data: resetParams | undefined) {
     console.log('scene init');
 
     // Generate a part of dungeon
-    if (Object.entries(data).length) {
+    if (data?.roomIndex) {
       // Restart scene with new data
       console.log('init with new data :>>>', data);
 
-      const { roomIndex, direction } = data;
+      const { roomIndex, direction, reset } = data;
       // Create a new map or load existing content
-      this.content?.setRoom(roomIndex, direction);
+      this.content?.setRoom(roomIndex, direction, reset);
     } else {
       const gameStore = useGameStore();
       const tileSize = gameStore.getTileSize;
@@ -657,12 +658,12 @@ export default class Dungeon extends Scene {
   #updateContent(gameStore: any, restart = false) {
     if (this.content) {
       // Clear zones
+      this.doors.forEach((door) => door.destroy());
       this.doors.splice(0);
       // Remove collider
       this.physics.world.colliders.destroy();
       // Destory ray
       this.enemies.forEach((e) => {
-        this.raycaster?.removeMappedObjects(e.sprite);
         e.sprite.destroy();
         e.ray?.destroy();
       });
@@ -670,15 +671,12 @@ export default class Dungeon extends Scene {
       this.#storeEnemyData(gameStore);
       // Remove mapped objects
       this.raycaster?.removeMappedObjects(this.groundLayer);
-      this.raycaster?.removeMappedObjects(this.player?.sprite);
       // destroy raycaster
       this.raycaster?.destroy();
       // Remove layer
       this.groundLayer?.destroy();
       // Destroy navMesh
       this.navMesh.destroy();
-      // Store player data
-      gameStore.setPlayerStatus(this.player?.data);
       // Destroy player
       this.player?.sprite.destroy();
       console.log('this.player :>>>', this.player?.sprite);
@@ -695,10 +693,14 @@ export default class Dungeon extends Scene {
       // Disable key input event
       if (this.input.keyboard) this.input.keyboard.enabled = false;
 
+      this.walkable.slice(0);
+
       if (restart) {
         gameStore.setPlayerStatus({});
         this.scene.restart();
       } else {
+        // Store player data
+        gameStore.setPlayerStatus(this.player?.data);
         const direction = this.content.doors[gameStore.doorIndex].direction;
         console.log(`Open the door ${direction}`);
         // Mark the room visited
@@ -723,6 +725,7 @@ export default class Dungeon extends Scene {
         this.scene.restart({
           roomIndex: roomIndex,
           direction: direction,
+          reset: false,
           // And more...
         });
       }
