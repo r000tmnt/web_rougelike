@@ -1,3 +1,5 @@
+import { player } from 'src/model/character';
+
 export default {
   lv: 1,
   name: 'Player',
@@ -100,8 +102,8 @@ export default {
     },
     accessory: {},
   },
-  exp: 0,
+  exp: 90,
   pt: 0,
   gold: 0,
   bag: [],
-};
+} as player;
