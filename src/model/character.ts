@@ -31,11 +31,11 @@ interface unit {
 
 export type player = unit & {
   equip: {
-    head: item;
-    body: item;
-    hand: item;
-    feet: item;
-    accessory: item;
+    head: item | object;
+    body: item | object;
+    hand: item | object;
+    feet: item | object;
+    accessory: item | object;
   };
   gold: number;
   bag: Array<item>;
