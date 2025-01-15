@@ -65,20 +65,30 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
     value: 0,
   };
 
-  let baseDMG = attacker.base_attribute.str + attacker.add_attribute.str;
-  const baseDEF = defender.base_attribute.def + defender.add_attribute.def;
+  let baseDMG =
+    attacker.total_attribute.str +
+    attacker.base_attribute.int *
+      Math.floor(
+        attacker.base_attribute.str * (attacker.base_attribute.int / 100)
+      );
+  const baseDEF =
+    defender.total_attribute.def +
+    defender.base_attribute.int *
+      Math.floor(
+        attacker.base_attribute.def * (attacker.base_attribute.int / 100)
+      );
 
-  if (attacker.equip) {
-    if (Object.entries(attacker.equip.hand).length) {
-      // Alter baseDMG
-    }
-  }
+  // if (attacker.equip) {
+  //   if (Object.entries(attacker.equip.hand).length) {
+  //     // Alter baseDMG
+  //   }
+  // }
 
-  if (skill) {
-    if (Object.entries(skill).length) {
-      // Alter baseDMG
-    }
-  }
+  // if (skill) {
+  //   if (Object.entries(skill).length) {
+  //     // Alter baseDMG
+  //   }
+  // }
 
   // Alter baseDEF if needed
 
@@ -86,33 +96,30 @@ export const calculateDamage = (attacker: any, defender: any, skill?: any) => {
     {
       name: 'hit',
       value:
-        attacker.base_attribute.int +
-        attacker.add_attribute.int +
-        (attacker.base_attribute.int +
+        attacker.total_attribute.int +
+        attacker.base_attribute.int *
           Math.floor(
             attacker.base_attribute.int * (attacker.base_attribute.spd / 100)
-          )) +
+          ) +
         100,
     },
     {
       name: 'evade',
       value:
-        defender.base_attribute.spd +
-        defender.add_attribute.spd +
-        (defender.base_attribute.spd +
+        defender.total_attribute.spd +
+        defender.base_attribute.spd *
           Math.floor(
-            defender.base_attribute.spd * (defender.base_attribute.spd / 100)
-          )),
+            defender.base_attribute.spd * (defender.base_attribute.int / 100)
+          ),
     },
     {
       name: 'crit',
       value:
-        attacker.base_attribute.luck +
-        attacker.add_attribute.luck +
-        (attacker.base_attribute.int +
+        attacker.total_attribute.luck +
+        attacker.base_attribute.int *
           Math.floor(
             attacker.base_attribute.int * (attacker.base_attribute.luck / 100)
-          )) +
+          ) +
         25,
     },
   ];
@@ -185,3 +192,5 @@ export const gainExp = (enemy: enemy) => {
     gameStore.setPlayerStatus(player);
   }
 };
+
+// export const prepareDropItems = (player, enemy) => {};
