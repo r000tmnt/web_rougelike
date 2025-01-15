@@ -8,3 +8,9 @@ export interface doorPosition {
   row: number;
   col: number;
 }
+
+export interface resetParams {
+  roomIndex: number;
+  direction: string;
+  reset: boolean;
+}
