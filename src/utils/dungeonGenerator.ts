@@ -49,7 +49,7 @@ export default class DungeonGenerator {
     this.setRoom();
   }
 
-  async setRoom(index = -1, direction = '') {
+  async setRoom(index = -1, direction = '', reset = false) {
     this.doors.splice(0);
     if (index >= 0) {
       this.roomIndex = index;
@@ -58,7 +58,14 @@ export default class DungeonGenerator {
     } else {
       // Set the room as the starting point
       this.roomIndex = Math.floor(Math.random() * this.level.length);
+
+      // Clear the room if exist for some reason
+      if (this.level[this.roomIndex].length)
+        this.level.splice(this.roomIndex, 1);
     }
+
+    // Clear the old room is needed
+    if (reset) this.level.splice(this.roomIndex, 1);
 
     console.log(`room ${this.roomIndex}`);
     await this.#setDoorDirections();
@@ -165,6 +172,10 @@ export default class DungeonGenerator {
       console.log(`mark room ${index} cleared`);
       this.clearedRoom.push(index);
     }
+  }
+
+  reset() {
+    this.level.forEach((room) => room.splice(0));
   }
 
   async #setDoorDirections() {
