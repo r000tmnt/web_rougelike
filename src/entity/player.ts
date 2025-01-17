@@ -244,9 +244,13 @@ export default class Player {
     });
 
     gameStore.emitter.on('player-take-damage', (dmg: number) => {
+      this.status = 'hit';
+
       this.sprite.body?.setVelocity(0);
-      this.data.total_attribute.hp -=
-        dmg > this.data.total_attribute.hp ? this.data.total_attribute.hp : dmg;
+
+      const data = gameStore.getPlayer
+      data.total_attribute.hp -=
+        dmg > data.total_attribute.hp ? data.total_attribute.hp : dmg;
 
       // console.log('current hp ', this.data.base_attribute.hp);
 
@@ -259,7 +263,7 @@ export default class Player {
       this.scene.juice.shake(this.sprite, { x: 1, repeat: 2 });
 
       // If player lose
-      if (this.data.total_attribute.hp === 0) {
+      if (data.total_attribute.hp === 0) {
         this.sprite.active = false;
         this.status = 'dead';
         this.scene.camera?.pan(this.sprite.x, this.sprite.y, 200, 'Power2');
@@ -286,7 +290,6 @@ export default class Player {
               });
               this.scene.time.delayedCall(2000, () => {
                 //Show Game over screen
-                const gameStore = useGameStore();
                 gameStore.setGameOver(true);
                 this.scene.physics.pause();
               });
@@ -294,14 +297,13 @@ export default class Player {
           }, 500);
         }, 500);
       } else {
-        this.status = 'hit';
         setTimeout(() => {
           this.status = '';
           this.sprite.anims.play('player-lose');
           this.keys['mouseLeft'] = 0;
         }, 200);
       }
-      gameStore.setPlayerStatus(this.data);
+      gameStore.setPlayerStatus(data);
     });
 
     gameStore.emitter.on('player-level-up', () => {
