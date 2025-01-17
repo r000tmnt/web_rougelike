@@ -703,9 +703,10 @@ export default class Dungeon extends Scene {
       this.walkable.slice(0);
 
       if (restart) {
-        gameStore.setPlayerStatus({});
-        this.content.reset();
-        this.scene.restart();
+        // gameStore.setPlayerStatus({});
+        // this.content.reset();
+        // this.scene.restart();
+        location.reload();
       } else {
         // Store player data
         gameStore.setPlayerStatus(this.player?.data);
