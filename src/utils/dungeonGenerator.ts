@@ -65,8 +65,8 @@ export default class DungeonGenerator {
       this.roomIndex = Math.floor(Math.random() * this.level.length);
 
       // Clear the room if exist for some reason
-      if (this.level[this.roomIndex].length)
-        this.level[this.roomIndex].splice(0);
+      // if (this.level[this.roomIndex].length)
+      //   this.level[this.roomIndex].splice(0);
     }
 
     console.log(`room ${this.roomIndex}`);
