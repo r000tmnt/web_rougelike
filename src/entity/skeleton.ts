@@ -271,6 +271,12 @@ export default class Skeleton {
     gameStore.emitter.on(
       'enemy-take-damage',
       (data: { index: number; result: number }) => {
+
+        if (this.keys['mouseLeft'] === 1) {
+          // Release key
+          this.keys['mouseLeft'] = 0;
+        }
+
         const { index, result } = data;
 
         if (index === this.index) {
@@ -736,8 +742,7 @@ export default class Skeleton {
             );
             // If the player is in the range of attack
             if (
-              distanceToPlayer <= this.tileSize + 5 &&
-              !this.keys['mouseLeft']
+              distanceToPlayer <= this.tileSize + 5
             ) {
               // Attack
               if (this.scene.player.sprite.active) {
@@ -745,8 +750,10 @@ export default class Skeleton {
                 this.path = null;
                 this.sprite.body.setVelocity(0);
                 this.#alterRayAngle();
-                this.sprite?.anims.play('enemy_attack', true);
-                this.keys['mouseLeft'] = 1;
+                if(!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0){
+                  this.sprite?.anims.play('enemy_attack', true);
+                  this.keys['mouseLeft'] = 1;
+                }
                 // this.#setZone(this.scene.player.sprite);
               }
             }
@@ -875,17 +882,14 @@ export default class Skeleton {
   }
 
   #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
-    if (!anim.key.includes('attack') && this.keys['mouseLeft'] === 1) {
-      // Release key
-      this.keys['mouseLeft'] = 0;
-    }
+    //
   }
 
   #animationUpdate(anim: any, frame: any, sprite: any, frameKey: any) {
     // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack') && frameKey === '4') {
       // Check overlap
-      if (this.overlap && !this.text.visible) {
+      if (this.overlap && !this.text.visible && this.scene.player.status !== 'dead' && this.scene.player.status !== 'hit') {
         const result = calculateDamage(this.data, this.scene.player.data);
 
         this.text.setPosition(
