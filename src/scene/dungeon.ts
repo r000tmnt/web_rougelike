@@ -11,6 +11,7 @@ import PhaserRaycaster from 'phaser-raycaster';
 import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 import phaserJuice from '../lib/phaserJuice.min.js';
 import { resetParams } from 'src/model/dungeon.js';
+import { enemy } from 'src/model/character.js';
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
   theme: string;
@@ -313,29 +314,35 @@ export default class Dungeon extends Scene {
   }
 
   #setRayCaster() {
-    const bounds = this.groundLayer?.getBounds();
+    if (this.groundLayer) {
+      const bounds = this.groundLayer?.getBounds();
 
-    // Init raycaster
-    this.raycaster = this.raycasterPlugin.createRaycaster({
-      boundingBox: bounds,
-      debug: {
-        enabled: true, //enable debug mode
-        maps: true, //enable maps debug
-        rays: true, //enable rays debug
-        graphics: {
-          ray: 0x00ff00, //debug ray color; set false to disable
-          rayPoint: 0xff00ff, //debug ray point color; set false to disable
-          mapPoint: 0x00ffff, //debug map point color; set false to disable
-          mapSegment: 0x0000fe, //debug map segment color; set false to disable
-          mapBoundingBox: 0xff0000, //debug map bounding box color; set false to disable
+      // Init raycaster
+      this.raycaster = this.raycasterPlugin.createRaycaster({
+        boundingBox: bounds,
+        debug: {
+          enabled: true, //enable debug mode
+          maps: true, //enable maps debug
+          rays: true, //enable rays debug
+          graphics: {
+            ray: 0x00ff00, //debug ray color; set false to disable
+            rayPoint: 0xff00ff, //debug ray point color; set false to disable
+            mapPoint: 0x00ffff, //debug map point color; set false to disable
+            mapSegment: 0x0000fe, //debug map segment color; set false to disable
+            mapBoundingBox: 0xff0000, //debug map bounding box color; set false to disable
+          },
         },
-      },
-    });
+      });
 
-    // Set raycaster to collide with the tileMap
-    this.raycaster.mapGameObjects(this.groundLayer, false, {
-      collisionTiles: [1, 2],
-    });
+      try {
+        // Set raycaster to collide with the tileMap
+        this.raycaster.mapGameObjects(this.groundLayer, false, {
+          collisionTiles: [1, 2],
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    }
   }
 
   #setNavMesh(tileSize: number) {
@@ -589,23 +596,23 @@ export default class Dungeon extends Scene {
         for (let i = 0; i < enemyPosition.length; i++) {
           const enemyX = enemyPosition[i].x * tileSize;
           const enemyY = enemyPosition[i].y * tileSize;
-          const enemy = new Skeleton(
-            this,
-            enemyX + this.offsetX,
-            enemyY + this.offsetY,
-            'demo_enemy',
-            storedEnemy[i],
-            i,
-            this.player.sprite,
-            this.groundLayer,
-            this.content.level[this.content.roomIndex],
-            tileSize,
-            this.navMesh
-          );
-
+          if (storedEnemy[i]) {
+            const enemy = new Skeleton(
+              this,
+              enemyX + this.offsetX,
+              enemyY + this.offsetY,
+              'demo_enemy',
+              storedEnemy[i],
+              i,
+              this.player.sprite,
+              this.groundLayer,
+              this.content.level[this.content.roomIndex],
+              tileSize,
+              this.navMesh
+            );
+            this.enemies.push(enemy);
+          }
           console.log('stored enemy data :>>>', storedEnemy[i]);
-
-          this.enemies.push(enemy);
         }
       }
 
@@ -734,16 +741,19 @@ export default class Dungeon extends Scene {
 
   #storeEnemyData(gameStore: any) {
     if (this.content) {
-      const copy = this.enemies.map((e) => {
-        if (e.sprite && e.sprite.active)
+      const copy: enemy[] = [];
+
+      this.enemies.forEach((e) => {
+        if (e.sprite && e.status !== 'dead')
           // Update position
           e.data.position = {
             x: e.sprite.x - this.offsetX,
             y: e.sprite.y - this.offsetY,
           };
 
-        return e.data;
+        copy.push(e.data);
       });
+
       gameStore.storeEnemyIntheRoom(copy, this.content.roomIndex);
     }
   }
