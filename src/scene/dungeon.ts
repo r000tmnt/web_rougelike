@@ -504,7 +504,7 @@ export default class Dungeon extends Scene {
           playerX + this.offsetX,
           playerY + this.offsetY,
           'demo_player',
-          swordsman,
+          JSON.parse(JSON.stringify(swordsman)), // Pass a copy of data
           this.groundLayer,
           this.content.level[this.content.roomIndex],
           tileSize
@@ -704,11 +704,13 @@ export default class Dungeon extends Scene {
 
       if (restart) {
         gameStore.setPlayerStatus({});
+        this.content.reset();
         this.scene.restart();
       } else {
         // Store player data
         gameStore.setPlayerStatus(this.player?.data);
-        const direction = this.content.doors[gameStore.doorIndex].direction;
+        const doorIndex = gameStore.getDoorIndex;
+        const direction = this.content.doors[doorIndex].direction;
         console.log(`Open the door ${direction}`);
         // Mark the room visited
         this.content.markRoomVisited(this.content.roomIndex);
@@ -744,14 +746,15 @@ export default class Dungeon extends Scene {
       const copy: enemy[] = [];
 
       this.enemies.forEach((e) => {
-        if (e.sprite && e.status !== 'dead')
+        if (e.data.total_attribute.hp > 0) {
           // Update position
           e.data.position = {
             x: e.sprite.x - this.offsetX,
             y: e.sprite.y - this.offsetY,
           };
 
-        copy.push(e.data);
+          copy.push(e.data);
+        }
       });
 
       gameStore.storeEnemyIntheRoom(copy, this.content.roomIndex);
