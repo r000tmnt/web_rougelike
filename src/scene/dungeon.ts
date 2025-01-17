@@ -83,7 +83,7 @@ export default class Dungeon extends Scene {
     console.log('scene init');
 
     // Generate a part of dungeon
-    if (data?.roomIndex) {
+    if (data?.direction) {
       // Restart scene with new data
       console.log('init with new data :>>>', data);
 
@@ -703,10 +703,9 @@ export default class Dungeon extends Scene {
       this.walkable.slice(0);
 
       if (restart) {
-        // gameStore.setPlayerStatus({});
-        // this.content.reset();
-        // this.scene.restart();
-        location.reload();
+        gameStore.setPlayerStatus({});
+        this.content.reset();
+        this.scene.restart();
       } else {
         // Store player data
         gameStore.setPlayerStatus(this.player?.data);
@@ -715,25 +714,24 @@ export default class Dungeon extends Scene {
         console.log(`Open the door ${direction}`);
         // Mark the room visited
         this.content.markRoomVisited(this.content.roomIndex);
-        let roomIndex = -1;
 
         switch (direction) {
           case 'up':
-            roomIndex = this.content.roomIndex - 3;
+            this.content.roomIndex -= 3;
             break;
           case 'right':
-            roomIndex = this.content.roomIndex + 1;
+            this.content.roomIndex += 1;
             break;
           case 'down':
-            roomIndex = this.content.roomIndex + 3;
+            this.content.roomIndex += 3;
             break;
           case 'left':
-            roomIndex = this.content.roomIndex - 1;
+            this.content.roomIndex -= 1;
             break;
         }
 
         this.scene.restart({
-          roomIndex: roomIndex,
+          roomIndex: this.content.roomIndex,
           direction: direction,
           reset: false,
           // And more...
