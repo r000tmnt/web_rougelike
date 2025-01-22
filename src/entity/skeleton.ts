@@ -22,6 +22,7 @@ export default class Skeleton {
   phase: string;
   step: number;
   target: any;
+  collider: Phaser.Physics.Arcade.Collider[];
   collidedTarget: any;
   idleTimer: NodeJS.Timeout | null;
   ray: Raycaster.Ray | null;
@@ -60,6 +61,7 @@ export default class Skeleton {
     this.inSight = false;
     this.target = null;
     this.collidedTarget = null;
+    this.collider = [];
     this.ray = null;
     this.angle = [0, 45, 90, 135, 180, -180, -135, -90, -45, -0];
     this.facingAngle = 0;
@@ -183,15 +185,21 @@ export default class Skeleton {
     }, 1000);
   }
 
+  removeCollider() {
+    this.collider.forEach((collider) => collider.destroy());
+  }
+
   addCollision(target: any) {
     if (this.sprite) {
       // console.log('target :>>>', target);
-      this.scene.physics.add.collider(
-        this.sprite,
-        target,
-        this.#onCollide,
-        null,
-        this
+      this.collider.push(
+        this.scene.physics.add.collider(
+          this.sprite,
+          target,
+          this.#onCollide,
+          null,
+          this
+        )
       );
     }
   }
@@ -271,7 +279,6 @@ export default class Skeleton {
     gameStore.emitter.on(
       'enemy-take-damage',
       (data: { index: number; result: number }) => {
-
         if (this.keys['mouseLeft'] === 1) {
           // Release key
           this.keys['mouseLeft'] = 0;
@@ -667,7 +674,7 @@ export default class Skeleton {
         // this.navMesh.debugDrawPath(this.path, 0xffd900);
 
         this.target = this.path.shift();
-        this.#moveToTarget(this.target);
+        if (this.status !== 'dead') this.#moveToTarget(this.target);
       } else {
         this.#markTileAsChecked(this.target);
       }
@@ -741,16 +748,14 @@ export default class Skeleton {
               this.scene.player.sprite.y + half
             );
             // If the player is in the range of attack
-            if (
-              distanceToPlayer <= this.tileSize + 5
-            ) {
+            if (distanceToPlayer <= this.tileSize + 5) {
               // Attack
               if (this.scene.player.sprite.active) {
                 this.phase = 'aggro';
                 this.path = null;
                 this.sprite.body.setVelocity(0);
                 this.#alterRayAngle();
-                if(!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0){
+                if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
                   this.sprite?.anims.play('enemy_attack', true);
                   this.keys['mouseLeft'] = 1;
                 }
@@ -765,7 +770,7 @@ export default class Skeleton {
               this.awaitTimer = null;
             }
             // If there are path to go
-            if (this.path.length) {
+            if (this.path.length && this.status !== 'dead') {
               this.target = this.path.shift();
               // this.#followThePath();
               this.#moveToTarget(this.target);
@@ -889,7 +894,12 @@ export default class Skeleton {
     // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack') && frameKey === '4') {
       // Check overlap
-      if (this.overlap && !this.text.visible && this.scene.player.status !== 'dead' && this.scene.player.status !== 'hit') {
+      if (
+        this.overlap &&
+        !this.text.visible &&
+        this.scene.player.status !== 'dead' &&
+        this.scene.player.status !== 'hit'
+      ) {
         const result = calculateDamage(this.data, this.scene.player.data);
 
         this.text.setPosition(

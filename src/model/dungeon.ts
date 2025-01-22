@@ -1,3 +1,5 @@
+import Player from 'src/entity/player';
+
 export interface mapBorder {
   row: number;
   cols: number[];
@@ -13,4 +15,5 @@ export interface resetParams {
   roomIndex: number;
   direction: string;
   reset: boolean;
+  player?: Player;
 }

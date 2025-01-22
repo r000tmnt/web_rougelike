@@ -13,13 +13,12 @@ export default class Player {
   map: number[][];
   ready: boolean;
   overlap: boolean;
-  collide: boolean;
   status: string;
   target: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
   dmgText: Phaser.GameObjects.Text;
   lvText: Phaser.GameObjects.Text;
   keys: action;
-
+  collider: Phaser.Physics.Arcade.Collider[];
   private zone!: Phaser.GameObjects.Zone;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
   private fKey!: Input.Keyboard.Key;
@@ -62,9 +61,9 @@ export default class Player {
       (this.map = map);
     this.ready = false;
     this.overlap = false;
-    this.collide = false;
     this.target = [];
     this.keys = {};
+    this.collider = [];
     this.init(texture, groundLayer, reset);
   }
 
@@ -74,6 +73,7 @@ export default class Player {
     reset: boolean
   ) {
     this.sprite.name = texture;
+    this.sprite.depth = 1;
     this.sprite.setSize(this.tileSize, this.tileSize);
     this.sprite.setOrigin(0, 0);
     this.sprite.setOffset(0, 0); // Adjust rendering position
@@ -172,7 +172,7 @@ export default class Player {
       this
     );
 
-    this.#setCollide(groundLayer);
+    this.addCollision(groundLayer);
     this.#setCustomEvent();
     this.#addContorl();
     this.#setZone();
@@ -248,7 +248,7 @@ export default class Player {
 
       this.sprite.body?.setVelocity(0);
 
-      const data = gameStore.getPlayer
+      const data = gameStore.getPlayer;
       data.total_attribute.hp -=
         dmg > data.total_attribute.hp ? data.total_attribute.hp : dmg;
 
@@ -371,14 +371,8 @@ export default class Player {
     });
   }
 
-  #setCollide(groundLayer: Phaser.Tilemaps.TilemapLayer) {
-    this.scene.physics.add.collider(
-      this.sprite,
-      groundLayer,
-      this.#onCollide,
-      null,
-      this
-    );
+  removeCollider() {
+    this.collider.forEach((collider) => collider.destroy());
   }
 
   addOverlap(target: any) {
@@ -393,13 +387,15 @@ export default class Player {
 
   addCollision(target: any) {
     if (this.sprite) {
-      console.log('target :>>>', target);
-      this.scene.physics.add.collider(
-        this.sprite,
-        target,
-        this.#onCollide,
-        null,
-        this
+      // console.log('target :>>>', target);
+      this.collider.push(
+        this.scene.physics.add.collider(
+          this.sprite,
+          target,
+          this.#onCollide,
+          null,
+          this
+        )
       );
     }
   }
@@ -503,7 +499,7 @@ export default class Player {
   }
 
   #update() {
-    // console.log('listen to scene update');
+    console.log('player update');
     // Listen to key press
     if (
       this.sprite?.body &&
@@ -535,19 +531,6 @@ export default class Player {
 
         if (doorIndex >= 0) gameStore.emitter.emit('open-door');
       }
-
-      // if (this.dKey && this.dKey.isDown) {
-      //   if (
-      //     !this.keys[this.dKey.keyCode] ||
-      //     this.keys[this.dKey.keyCode] === 0
-      //   ) {
-      //     console.log('add key');
-      //     this.keys[this.dKey.keyCode] = 1;
-      //     this.sprite?.anims.play('player-attack', true);
-      //   } else {
-      //     console.log('lock key');
-      //   }
-      // }
 
       // Mouse left click
       if (this.pointer.isDown) {
@@ -620,7 +603,7 @@ export default class Player {
           }
         } else {
           this.sprite.body.setVelocity(0);
-          if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
+          if (this.keys['mouseLeft'] !== 1) {
             this.sprite.anims.play('player-idle', true);
           }
         }
@@ -740,6 +723,11 @@ export default class Player {
 
   updateStatus(status: string) {
     this.status = status;
+  }
+
+  updatePosition(x: number, y: number) {
+    this.sprite.setPosition(x, y);
+    this.scene.events.on('update', this.#update, this);
   }
 
   #onCollide(self: any, target: any) {
