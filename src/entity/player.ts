@@ -6,6 +6,7 @@ import { item } from 'src/model/item';
 import unit from './unit';
 import { addTexture, setAnimation } from 'src/utils/asset';
 import { onCollidePlayer } from 'src/utils/collide';
+import Dungeon from 'src/scene/dungeon';
 
 export default class Player extends unit {
   target: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
@@ -20,7 +21,7 @@ export default class Player extends unit {
   private pointer!: Input.Pointer;
 
   constructor(
-    scene: Phaser.Scene,
+    scene: Dungeon,
     x: number,
     y: number,
     texture: string,
@@ -120,7 +121,12 @@ export default class Player extends unit {
       // Check if there's equipment to count
       if ('equip' in this.sprite.data.values && this.sprite.data.values.equip) {
         Object.entries(this.sprite.data.values.equip).forEach((e) => {
-          if (e[1] && 'id' in e[1] && 'name' in e[1]) {
+          if (
+            e[1] &&
+            typeof e[1] === 'object' &&
+            'id' in e[1] &&
+            'name' in e[1]
+          ) {
             this.applyEquip(e[1] as item);
           }
         });
@@ -532,7 +538,8 @@ export default class Player extends unit {
 
           if (
             this.scene.enemies[enemyIndex] &&
-            this.scene.enemies[enemyIndex].data.total_attribute.hp > 0
+            this.scene.enemies[enemyIndex].sprite.data.values.total_attribute
+              .hp > 0
           ) {
             this.attack(this.scene.enemies[enemyIndex], true);
           }
@@ -556,9 +563,5 @@ export default class Player extends unit {
         this.keys['mouseLeft'] = 0;
       });
     }
-  }
-
-  updateStatus(status: string) {
-    this.status = status;
   }
 }
