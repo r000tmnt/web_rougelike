@@ -5,7 +5,6 @@ import { useGameStore } from 'src/stores/game';
 import { item } from 'src/model/item';
 import unit from './unit';
 import { addTexture, setAnimation } from 'src/utils/asset';
-import { onCollidePlayer } from 'src/utils/collide';
 import Dungeon from 'src/scene/dungeon';
 
 export default class Player extends unit {
@@ -110,7 +109,7 @@ export default class Player extends unit {
       this
     );
 
-    this.addCollision(groundLayer, onCollidePlayer);
+    this.addCollision(groundLayer, this.onCollide);
     this.#setCustomEvent();
     this.#addContorl();
     this.#setZone();
@@ -290,7 +289,7 @@ export default class Player extends unit {
     });
 
     gameStore.emitter.on('player-update', (data: player) => {
-      this.sprite.data.values = data;
+      this.sprite.setData(data);
     });
 
     gameStore.emitter.on('player-equip', (item: item) => {
@@ -532,7 +531,7 @@ export default class Player extends unit {
     if (anim.key.includes('attack') && frameKey === '1') {
       // Check overlap
       if (this.overlap) {
-        console.log('zoon overlap with the enemy');
+        // console.log('zoon overlap with the enemy');
         this.target.forEach((t) => {
           const enemyIndex = Number(t.name.split('_')[1]);
 
@@ -545,13 +544,13 @@ export default class Player extends unit {
           }
         });
       } else {
-        console.log('zoon not overlap with the enemy');
+        // console.log('zoon not overlap with the enemy');
       }
     }
   }
 
   #animationComplete(context: any) {
-    console.log('context :>>>', context);
+    // console.log('context :>>>', context);
     // Check if the attack animation finished
     if (context.key.includes('attack')) {
       this.sprite.setSize(this.tileSize, this.tileSize);
@@ -562,6 +561,15 @@ export default class Player extends unit {
         // release key
         this.keys['mouseLeft'] = 0;
       });
+    }
+  }
+
+  onCollide(
+    self: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
+    target: any
+  ) {
+    if (target.name && target.name.includes('enemy')) {
+      self.body.stop();
     }
   }
 }
