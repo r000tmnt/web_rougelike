@@ -4,6 +4,7 @@ export default {
   name: 'Skeleton',
   class: 'Undead',
   status: 'Normal',
+  phase: 'roaming',
   elite: false,
   boss: false,
   base_attribute: {

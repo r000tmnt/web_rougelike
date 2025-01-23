@@ -49,6 +49,7 @@ export type player = unit & {
 
 export type enemy = unit & {
   // theme: string;
+  phase: string;
   elite: boolean;
   boss: boolean;
   drop: Array<item>;
