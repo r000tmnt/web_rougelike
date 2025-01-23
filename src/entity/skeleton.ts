@@ -1,42 +1,32 @@
-import { enemy, action, base_attribute } from 'src/model/character';
+import { enemy } from 'src/model/character';
 import { Animations } from 'phaser';
-import { getDirection, getPosition, getDistance } from 'src/utils/path';
-import { calculateDamage, gainExp } from 'src/utils/battle';
+import { getDirection, getPosition } from 'src/utils/path';
+import { gainExp } from 'src/utils/battle';
+import unit from './unit';
+import { addTexture, setAnimation } from 'src/utils/asset';
 import { useGameStore } from 'src/stores/game';
+import Dungeon from 'src/scene/dungeon';
 
-export default class Skeleton {
-  scene: Phaser.Scene;
-  sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-  data: enemy;
+export default class Skeleton extends unit {
   index: number;
   facingAngle: number;
-  tileSize: number;
   awaitTimer: NodeJS.Timeout | null;
-  map: number[][];
   angle: number[];
-  ready: boolean;
-  overlap: boolean;
-  collide: boolean;
   inSight: boolean;
-  status: string;
-  phase: string;
   step: number;
   target: any;
   collidedTarget: any;
   idleTimer: NodeJS.Timeout | null;
   ray: Raycaster.Ray | null;
-  text: Phaser.GameObjects.Text;
-  keys: action;
   navMesh: any;
   path: any;
-  lastCheckTime: number;
   walkingTweens: Phaser.Tweens.Tween | null;
   intersections: Phaser.Geom.Point[];
 
   private zone!: Phaser.GameObjects.Zone;
 
   constructor(
-    scene: Phaser.Scene,
+    scene: Dungeon,
     x: number,
     y: number,
     texture: string,
@@ -48,15 +38,9 @@ export default class Skeleton {
     tileSize: number,
     navMesh: any
   ) {
-    this.scene = scene;
-    this.sprite = this.scene.physics.add.sprite(x, y);
-    this.data = data;
+    super(scene, x, y, `enemy_${index}`, data, tileSize, map, false, false);
+
     this.index = index;
-    this.tileSize = tileSize;
-    this.map = map;
-    this.ready = false;
-    this.overlap = false;
-    this.collide = false;
     this.inSight = false;
     this.target = null;
     this.collidedTarget = null;
@@ -65,20 +49,11 @@ export default class Skeleton {
     this.facingAngle = 0;
     this.idleTimer = null;
     this.awaitTimer = null;
-    this.status = '';
-    this.phase = 'roaming'; // roaming, searching, aggro
+    // this.sprite.data.values.phase = 'roaming'; // roaming, searching, aggro
     this.step = 0;
-    this.lastCheckTime = 0;
     this.navMesh = navMesh;
-    this.keys = {};
     this.walkingTweens = null;
     this.intersections = [];
-    this.text = this.scene.add
-      .text(x, y - tileSize / 2, '', {
-        fontSize: tileSize * 0.3,
-        fontFamily: 'pixelify',
-      })
-      .setVisible(false);
     this.init(x, y, texture, player, groundLayer);
   }
 
@@ -89,77 +64,37 @@ export default class Skeleton {
     player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
     groundLayer: Phaser.Tilemaps.TilemapLayer
   ) {
-    this.sprite.name = `enemy_${this.index}`;
-    this.sprite.setSize(this.tileSize, this.tileSize);
-    this.sprite.setOrigin(0, 0);
-    this.sprite.setOffset(0, 0); // Adjust rendering position
-    this.sprite.setPushable(false);
-
     //Prepare textures
-    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_idle`, {
-      atlas: texture,
-      frame: `${texture}_idle`,
-      frameWidth: this.tileSize,
-      frameHeight: this.tileSize,
-    });
-
-    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_attack`, {
-      atlas: texture,
-      frame: `${texture}_attack`,
-      frameWidth: this.tileSize,
-      frameHeight: this.tileSize,
-    });
-
-    this.scene.textures.addSpriteSheetFromAtlas(`${texture}_lose`, {
-      atlas: texture,
-      frame: `${texture}_lose`,
-      frameWidth: this.tileSize,
-      frameHeight: this.tileSize,
-    });
+    addTexture(
+      this.scene,
+      `${texture}_idle`,
+      texture,
+      this.tileSize,
+      this.tileSize
+    );
+    addTexture(
+      this.scene,
+      `${texture}_attack`,
+      texture,
+      this.tileSize,
+      this.tileSize
+    );
+    addTexture(
+      this.scene,
+      `${texture}_lose`,
+      texture,
+      this.tileSize,
+      this.tileSize
+    );
 
     // Set animation
-    this.scene.anims.create({
-      key: 'enemy_idle',
-      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
-        start: 0,
-        end: 0,
-      }),
-      frameRate: 0,
-      repeat: 0,
-    });
+    setAnimation(this.scene, 'enemy_idle', `${texture}_idle`, 0, 0, 0, 0);
+    setAnimation(this.scene, 'enemy_walking', `${texture}_idle`, 0, 2, 5, -1);
+    setAnimation(this.scene, 'enemy_attack', `${texture}_attack`, 0, 4, 10, 0);
+    setAnimation(this.scene, 'enemy_lose', `${texture}_lose`, 0, 5, 8, 0);
 
-    this.scene.anims.create({
-      key: 'enemy_walking',
-      frames: this.scene.anims.generateFrameNames(`${texture}_idle`, {
-        start: 0,
-        end: 2,
-      }),
-      frameRate: 5,
-      repeat: -1,
-    });
-
-    this.scene.anims.create({
-      key: 'enemy_attack',
-      frames: this.scene.anims.generateFrameNames(`${texture}_attack`, {
-        start: 0,
-        end: 4,
-      }),
-      frameRate: 10,
-    });
-
-    this.scene.anims.create({
-      key: 'enemy_lose',
-      frames: this.scene.anims.generateFrameNames(`${texture}_lose`, {
-        start: 0,
-        end: 5,
-      }),
-      frameRate: 8,
-    });
-
-    // console.log('setting enemy collision');
-
-    this.addCollision(groundLayer);
-    this.addCollision(player);
+    this.addCollision(groundLayer, this.onCollide);
+    this.addCollision(player, this.onCollide);
     this.ready = true;
 
     this.scene.events.on('update', this.#update, this);
@@ -168,40 +103,19 @@ export default class Skeleton {
       this.scene.events.off('update', this.#update);
     });
 
-    this.#setData();
+    this.setData();
     this.#setZone(player);
     // Set event listener
     this.#setEvents();
 
     // Create ray
-    this.#setRay(this.scene.raycaster, x, y, player);
+    if (this.scene.raycaster) this.#setRay(this.scene.raycaster, x, y, player);
 
     console.log('enemy? ', this.sprite);
     this.sprite.anims.play('enemy_idle');
     setTimeout(() => {
       this.#getRandomDirection();
     }, 1000);
-  }
-
-  addCollision(target: any) {
-    if (this.sprite) {
-      // console.log('target :>>>', target);
-      this.scene.physics.add.collider(
-        this.sprite,
-        target,
-        this.#onCollide,
-        null,
-        this
-      );
-    }
-  }
-
-  updateStatus(status: string) {
-    this.status = status;
-  }
-
-  updateData(data: enemy) {
-    this.data = data;
   }
 
   #setZone(player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) {
@@ -271,7 +185,6 @@ export default class Skeleton {
     gameStore.emitter.on(
       'enemy-take-damage',
       (data: { index: number; result: number }) => {
-
         if (this.keys['mouseLeft'] === 1) {
           // Release key
           this.keys['mouseLeft'] = 0;
@@ -280,13 +193,16 @@ export default class Skeleton {
         const { index, result } = data;
 
         if (index === this.index) {
-          this.data.total_attribute.hp -=
-            result > this.data.total_attribute.hp
-              ? this.data.total_attribute.hp
+          this.sprite.data.values.total_attribute.hp -=
+            result > this.sprite.data.values.total_attribute.hp
+              ? this.sprite.data.values.total_attribute.hp
               : result;
 
           // Proceed to level up if the enemy is active
-          if (this.data.total_attribute.hp === 0 && this.sprite.active) {
+          if (
+            this.sprite.data.values.total_attribute.hp === 0 &&
+            this.sprite.active
+          ) {
             this.sprite.anims.play('enemy_lose');
             this.status = 'dead';
             this.ray?.destroy();
@@ -298,57 +214,36 @@ export default class Skeleton {
               this.awaitTimer = null;
             }
             // this.scene.removeEnemyIntheRoom(this.index);
-            // Draw image at the same spot
-            // this.scene.add.image(this.sprite.x, this.sprite.y, 'enemy_lose', 5);
             this.sprite.disableBody();
             // this.scene.events.off('update', this.#update);
-            gainExp(this.data);
+
+            // Drop items
+
+            gainExp(this.sprite.data.values as enemy);
           }
         }
       }
     );
   }
 
-  #setData() {
-    Object.entries(this.data.total_attribute).forEach((a) => {
-      const key = a[0];
-      // console.log(key);
-      this.data.total_attribute[key as keyof base_attribute] =
-        this.data.base_attribute[key as keyof base_attribute] +
-        this.data.add_attribute[key as keyof base_attribute];
-    });
-
-    console.log('total ', this.data.total_attribute);
-  }
-
   #setRay(raycaster: Raycaster, x: number, y: number, player: any) {
     this.ray = raycaster.createRay();
     //set ray position to the center of the object
     this.ray.setOrigin(x + this.tileSize / 2, y + this.tileSize / 2);
-    //set ray direction (in radians)
-    // this.ray.setAngle(2);
-    //set ray direction (in degrees)
-    // this.ray.setAngleDeg(90);
-    //cast single ray and get closets intersection, hit mapped object and hit segment
-    // const intersection = this.ray.cast();
     //enable auto slicing field of view
     this.ray.autoSlice = true;
     //enable arcade physics body
     this.ray.enablePhysics();
     //set collision (field of view) range
-    this.ray.setCollisionRange(this.tileSize * this.data.base_attribute.vd);
-    this.ray.setDetectionRange(this.tileSize * this.data.base_attribute.vd);
+    this.ray.setCollisionRange(
+      this.tileSize * this.sprite.data.values.base_attribute.vd
+    );
+    this.ray.setDetectionRange(
+      this.tileSize * this.sprite.data.values.base_attribute.vd
+    );
     //cast ray
-    // this.ray.castCircle();
-    // this.ray.cast();
     this.ray.setConeDeg(this.tileSize);
     this.ray.castCone();
-
-    //get objects in field of view
-    // visibleObjects = this.ray.overlap(group.getChildren());
-
-    //check if object is in field of view
-    // visibleObjects = this.ray.overlap(player);
 
     //add overlap collider (require passing ray.processOverlap as process callback)
     this.scene.physics.add.overlap(
@@ -359,10 +254,10 @@ export default class Skeleton {
          * What to do with game objects in line of sight.
          */
         // console.log('rayFoVCircle :>>>', rayFoVCircle);
-        if (this.scene.player.data.total_attribute.hp > 0) {
+        if (player.data.values.total_attribute.hp > 0) {
           this.#markPlayerInSight(target);
           this.inSight = true;
-          this.phase = 'chasing';
+          this.sprite.data.values.phase = 'chasing';
         }
       },
       this.ray.processOverlap.bind(this.ray)
@@ -385,7 +280,7 @@ export default class Skeleton {
         if (!this.ray?.body.embedded && this.inSight) {
           console.log(`${this.sprite.name} lost the player`);
           this.inSight = false;
-          this.phase = 'searching';
+          this.sprite.data.values.phase = 'searching';
         }
       }
     }
@@ -410,21 +305,16 @@ export default class Skeleton {
 
       this.#alterRayAngle();
       this.#GetPath();
-      // const randomNumber = Phaser.Math.Between(0, this.angle.length - 1);
-      // this.facingAngle = this.angle[randomNumber];
-      // this.ray.setAngleDeg(this.facingAngle);
-
-      // this.ray?.castCircle();
-      // this.#startChasing();
     }
   }
 
   #alterRayAngle() {
-    if (this.ray && this.ray.origin && this.target) {
+    if (this.ray && this.ray.origin && this.target && this.scene.player) {
       const half = this.tileSize / 2;
       const radain = Phaser.Math.Angle.BetweenPoints(
         this.sprite,
-        this.phase === 'aggro' || this.phase === 'chasing'
+        this.sprite.data.values.phase === 'aggro' ||
+          this.sprite.data.values.phase === 'chasing'
           ? this.scene.player.sprite
           : this.target
       );
@@ -493,129 +383,6 @@ export default class Skeleton {
     }
   }
 
-  // #limitDirection(limiter: any) {
-  //   let done = false;
-
-  //   let limitAngle = this.angle.filter((a) => {
-  //     if (limiter.max === 135) {
-  //       return a < 135 && a > -135;
-  //     }
-
-  //     if (limiter.max === -45) {
-  //       return a < 1 - 35 || a > -45;
-  //     }
-
-  //     if (limiter.min === -45) {
-  //       return a < -45 || a > 45;
-  //     }
-
-  //     if (limiter.min === 45) {
-  //       return a < 45 || a > 135;
-  //     }
-  //   });
-
-  //   console.log('limited angles :>>>', limitAngle);
-
-  //   const { x, y } = getPosition(
-  //     this.sprite,
-  //     this.tileSize
-  //   );
-
-  //   do {
-  //     const randomNumber = Phaser.Math.Between(0, limitAngle.length - 1);
-  //     this.facingAngle = limitAngle[randomNumber];
-
-  //     const direction = getDirection(this.facingAngle);
-
-  //     switch (direction) {
-  //       case 0:
-  //         if (y - 1 >= 1 && this.map[y - 1][x] !== 0) {
-  //           limitAngle = limitAngle.filter((a) => a < -135 || a > -45);
-  //         } else {
-  //           this.ray?.setAngleDeg(this.facingAngle);
-  //           this.#GetPath();
-  //           done = true;
-  //         }
-  //         break;
-  //       case 1:
-  //         if (this.map[y][x + 1] !== 0) {
-  //           limitAngle = limitAngle.filter((a) => a < -45 || a > 45);
-  //         } else {
-  //           this.ray?.setAngleDeg(this.facingAngle);
-  //           this.#GetPath();
-  //           done = true;
-  //         }
-  //         break;
-  //       case 2:
-  //         if (this.map[y + 1][x] !== 0) {
-  //           limitAngle = limitAngle.filter((a) => a < 45 || a > 135);
-  //         } else {
-  //           this.ray?.setAngleDeg(this.facingAngle);
-  //           this.#GetPath();
-  //           done = true;
-  //         }
-  //         break;
-  //       case 3:
-  //         if (this.map[y][x - 1] !== 0) {
-  //           limitAngle = limitAngle.filter((a) => a < 135 && a > -135);
-  //         } else {
-  //           this.ray?.setAngleDeg(this.facingAngle);
-  //           this.#GetPath();
-  //           done = true;
-  //         }
-  //         break;
-  //     }
-  //   } while (!done);
-  // }
-
-  #changeDirection() {
-    const { down, left, right, up } = this.sprite.body.touching;
-
-    // Get current position
-    const { x, y } = getPosition(
-      this.sprite,
-      this.scene.offsetX,
-      this.scene.offsetY,
-      this.tileSize
-    );
-
-    // console.log(this.sprite.touching)
-
-    // Checking other direction
-    const direction = [
-      [y - 1, x],
-      [y, x + 1],
-      [y + 1, x],
-      [y, x - 1],
-    ];
-
-    if (down) {
-      direction.splice(2, 1);
-    }
-
-    if (left) {
-      direction.splice(3, 1);
-    }
-
-    if (right) {
-      direction.splice(1, 1);
-    }
-
-    if (up) {
-      direction.splice(0, 1);
-    }
-
-    for (let i = 0; i < direction.length; i++) {
-      const newX = direction[i][1];
-      const newY = direction[i][0];
-      if (this.map[newY] && this.map[newY][newX] === 0) {
-        this.target = { x: newX * this.tileSize, y: newY * this.tileSize };
-        this.#GetPath();
-        break;
-      }
-    }
-  }
-
   #markTileAsChecked(target: { x: number; y: number; checked: boolean }) {
     const index = this.scene.walkable.findIndex(
       (w) => w.x === target.x && w.y === target.y
@@ -649,18 +416,6 @@ export default class Skeleton {
           p.x += this.scene.offsetX;
           p.y += this.scene.offsetY;
         });
-
-        // Remove the position that is on the wall
-        // this.path = this.path.filter((p) => {
-        //   const { x, y } = getPosition(
-        //     p,
-        //     this.scene.offsetX,
-        //     this.scene.offsetY,
-        //     this.tileSize
-        //   );
-
-        //   return this.map[y][x] === 0;
-        // });
 
         console.log('path :>>>', this.path);
 
@@ -733,7 +488,7 @@ export default class Skeleton {
             target.y
           );
 
-          if (this.inSight) {
+          if (this.inSight && this.scene.player) {
             const distanceToPlayer = Phaser.Math.Distance.Between(
               this.sprite.x + half,
               this.sprite.y + half,
@@ -741,16 +496,14 @@ export default class Skeleton {
               this.scene.player.sprite.y + half
             );
             // If the player is in the range of attack
-            if (
-              distanceToPlayer <= this.tileSize + 5
-            ) {
+            if (distanceToPlayer <= this.tileSize + 5) {
               // Attack
               if (this.scene.player.sprite.active) {
-                this.phase = 'aggro';
+                this.sprite.data.values.phase = 'aggro';
                 this.path = null;
                 this.sprite.body.setVelocity(0);
                 this.#alterRayAngle();
-                if(!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0){
+                if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
                   this.sprite?.anims.play('enemy_attack', true);
                   this.keys['mouseLeft'] = 1;
                 }
@@ -786,55 +539,6 @@ export default class Skeleton {
               target.y
             );
 
-            // this.intersections.forEach((section: any) => {
-            //   if (section.segment) {
-            //     const distance = Phaser.Math.Distance.Between(
-            //       this.sprite.x + half,
-            //       this.sprite.y + half,
-            //       section.x,
-            //       section.y
-            //     );
-
-            //     if (distance < half) {
-            //       const avoidanceDirection = this.#getAvoidanceDirection(
-            //         this.sprite,
-            //         section
-            //       );
-
-            //       if (avoidanceDirection === 'left') {
-            //         this.sprite.body.velocity.x -= this.tileSize;
-            //         this.sprite.body.velocity.y -= this.tileSize;
-            //       } else if (avoidanceDirection === 'right') {
-            //         this.sprite.body.velocity.x += this.tileSize;
-            //         this.sprite.body.velocity.y += this.tileSize;
-            //       }
-            //     }
-            //   }
-            // });
-
-            // let avoidAngle = 0;
-            // if (this.collidedTarget) {
-            //   const angleToObstacle = Phaser.Math.Angle.Between(
-            //     this.sprite.x,
-            //     this.sprite.y,
-            //     this.collidedTarget.x,
-            //     this.collidedTarget.y
-            //   );
-
-            //   avoidAngle +=
-            //     (angleToObstacle > angleToTarget ? -1 : 1) * this.tileSize * 0.2;
-
-            //   // Remove collided target
-            //   this.collidedTarget = null;
-            // }
-
-            // const finalAngle = angleToTarget + avoidAngle;
-
-            // console.log('avoidAngle :>>>', avoidAngle);
-            // console.log('finalAngle :>>>', finalAngle);
-            // console.log('cos :>>>', Math.cos(finalAngle));
-            // console.log('sin :>>>', Math.sin(finalAngle));
-
             if (this.sprite && this.sprite.active)
               this.sprite.setVelocity(
                 Math.cos(angleToTarget) * this.tileSize,
@@ -861,11 +565,11 @@ export default class Skeleton {
     }
   }
 
-  #onCollide(self: any, target: any) {
-    if (this.data.total_attribute.hp > 0) {
+  onCollide(self: any, target: any) {
+    if (this.sprite.data.values.total_attribute.hp > 0) {
       // this.sprite.body.setVelocity(0);
       // console.log('self', self);
-      console.log('enemy collide with target', target);
+      // console.log('enemy collide with target', target);
       if (target.name && target.name.includes('enemy')) {
         this.sprite.anims.play('enemy_idle');
         // this.#changeDirection();
@@ -873,8 +577,8 @@ export default class Skeleton {
 
       // If collide with player but player not in sight
       if (target.name && target.name.includes('player')) {
-        if (this.phase !== 'chasing') {
-          this.phase = 'chasing';
+        if (this.sprite.data.values.phase !== 'chasing') {
+          this.sprite.data.values.phase = 'chasing';
           this.#markPlayerInSight(target);
         }
       }
@@ -889,40 +593,14 @@ export default class Skeleton {
     // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack') && frameKey === '4') {
       // Check overlap
-      if (this.overlap && !this.text.visible && this.scene.player.status !== 'dead' && this.scene.player.status !== 'hit') {
-        const result = calculateDamage(this.data, this.scene.player.data);
-
-        this.text.setPosition(
-          this.scene.player.sprite.x,
-          this.scene.player.sprite.y - this.tileSize / 2
-        );
-
-        // Check demage
-        if (result.value === 0) {
-          // Miss!
-          this.text.setText('MISS');
-          this.text.setVisible(true);
-        } else {
-          console.log('ENEMY HIT!');
-          if (result.type.includes('crit')) {
-            this.text.setText(`${result.value}`);
-            this.text.setStyle({ color: '#FFB343' });
-            this.text.setFontSize(this.tileSize * 0.4);
-            this.text.setVisible(true);
-          } else {
-            this.text.setText(`${result.value}`);
-            this.text.setVisible(true);
-          }
-
-          const gameStore = useGameStore();
-          gameStore.emitter.emit('player-take-damage', result.value);
-        }
-
-        setTimeout(() => {
-          this.text.setVisible(false);
-          this.text.setFontSize(this.tileSize * 0.3);
-          this.text.setStyle({ color: '#ffffff' });
-        }, 500);
+      if (
+        this.overlap &&
+        !this.dmgText.visible &&
+        this.scene.player &&
+        this.scene.player.sprite.data.values.status !== 'dead' &&
+        this.scene.player.sprite.data.values.status !== 'hit'
+      ) {
+        this.attack(this.scene.player, false);
       }
     }
   }
@@ -930,7 +608,10 @@ export default class Skeleton {
   #animationComplete(context: any) {
     // console.log('context :>>>', context);
     // Check if the attack animation finished
-    if (context.key.includes('attack') && this.data.total_attribute.hp > 0) {
+    if (
+      context.key.includes('attack') &&
+      this.sprite.data.values.total_attribute.hp > 0
+    ) {
       this.sprite.body.setVelocity(0);
       this.sprite?.anims.play('enemy_idle');
       this.scene.time.delayedCall(500, () => {
