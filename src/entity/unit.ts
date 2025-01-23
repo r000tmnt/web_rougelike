@@ -1,9 +1,10 @@
 import { player, enemy, action } from 'src/model/character';
+import Dungeon from 'src/scene/dungeon';
 import { useGameStore } from 'src/stores/game';
 import { calculateDamage } from 'src/utils/battle';
 
 export default class unit {
-  scene: Phaser.Scene;
+  scene: Dungeon;
   sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   tileSize: number;
   map: number[][];
@@ -15,7 +16,7 @@ export default class unit {
   keys: action;
 
   constructor(
-    scene: Phaser.Scene,
+    scene: Dungeon,
     x: number,
     y: number,
     texture: string,
@@ -85,7 +86,10 @@ export default class unit {
   }
 
   attack(target: any, isPlayer: boolean) {
-    const result = calculateDamage(this.sprite.data.values, target.data);
+    const result = calculateDamage(
+      this.sprite.data.values,
+      target.sprite.data.values
+    );
 
     this.dmgText.setPosition(
       target.sprite.x,
@@ -110,9 +114,15 @@ export default class unit {
       }
 
       const gameStore = useGameStore();
+
       gameStore.emitter.emit(
         `${isPlayer ? 'enemy' : 'player'}-take-damage`,
-        result.value
+        isPlayer
+          ? {
+              index: target.index,
+              result: result.value,
+            }
+          : result.value
       );
     }
 
