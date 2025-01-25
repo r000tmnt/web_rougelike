@@ -68,6 +68,8 @@ export default class Dungeon extends Scene {
       'chase-countdown-calling',
       'player-equip',
       'player-unequip',
+      'enemy-take-damage',
+      'player-take-damage',
       'open-door',
       'reset',
       'pause',
