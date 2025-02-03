@@ -624,13 +624,14 @@ export default class DungeonGenerator {
 
       // Remove a certain number of tiles around the player
       for (let i = 0; i < walkables.length; i++) {
-        if (Math.abs(walkables[i].row - this.startingPoint[0]) < distance) {
+        if (Math.abs(walkables[i].row - this.startingPoint[0]) <= distance) {
           for (let j = 0; j < walkables[i].cols.length; j++) {
             if (
               Math.abs(walkables[i].cols[j] - this.startingPoint[1]) <= distance
             ) {
               walkables[i].cols.splice(j, 1);
             }
+            if (!walkables[i].cols.length) walkables.splice(i, 1);
           }
         }
       }
@@ -658,8 +659,8 @@ export default class DungeonGenerator {
           );
           if (
             exist === -1 &&
-            (Math.abs(this.startingPoint[0] - eRow) > 4 ||
-              Math.abs(this.startingPoint[1] - eCol) > 4)
+            (Math.abs(this.startingPoint[0] - eRow) > distance ||
+              Math.abs(this.startingPoint[1] - eCol) > distance)
           ) {
             console.log('mark enemy position');
             this.enemyPositions[this.roomIndex].push({
