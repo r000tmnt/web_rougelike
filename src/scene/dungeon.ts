@@ -512,11 +512,10 @@ export default class Dungeon extends Scene {
       }
 
       console.log('player :>>>', this.player);
-      gameStore.setPlayerStatus(this.player.sprite.data.values as player);
+      gameStore.setPlayerStatus(this.player.data.values as player);
 
       // Set the camera to follow the player
-      if (this.player.sprite)
-        this.camera?.startFollow(this.player.sprite, true);
+      if (this.player) this.camera?.startFollow(this.player, true);
 
       // Config grid movement & player
       // try {
@@ -541,12 +540,7 @@ export default class Dungeon extends Scene {
 
   #setEnemy(tileSize: number, gameStore: any) {
     // Set enemies
-    if (
-      this.content &&
-      this.player?.sprite &&
-      this.groundLayer &&
-      this.raycaster
-    ) {
+    if (this.content && this.player && this.groundLayer && this.raycaster) {
       const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
 
       const storedEnemy = gameStore.getEnemyIntheRoom(this.content.roomIndex);
@@ -554,7 +548,7 @@ export default class Dungeon extends Scene {
       // If there's no enemy in the gameStore
       if (!storedEnemy.length) {
         // Create new enemy
-        const playerLv = this.player.sprite.data.values.lv;
+        const playerLv = this.player.data.values.lv;
         const levelRange = [playerLv, playerLv + 1, playerLv + 2];
 
         console.log('levelRange :>>>', levelRange);
@@ -576,14 +570,14 @@ export default class Dungeon extends Scene {
             'demo_enemy',
             newEnemyData,
             i,
-            this.player.sprite,
+            this.player as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
             this.groundLayer,
             this.content.level[this.content.roomIndex],
             tileSize,
             this.navMesh
           );
 
-          console.log('new enemy data :>>>', enemy.sprite.data.values);
+          console.log('new enemy data :>>>', enemy.data.values);
           // enemy.updateData(newEnemyData);
 
           this.enemies.push(enemy);
@@ -601,7 +595,7 @@ export default class Dungeon extends Scene {
               'demo_enemy',
               storedEnemy[i],
               i,
-              this.player.sprite,
+              this.player as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
               this.groundLayer,
               this.content.level[this.content.roomIndex],
               tileSize,
@@ -633,11 +627,11 @@ export default class Dungeon extends Scene {
   #setCollision(room: number[][], gameStore: any) {
     // Add collision to each other
     this.enemies.forEach((enemy, i) => {
-      this.player?.addOverlap(enemy.sprite);
-      this.player?.addCollision(enemy.sprite, this.player?.onCollide);
+      this.player?.addOverlap(enemy);
+      this.player?.addCollision(enemy, this.player?.onCollide);
       const others = this.enemies.filter((e, n) => n !== i);
 
-      others.forEach((o) => enemy.addCollision(o.sprite, o.onCollide));
+      others.forEach((o) => enemy.addCollision(o, o.onCollide));
     });
 
     // Enable zone
@@ -647,8 +641,8 @@ export default class Dungeon extends Scene {
       this.physics.add.existing(door, false);
       // if (door.body) door.body.moves = false;
 
-      if (this.player?.sprite)
-        this.physics.add.overlap(door, this.player?.sprite, () => {
+      if (this.player)
+        this.physics.add.overlap(door, this.player, () => {
           // console.log('overlap!');
           gameStore.setTextContent('[F] OPEN');
           gameStore.setDoorIndex(index);
@@ -667,7 +661,7 @@ export default class Dungeon extends Scene {
       this.#storeEnemyData(gameStore);
       // Destory ray
       this.enemies.forEach((e) => {
-        e.sprite.destroy();
+        e.destroy();
         e.ray?.destroy();
       });
       // Remove mapped objects
@@ -696,16 +690,16 @@ export default class Dungeon extends Scene {
       if (restart) {
         gameStore.setPlayerStatus({});
         // Destroy player
-        this.player?.sprite.destroy();
+        this.player?.destroy();
         this.content.reset();
         this.scene.restart();
       } else {
         // Store player data
         gameStore.setPlayerStatus(
-          JSON.parse(JSON.stringify(this.player?.sprite.data.values))
+          JSON.parse(JSON.stringify(this.player?.data.values))
         );
         // Destroy player
-        this.player?.sprite.destroy();
+        this.player?.destroy();
         const doorIndex = gameStore.getDoorIndex;
         const direction = this.content.doors[doorIndex].direction;
         console.log(`Open the door ${direction}`);
@@ -742,14 +736,14 @@ export default class Dungeon extends Scene {
       const copy: enemy[] = [];
 
       this.enemies.forEach((e) => {
-        if (e.sprite.data.values.total_attribute.hp > 0) {
+        if (e.data.values.total_attribute.hp > 0) {
           // Update position
-          e.sprite.data.values.position = {
-            x: e.sprite.x - this.offsetX,
-            y: e.sprite.y - this.offsetY,
+          e.data.values.position = {
+            x: e.x - this.offsetX,
+            y: e.y - this.offsetY,
           };
 
-          copy.push(JSON.parse(JSON.stringify(e.sprite.data.values)));
+          copy.push(JSON.parse(JSON.stringify(e.data.values)));
         }
       });
 

@@ -49,7 +49,7 @@ export default class Skeleton extends unit {
     this.facingAngle = 0;
     this.idleTimer = null;
     this.awaitTimer = null;
-    // this.sprite.data.values.phase = 'roaming'; // roaming, searching, aggro
+    // this.data.values.phase = 'roaming'; // roaming, searching, aggro
     this.step = 0;
     this.navMesh = navMesh;
     this.walkingTweens = null;
@@ -61,7 +61,7 @@ export default class Skeleton extends unit {
     x: number,
     y: number,
     texture: string,
-    player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
+    player: Phaser.Types.Physics.ArcadeWithDynamicBody,
     groundLayer: Phaser.Tilemaps.TilemapLayer
   ) {
     //Prepare textures
@@ -99,11 +99,11 @@ export default class Skeleton extends unit {
 
     this.scene.events.on('update', this.#update, this);
 
-    this.sprite.on('destroy', () => {
+    this.on('destroy', () => {
       this.scene.events.off('update', this.#update);
     });
 
-    this.setData();
+    this.calculateData();
     this.#setZone(player);
     // Set event listener
     this.#setEvents();
@@ -111,18 +111,18 @@ export default class Skeleton extends unit {
     // Create ray
     if (this.scene.raycaster) this.#setRay(this.scene.raycaster, x, y, player);
 
-    console.log('enemy? ', this.sprite);
-    this.sprite.anims.play('enemy_idle');
+    console.log('enemy? ', this);
+    this.anims.play('enemy_idle');
     setTimeout(() => {
       this.#getRandomDirection();
     }, 1000);
   }
 
-  #setZone(player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) {
+  #setZone(player: Phaser.Types.Physics.ArcadeWithDynamicBody) {
     const half = this.tileSize / 2;
     this.zone = this.scene.add.zone(
-      this.sprite.flipX ? this.sprite.x + this.tileSize : this.sprite.x - half,
-      this.sprite.y,
+      this.flipX ? this.x + this.tileSize : this.x - half,
+      this.y,
       half,
       this.tileSize
     );
@@ -135,9 +135,7 @@ export default class Skeleton extends unit {
     });
   }
 
-  #markPlayerInSight(
-    target: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
-  ) {
+  #markPlayerInSight(target: Phaser.Types.Physics.ArcadeWithDynamicBody) {
     const gameStore = useGameStore();
     const half = gameStore.tileSize / 2;
     this.target = {
@@ -154,20 +152,12 @@ export default class Skeleton extends unit {
 
   #setEvents() {
     // Animation listener
-    this.sprite.on(
-      Animations.Events.ANIMATION_START,
-      this.#animationStart,
-      this
-    );
+    this.on(Animations.Events.ANIMATION_START, this.#animationStart, this);
 
-    this.sprite.on(
-      Animations.Events.ANIMATION_UPDATE,
-      this.#animationUpdate,
-      this
-    );
+    this.on(Animations.Events.ANIMATION_UPDATE, this.#animationUpdate, this);
 
     // Animation listener
-    this.sprite.on(
+    this.on(
       Animations.Events.ANIMATION_COMPLETE,
       this.#animationComplete,
       this
@@ -177,7 +167,7 @@ export default class Skeleton extends unit {
 
     gameStore.emitter.on(
       'chase-countdown-start',
-      (player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
+      (player: Phaser.Types.Physics.ArcadeWithDynamicBody) => {
         this.#markPlayerInSight(player);
       }
     );
@@ -193,17 +183,14 @@ export default class Skeleton extends unit {
         const { index, result } = data;
 
         if (index === this.index) {
-          this.sprite.data.values.total_attribute.hp -=
-            result > this.sprite.data.values.total_attribute.hp
-              ? this.sprite.data.values.total_attribute.hp
+          this.data.values.total_attribute.hp -=
+            result > this.data.values.total_attribute.hp
+              ? this.data.values.total_attribute.hp
               : result;
 
           // Proceed to level up if the enemy is active
-          if (
-            this.sprite.data.values.total_attribute.hp === 0 &&
-            this.sprite.active
-          ) {
-            this.sprite.anims.play('enemy_lose');
+          if (this.data.values.total_attribute.hp === 0 && this.active) {
+            this.anims.play('enemy_lose');
             this.status = 'dead';
             this.ray?.destroy();
             this.zone?.destroy();
@@ -214,12 +201,12 @@ export default class Skeleton extends unit {
               this.awaitTimer = null;
             }
             // this.scene.removeEnemyIntheRoom(this.index);
-            this.sprite.disableBody();
+            this.disableBody();
             // this.scene.events.off('update', this.#update);
 
             // Drop items
 
-            gainExp(this.sprite.data.values as enemy);
+            gainExp(this.data.values as enemy);
           }
         }
       }
@@ -236,10 +223,10 @@ export default class Skeleton extends unit {
     this.ray.enablePhysics();
     //set collision (field of view) range
     this.ray.setCollisionRange(
-      this.tileSize * this.sprite.data.values.base_attribute.vd
+      this.tileSize * this.data.values.base_attribute.vd
     );
     this.ray.setDetectionRange(
-      this.tileSize * this.sprite.data.values.base_attribute.vd
+      this.tileSize * this.data.values.base_attribute.vd
     );
     //cast ray
     this.ray.setConeDeg(this.tileSize);
@@ -247,7 +234,7 @@ export default class Skeleton extends unit {
 
     //add overlap collider (require passing ray.processOverlap as process callback)
     this.scene.physics.add.overlap(
-      this.ray,
+      this.ray as unknown as Phaser.GameObjects.GameObject,
       player,
       (rayFoVCircle: any, target: any) => {
         /*
@@ -257,7 +244,7 @@ export default class Skeleton extends unit {
         if (player.data.values.total_attribute.hp > 0) {
           this.#markPlayerInSight(target);
           this.inSight = true;
-          this.sprite.data.values.phase = 'chasing';
+          this.data.values.phase = 'chasing';
         }
       },
       this.ray.processOverlap.bind(this.ray)
@@ -265,7 +252,7 @@ export default class Skeleton extends unit {
   }
 
   #update() {
-    if (this.sprite && this.ray?.body) {
+    if (this && this.ray?.body) {
       if (this.status === 'hit') {
         // TODO: Play get hit animation
         this.scene.time.delayedCall(200, () => {
@@ -278,9 +265,9 @@ export default class Skeleton extends unit {
 
         // If the ray doesn't hit anything and the player were in sight
         if (!this.ray?.body.embedded && this.inSight) {
-          console.log(`${this.sprite.name} lost the player`);
+          console.log(`${this.name} lost the player`);
           this.inSight = false;
-          this.sprite.data.values.phase = 'searching';
+          this.data.values.phase = 'searching';
         }
       }
     }
@@ -312,17 +299,17 @@ export default class Skeleton extends unit {
     if (this.ray && this.ray.origin && this.target && this.scene.player) {
       const half = this.tileSize / 2;
       const radain = Phaser.Math.Angle.BetweenPoints(
-        this.sprite,
-        this.sprite.data.values.phase === 'aggro' ||
-          this.sprite.data.values.phase === 'chasing'
-          ? this.scene.player.sprite
+        this,
+        this.data.values.phase === 'aggro' ||
+          this.data.values.phase === 'chasing'
+          ? this.scene.player
           : this.target
       );
       this.facingAngle = Phaser.Math.RadToDeg(radain);
 
       this.ray.setAngleDeg(this.facingAngle);
 
-      this.ray.setOrigin(this.sprite.x + half, this.sprite.y + half);
+      this.ray.setOrigin(this.x + half, this.y + half);
 
       const facingDirection = getDirection(this.facingAngle);
 
@@ -330,48 +317,42 @@ export default class Skeleton extends unit {
 
       switch (facingDirection) {
         case 0: // up
-          this.zone.setPosition(this.sprite.x, this.sprite.y - half);
+          this.zone.setPosition(this.x, this.y - half);
           this.zone.setDisplaySize(this.tileSize, half);
           break;
         case 1: // up right
-          this.zone.setPosition(this.sprite.x + half, this.sprite.y - half);
+          this.zone.setPosition(this.x + half, this.y - half);
           this.zone.setDisplaySize(this.tileSize, half);
-          this.sprite.setFlipX(true);
+          this.setFlipX(true);
           break;
         case 2: // right
-          this.zone.setPosition(this.sprite.x + half, this.sprite.y);
+          this.zone.setPosition(this.x + half, this.y);
           this.zone.setDisplaySize(half, this.tileSize);
-          this.sprite.setFlipX(true);
+          this.setFlipX(true);
           break;
         case 3: // right down
-          this.zone.setPosition(
-            this.sprite.x + half,
-            this.sprite.y + this.tileSize
-          );
+          this.zone.setPosition(this.x + half, this.y + this.tileSize);
           this.zone.setDisplaySize(this.tileSize, half);
-          this.sprite.setFlipX(true);
+          this.setFlipX(true);
           break;
         case 4: // down
-          this.zone.setPosition(this.sprite.x, this.sprite.y + this.tileSize);
+          this.zone.setPosition(this.x, this.y + this.tileSize);
           this.zone.setDisplaySize(this.tileSize, half);
           break;
         case 5: // left down
-          this.zone.setPosition(
-            this.sprite.x - half,
-            this.sprite.y + this.tileSize
-          );
+          this.zone.setPosition(this.x - half, this.y + this.tileSize);
           this.zone.setDisplaySize(this.tileSize, half);
-          this.sprite.setFlipX(false);
+          this.setFlipX(false);
           break;
         case 6: // left
-          this.zone.setPosition(this.sprite.x - half, this.sprite.y);
+          this.zone.setPosition(this.x - half, this.y);
           this.zone.setDisplaySize(half, this.tileSize);
-          this.sprite.setFlipX(false);
+          this.setFlipX(false);
           break;
         case 7: // left up
-          this.zone.setPosition(this.sprite.x - half, this.sprite.y - half);
+          this.zone.setPosition(this.x - half, this.y - half);
           this.zone.setDisplaySize(this.tileSize, half);
-          this.sprite.setFlipX(false);
+          this.setFlipX(false);
           break;
       }
 
@@ -401,8 +382,8 @@ export default class Skeleton extends unit {
       const half = this.tileSize / 2;
       this.path = this.navMesh.findPath(
         {
-          x: this.sprite.x + half - this.scene.offsetX,
-          y: this.sprite.y + half - this.scene.offsetY,
+          x: this.x + half - this.scene.offsetX,
+          y: this.y + half - this.scene.offsetY,
         },
         this.target
       );
@@ -412,7 +393,7 @@ export default class Skeleton extends unit {
         // const debugGraphics = this.scene.add.graphics(0, 0).setAlpha(0.5);
         // this.navMesh.enableDebug(debugGraphics);
         // Add the offset back to path
-        this.path.forEach((p) => {
+        this.path.forEach((p: any) => {
           p.x += this.scene.offsetX;
           p.y += this.scene.offsetY;
         });
@@ -458,13 +439,13 @@ export default class Skeleton extends unit {
     );
 
     const facingVector = new Phaser.Math.Vector2(
-      this.sprite.body.velocity.x,
-      this.sprite.body.velocity.y
+      this.body?.velocity.x,
+      this.body?.velocity.y
     );
 
     // If the sprite is stationary, assume default direction (e.g., facing right)
     if (facingVector.length() === 0) {
-      facingVector.set(!this.sprite.flipX ? -1 : 1, 0); // Facing left or right
+      facingVector.set(!this.flipX ? -1 : 1, 0); // Facing left or right
     } else {
       facingVector.normalize();
     }
@@ -477,37 +458,37 @@ export default class Skeleton extends unit {
 
   #moveToTarget(target: Phaser.Geom.Point) {
     if (this.ray && target && this.awaitTimer === null) {
-      this.sprite.anims.play('enemy_walking');
+      this.anims.play('enemy_walking');
       const half = this.tileSize / 2;
       this.awaitTimer = setInterval(() => {
         if (this.status !== 'dead') {
           const distance = Phaser.Math.Distance.Between(
-            this.sprite.x + half,
-            this.sprite.y + half,
+            this.x + half,
+            this.y + half,
             target.x,
             target.y
           );
 
           if (this.inSight && this.scene.player) {
             const distanceToPlayer = Phaser.Math.Distance.Between(
-              this.sprite.x + half,
-              this.sprite.y + half,
-              this.scene.player.sprite.x + half,
-              this.scene.player.sprite.y + half
+              this.x + half,
+              this.y + half,
+              this.scene.player.x + half,
+              this.scene.player.y + half
             );
             // If the player is in the range of attack
             if (distanceToPlayer <= this.tileSize + 5) {
               // Attack
-              if (this.scene.player.sprite.active) {
-                this.sprite.data.values.phase = 'aggro';
+              if (this.scene.player.active) {
+                this.data.values.phase = 'aggro';
                 this.path = null;
-                this.sprite.body.setVelocity(0);
+                this.body?.setVelocity(0);
                 this.#alterRayAngle();
                 if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
-                  this.sprite?.anims.play('enemy_attack', true);
+                  this?.anims.play('enemy_attack', true);
                   this.keys['mouseLeft'] = 1;
                 }
-                // this.#setZone(this.scene.player.sprite);
+                // this.#setZone(this.scene.player);
               }
             }
           }
@@ -533,14 +514,14 @@ export default class Skeleton extends unit {
             }
           } else {
             const angleToTarget = Phaser.Math.Angle.Between(
-              this.sprite.x + half,
-              this.sprite.y + half,
+              this.x + half,
+              this.y + half,
               target.x,
               target.y
             );
 
-            if (this.sprite && this.sprite.active)
-              this.sprite.setVelocity(
+            if (this && this.active)
+              this.body?.setVelocity(
                 Math.cos(angleToTarget) * this.tileSize,
                 Math.sin(angleToTarget) * this.tileSize
               );
@@ -551,9 +532,9 @@ export default class Skeleton extends unit {
   }
 
   #stopMoving() {
-    if (this.sprite.body) {
-      this.sprite?.anims?.play('enemy_idle', true);
-      this.sprite.body.setVelocity(0);
+    if (this.body) {
+      this.anims?.play('enemy_idle', true);
+      this.body?.setVelocity(0);
 
       if (!this.inSight) {
         // Starting moving again
@@ -566,19 +547,19 @@ export default class Skeleton extends unit {
   }
 
   onCollide(self: any, target: any) {
-    if (this.sprite.data.values.total_attribute.hp > 0) {
-      // this.sprite.body.setVelocity(0);
+    if (this.data.values.total_attribute.hp > 0) {
+      // this.body.setVelocity(0);
       // console.log('self', self);
       // console.log('enemy collide with target', target);
       if (target.name && target.name.includes('enemy')) {
-        this.sprite.anims.play('enemy_idle');
+        this.anims.play('enemy_idle');
         // this.#changeDirection();
       }
 
       // If collide with player but player not in sight
       if (target.name && target.name.includes('player')) {
-        if (this.sprite.data.values.phase !== 'chasing') {
-          this.sprite.data.values.phase = 'chasing';
+        if (this.data.values.phase !== 'chasing') {
+          this.data.values.phase = 'chasing';
           this.#markPlayerInSight(target);
         }
       }
@@ -597,8 +578,8 @@ export default class Skeleton extends unit {
         this.overlap &&
         !this.dmgText.visible &&
         this.scene.player &&
-        this.scene.player.sprite.data.values.status !== 'dead' &&
-        this.scene.player.sprite.data.values.status !== 'hit'
+        this.scene.player.data.values.status !== 'dead' &&
+        this.scene.player.data.values.status !== 'hit'
       ) {
         this.attack(this.scene.player, false);
       }
@@ -610,10 +591,10 @@ export default class Skeleton extends unit {
     // Check if the attack animation finished
     if (
       context.key.includes('attack') &&
-      this.sprite.data.values.total_attribute.hp > 0
+      this.data.values.total_attribute.hp > 0
     ) {
-      this.sprite.body.setVelocity(0);
-      this.sprite?.anims.play('enemy_idle');
+      this.body?.setVelocity(0);
+      this.anims.play('enemy_idle');
       this.scene.time.delayedCall(500, () => {
         // release key
         this.keys['mouseLeft'] = 0;

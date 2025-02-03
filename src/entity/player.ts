@@ -89,21 +89,13 @@ export default class Player extends unit {
     setAnimation(this.scene, `${texture}_lose`, `${texture}_lose`, 0, 1, 24, 0);
 
     // Animation event listener
-    this.sprite.on(
-      Animations.Events.ANIMATION_START,
-      this.#animationStart,
-      this
-    );
+    this.on(Animations.Events.ANIMATION_START, this.#animationStart, this);
 
     // Animation event listener
-    this.sprite.on(
-      Animations.Events.ANIMATION_UPDATE,
-      this.#animationUpdate,
-      this
-    );
+    this.on(Animations.Events.ANIMATION_UPDATE, this.#animationUpdate, this);
 
     // Animation event listener
-    this.sprite.on(
+    this.on(
       Animations.Events.ANIMATION_COMPLETE,
       this.#animationComplete,
       this
@@ -115,11 +107,11 @@ export default class Player extends unit {
     this.#setZone();
 
     if (reset) {
-      this.setData();
+      this.calculateData();
 
       // Check if there's equipment to count
-      if ('equip' in this.sprite.data.values && this.sprite.data.values.equip) {
-        Object.entries(this.sprite.data.values.equip).forEach((e) => {
+      if ('equip' in this.data.values && this.data.values.equip) {
+        Object.entries(this.data.values.equip).forEach((e) => {
           if (
             e[1] &&
             typeof e[1] === 'object' &&
@@ -148,16 +140,16 @@ export default class Player extends unit {
     }
     this.scene.events.on('update', this.#update, this);
 
-    this.sprite.on('destroy', () => {
+    this.on('destroy', () => {
       this.scene.events.off('update', this.#update);
     });
   }
 
   #setZone() {
-    if (this.sprite) {
+    if (this) {
       this.zone = this.scene.add.zone(
-        this.sprite.x - this.tileSize / 4,
-        this.sprite.y + this.tileSize / 2,
+        this.x - this.tileSize / 4,
+        this.y + this.tileSize / 2,
         this.tileSize / 2,
         this.tileSize
       );
@@ -172,46 +164,44 @@ export default class Player extends unit {
   #setCustomEvent() {
     const gameStore = useGameStore();
     gameStore.emitter.on('chase-countdown-calling', () => {
-      gameStore.emitter.emit('chase-countdown-start', this.sprite);
+      gameStore.emitter.emit('chase-countdown-start', this);
     });
 
     gameStore.emitter.on('player-take-damage', (dmg: number) => {
       this.status = 'hit';
 
-      this.sprite.body?.setVelocity(0);
+      this.body?.setVelocity(0);
 
       const data = gameStore.getPlayer;
       data.total_attribute.hp -=
         dmg > data.total_attribute.hp ? data.total_attribute.hp : dmg;
 
-      // console.log('current hp ', this.sprite.data.values.base_attribute.hp
-      this.sprite.setFrame(
-        this.scene.anims.get(`${this.sprite.name}_take_damage`).frames[0]
-          .textureFrame
+      // console.log('current hp ', this.data.values.base_attribute.hp
+      this.setFrame(
+        this.scene.anims.get(`${this.name}_take_damage`).frames[0].textureFrame
       );
-      this.scene.juice.shake(this.sprite, { x: 1, repeat: 2 });
+      this.scene.juice.shake(this, { x: 1, repeat: 2 });
 
       // If player lose
       if (data.total_attribute.hp === 0) {
-        this.sprite.active = false;
+        this.active = false;
         this.status = 'dead';
-        this.scene.camera?.pan(this.sprite.x, this.sprite.y, 200, 'Power2');
+        this.scene.camera?.pan(this.x, this.y, 200, 'Power2');
         this.scene.camera?.zoomTo(2, 200);
         setTimeout(() => {
-          this.sprite.anims.play(`${this.sprite.name}_lose`);
+          this.anims.play(`${this.name}_lose`);
 
           setTimeout(() => {
-            this.sprite.setFrame(
-              this.scene.anims.get(`${this.sprite.name}_lose`).frames[1]
-                .textureFrame
+            this.setFrame(
+              this.scene.anims.get(`${this.name}_lose`).frames[1].textureFrame
             );
             // Tint the sprite with Decimal number
-            // this.sprite.setTint(8519680)
-            // this.sprite.setTintFill(8519680)
+            // this.setTint(8519680)
+            // this.setTintFill(8519680)
 
             //FX Wipe
             this.scene.time.delayedCall(500, () => {
-              const wipe = this.sprite.preFX?.addWipe(0.1, 0, 0);
+              const wipe = this.preFX?.addWipe(0.1, 0, 0);
               this.scene.tweens.add({
                 targets: wipe,
                 progress: 1,
@@ -229,7 +219,7 @@ export default class Player extends unit {
       } else {
         setTimeout(() => {
           this.status = '';
-          this.sprite.anims.play(`${this.sprite.name}_lose`);
+          this.anims.play(`${this.name}_lose`);
           this.keys['mouseLeft'] = 0;
         }, 200);
       }
@@ -239,10 +229,7 @@ export default class Player extends unit {
     gameStore.emitter.on('player-level-up', () => {
       try {
         this.status = 'levelUp';
-        this.statText.setPosition(
-          this.sprite.x,
-          this.sprite.y - this.tileSize / 2
-        );
+        this.statText.setPosition(this.x, this.y - this.tileSize / 2);
         this.statText.setText('LEVEL UP');
         this.statText.setStyle({ color: '#FFB343' });
         this.statText.setFontSize(this.tileSize * 0.4);
@@ -289,7 +276,7 @@ export default class Player extends unit {
     });
 
     gameStore.emitter.on('player-update', (data: player) => {
-      this.sprite.setData(data);
+      this.setData(data);
     });
 
     gameStore.emitter.on('player-equip', (item: item) => {
@@ -317,40 +304,40 @@ export default class Player extends unit {
     for (const key in effect) {
       switch (key) {
         case 'bag':
-          if ('bag' in this.sprite.data.values.attribute_limit)
-            this.sprite.data.values.attribute_limit.bag += effect[key].value;
+          if ('bag' in this.data.values.attribute_limit)
+            this.data.values.attribute_limit.bag += effect[key].value;
           break;
         default:
-          const valueBeforeChange = this.sprite.data.values.add_attribute[key];
+          const valueBeforeChange = this.data.values.add_attribute[key];
 
           switch (effect[key].type) {
             case 0:
-              this.sprite.data.values.add_attribute[key] += effect[key].value;
+              this.data.values.add_attribute[key] += effect[key].value;
               break;
             case 1:
-              this.sprite.data.values.add_attribute[key] +=
-                this.sprite.data.values.base_attribute[key] *
+              this.data.values.add_attribute[key] +=
+                this.data.values.base_attribute[key] *
                 Math.floor(effect[key].value / 100);
               break;
             case 2:
-              this.sprite.data.values.add_attribute[key] -= effect[key].value;
+              this.data.values.add_attribute[key] -= effect[key].value;
               break;
             case 3:
-              this.sprite.data.values.add_attribute[key] -=
-                this.sprite.data.values.base_attribute[key] *
+              this.data.values.add_attribute[key] -=
+                this.data.values.base_attribute[key] *
                 Math.floor(effect[key].value / 100);
               break;
             // and more?
           }
 
           // Update the limit of the attribute
-          this.sprite.data.values.attribute_limit[key] =
-            this.sprite.data.values.base_attribute[key] +
-            this.sprite.data.values.add_attribute[key];
+          this.data.values.attribute_limit[key] =
+            this.data.values.base_attribute[key] +
+            this.data.values.add_attribute[key];
 
           // Update the total attribute by the difference between the old and the new one
-          this.sprite.data.values.total_attribute[key] +=
-            this.sprite.data.values.add_attribute[key] - valueBeforeChange;
+          this.data.values.total_attribute[key] +=
+            this.data.values.add_attribute[key] - valueBeforeChange;
           break;
       }
     }
@@ -362,42 +349,42 @@ export default class Player extends unit {
     for (const key in effect) {
       switch (key) {
         case 'bag':
-          if ('bag' in this.sprite.data.values.attribute_limit)
-            this.sprite.data.values.attribute_limit.bag -= effect[key].value;
+          if ('bag' in this.data.values.attribute_limit)
+            this.data.values.attribute_limit.bag -= effect[key].value;
           // If the quantity of items are bigger then the size of the bag
           // Drop items
           break;
         default:
-          const valueBeforeChange = this.sprite.data.values.add_attribute[key];
+          const valueBeforeChange = this.data.values.add_attribute[key];
 
           switch (effect[key].type) {
             case 0:
-              this.sprite.data.values.add_attribute[key] -= effect[key].value;
+              this.data.values.add_attribute[key] -= effect[key].value;
               break;
             case 1:
-              this.sprite.data.values.add_attribute[key] -=
-                this.sprite.data.values.base_attribute[key] *
+              this.data.values.add_attribute[key] -=
+                this.data.values.base_attribute[key] *
                 Math.floor(effect[key].value / 100);
               break;
             case 2:
-              this.sprite.data.values.add_attribute[key] += effect[key].value;
+              this.data.values.add_attribute[key] += effect[key].value;
               break;
             case 3:
-              this.sprite.data.values.add_attribute[key] +=
-                this.sprite.data.values.base_attribute[key] *
+              this.data.values.add_attribute[key] +=
+                this.data.values.base_attribute[key] *
                 Math.floor(effect[key].value / 100);
               break;
             // and more?
           }
 
           // Update the limit of the attribute
-          this.sprite.data.values.attribute_limit[key] =
-            this.sprite.data.values.base_attribute[key] +
-            this.sprite.data.values.add_attribute[key];
+          this.data.values.attribute_limit[key] =
+            this.data.values.base_attribute[key] +
+            this.data.values.add_attribute[key];
 
           // Update the total attribute by the difference between the old and the new one
-          this.sprite.data.values.total_attribute[key] +=
-            this.sprite.data.values.add_attribute[key] - valueBeforeChange;
+          this.data.values.total_attribute[key] +=
+            this.data.values.add_attribute[key] - valueBeforeChange;
           break;
       }
     }
@@ -407,15 +394,12 @@ export default class Player extends unit {
     // console.log('listen to scene update');
     // Listen to key press
     if (
-      this.sprite?.body &&
+      this?.body &&
       !this.status.includes('hit') &&
       !this.status.includes('dead')
     ) {
       if (this.status === 'levelUp') {
-        this.statText.setPosition(
-          this.sprite.x,
-          this.sprite.y - this.tileSize / 2
-        );
+        this.statText.setPosition(this.x, this.y - this.tileSize / 2);
       }
 
       this.target.forEach((t) => {
@@ -442,60 +426,60 @@ export default class Player extends unit {
         console.log('mouse left clicked ', this.pointer);
         if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
           this.keys['mouseLeft'] = 1;
-          this.sprite?.anims.play(`${this.sprite.name}_attack`, true);
+          this?.anims.play(`${this.name}_attack`, true);
         } else {
           console.log('lock key');
         }
       }
 
-      if (this.keys['mouseLeft'] !== 1 && this.sprite.body) {
+      if (this.keys['mouseLeft'] !== 1 && this.body) {
         if (this.cursor?.left.isDown || this.aKey.isDown) {
-          this.sprite.anims.play(`${this.sprite.name}_walking`, true);
-          this.sprite.setFlipX(false);
+          this.anims.play(`${this.name}_walking`, true);
+          this.setFlipX(false);
           // Update zone
           this.zone.setPosition(
-            this.sprite.x - this.tileSize / 4,
-            this.sprite.y + this.tileSize / 2
+            this.x - this.tileSize / 4,
+            this.y + this.tileSize / 2
           );
           // this.zone.setSize(this.tileSize / 2, this.tileSize);
           this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-          this.sprite.setVelocityX(-this.tileSize * 2.5);
+          this.setVelocityX(-this.tileSize * 2.5);
         } else if (this.cursor?.right.isDown || this.dKey.isDown) {
-          this.sprite.anims.play(`${this.sprite.name}_walking`, true);
-          this.sprite.setFlipX(true);
+          this.anims.play(`${this.name}_walking`, true);
+          this.setFlipX(true);
 
           // Update zone
           this.zone.setPosition(
-            this.sprite.x + this.tileSize + this.tileSize / 3,
-            this.sprite.y + this.tileSize / 2
+            this.x + this.tileSize + this.tileSize / 3,
+            this.y + this.tileSize / 2
           );
           // this.zone.setSize(this.tileSize / 2, this.tileSize);
           this.zone.setDisplaySize(this.tileSize / 2, this.tileSize);
-          this.sprite.setVelocityX(this.tileSize * 2.5);
+          this.setVelocityX(this.tileSize * 2.5);
         } else if (this.cursor?.up.isDown || this.wKey.isDown) {
-          this.sprite.anims.play(`${this.sprite.name}_walking`, true);
+          this.anims.play(`${this.name}_walking`, true);
           // Update zone
           this.zone.setPosition(
-            this.sprite.x + this.tileSize / 2,
-            this.sprite.y - this.tileSize / 4
+            this.x + this.tileSize / 2,
+            this.y - this.tileSize / 4
           );
           // this.zone.setSize(this.tileSize, this.tileSize / 2);
           this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-          this.sprite.setVelocityY(-this.tileSize * 2.5);
+          this.setVelocityY(-this.tileSize * 2.5);
         } else if (this.cursor?.down.isDown || this.sKey.isDown) {
-          this.sprite.anims.play(`${this.sprite.name}_walking`, true);
+          this.anims.play(`${this.name}_walking`, true);
           // Update zone
           this.zone.setPosition(
-            this.sprite.x + this.tileSize / 2,
-            this.sprite.y + this.tileSize * 1.5 - this.tileSize / 5
+            this.x + this.tileSize / 2,
+            this.y + this.tileSize * 1.5 - this.tileSize / 5
           );
           // this.zone.setSize(this.tileSize, this.tileSize / 2);
           this.zone.setDisplaySize(this.tileSize, this.tileSize / 2);
-          this.sprite.setVelocityY(this.tileSize * 2.5);
+          this.setVelocityY(this.tileSize * 2.5);
         } else {
-          this.sprite.body.setVelocity(0);
-          if (!this.sprite.anims.currentAnim?.key.includes('attack')) {
-            this.sprite.anims.play(`${this.sprite.name}_idle`, true);
+          this.body?.setVelocity(0);
+          if (!this.anims.currentAnim?.key.includes('attack')) {
+            this.anims.play(`${this.name}_idle`, true);
           }
         }
       }
@@ -505,23 +489,23 @@ export default class Player extends unit {
   #animationStart(anim: any, frame: any, sprite: any, frameKey: any) {
     // console.log('frameKey :>>>', frameKey);
     if (anim.key.includes('attack')) {
-      console.log('scene player data :>>>', this.sprite.data.values);
+      console.log('scene player data :>>>', this.data.values);
       // console.log('change sprite position');
       // Stop moving if needed
-      this.sprite.body.setSize(this.tileSize, this.tileSize);
-      this.sprite.body.setVelocity(0);
+      this.body?.setSize(this.tileSize, this.tileSize);
+      this.body?.setVelocity(0);
       // Temporary disable key captures
 
       const diffX = sprite.width - this.tileSize;
       const diffY = sprite.height - this.tileSize;
 
-      // this.sprite.setSize(sprite.width, sprite.height);
-      if (this.sprite.flipX) {
-        this.sprite.setDisplayOrigin(-diffX / 2, diffY);
-        this.sprite.setOffset(-diffX / 2, diffY);
+      // this.setSize(sprite.width, sprite.height);
+      if (this.flipX) {
+        this.setDisplayOrigin(-diffX / 2, diffY);
+        this.setOffset(-diffX / 2, diffY);
       } else {
-        this.sprite.setDisplayOrigin(diffX, diffY);
-        this.sprite.setOffset(diffX, diffY);
+        this.setDisplayOrigin(diffX, diffY);
+        this.setOffset(diffX, diffY);
       }
     }
   }
@@ -537,8 +521,7 @@ export default class Player extends unit {
 
           if (
             this.scene.enemies[enemyIndex] &&
-            this.scene.enemies[enemyIndex].sprite.data.values.total_attribute
-              .hp > 0
+            this.scene.enemies[enemyIndex].data.values.total_attribute.hp > 0
           ) {
             this.attack(this.scene.enemies[enemyIndex], true);
           }
@@ -553,10 +536,10 @@ export default class Player extends unit {
     // console.log('context :>>>', context);
     // Check if the attack animation finished
     if (context.key.includes('attack')) {
-      this.sprite.setSize(this.tileSize, this.tileSize);
-      this.sprite.setDisplayOrigin(0.5, 0.5);
-      this.sprite.setOffset(0, 0);
-      this.sprite.anims.play(`${this.sprite.name}_idle`);
+      this.setSize(this.tileSize, this.tileSize);
+      this.setDisplayOrigin(0.5, 0.5);
+      this.setOffset(0, 0);
+      this.anims.play(`${this.name}_idle`);
       this.scene.time.delayedCall(300, () => {
         // release key
         this.keys['mouseLeft'] = 0;
