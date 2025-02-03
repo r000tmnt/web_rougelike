@@ -3,9 +3,8 @@ import Dungeon from 'src/scene/dungeon';
 import { useGameStore } from 'src/stores/game';
 import { calculateDamage } from 'src/utils/battle';
 
-export default class unit {
+export default class unit extends Phaser.Physics.Arcade.Sprite {
   scene: Dungeon;
-  sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   tileSize: number;
   map: number[][];
   ready: boolean;
@@ -26,9 +25,9 @@ export default class unit {
     ready: boolean,
     overlap: boolean
   ) {
+    super(scene, x, y, texture);
     this.scene = scene;
-    this.sprite = this.scene.physics.add.sprite(x, y);
-    this.sprite.setData(data);
+    this.setData(data);
     this.tileSize = tileSize;
     this.map = map;
     this.ready = ready;
@@ -53,48 +52,38 @@ export default class unit {
   }
 
   #init(texture: string) {
-    this.sprite.name = texture;
-    this.sprite.setSize(this.tileSize, this.tileSize);
-    this.sprite.setOrigin(0, 0);
-    this.sprite.setOffset(0, 0); // Adjust rendering position
-    this.sprite.setPushable(false);
+    this.name = texture;
+    this.scene.add.existing(this);
+    this.scene.physics.add.existing(this);
+    this.setSize(this.tileSize, this.tileSize);
+    this.setOrigin(0, 0);
+    this.setOffset(0, 0); // Adjust rendering position
+    this.setPushable(false);
   }
 
-  setData() {
-    Object.entries(this.sprite.getData('total_attribute')).forEach((a) => {
+  calculateData() {
+    Object.entries(this.getData('total_attribute')).forEach((a) => {
       const key = a[0];
       // console.log(key);
-      this.sprite.data.values.total_attribute[key] =
-        this.sprite.data.values.base_attribute[key] +
-        this.sprite.data.values.add_attribute[key];
+      this.data.values.total_attribute[key] =
+        this.data.values.base_attribute[key] +
+        this.data.values.add_attribute[key];
     });
 
-    console.log('total ', this.sprite.data.values.total_attribute);
+    console.log('total ', this.data.values.total_attribute);
   }
 
   addCollision(target: any, callback: any) {
-    if (this.sprite) {
+    if (this) {
       // console.log('target :>>>', target);
-      this.scene.physics.add.collider(
-        this.sprite,
-        target,
-        callback,
-        null,
-        this
-      );
+      this.scene.physics.add.collider(this, target, callback, null, this);
     }
   }
 
   attack(target: any, isPlayer: boolean) {
-    const result = calculateDamage(
-      this.sprite.data.values,
-      target.sprite.data.values
-    );
+    const result = calculateDamage(this.data.values, target.data.values);
 
-    this.dmgText.setPosition(
-      target.sprite.x,
-      target.sprite.y - this.tileSize / 2
-    );
+    this.dmgText.setPosition(target.x, target.y - this.tileSize / 2);
 
     // Check demage
     if (result.value === 0) {
