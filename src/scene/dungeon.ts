@@ -121,6 +121,11 @@ export default class Dungeon extends Scene {
       '/assets/atlas/demo_enemy_spritesheet.png',
       '/assets/atlas/demo_enemy_sprites.json'
     );
+
+    this.load.spritesheet('demo_item', '/assets/demo_item.png', {
+      frameWidth: 24,
+      frameHeight: 24,
+    });
   }
 
   /**
