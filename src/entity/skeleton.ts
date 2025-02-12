@@ -6,6 +6,7 @@ import unit from './unit';
 import { addTexture, setAnimation } from 'src/utils/asset';
 import { useGameStore } from 'src/stores/game';
 import Dungeon from 'src/scene/dungeon';
+import { item } from 'src/model/item';
 
 export default class Skeleton extends unit {
   index: number;
@@ -205,6 +206,78 @@ export default class Skeleton extends unit {
             // this.scene.events.off('update', this.#update);
 
             // Drop items
+            if (this.data.values.drop.length) {
+              const rates: number[] = this.data.values.drop.map((d: item) => {
+                switch (d.rarity) {
+                  case 0:
+                    return 0.5;
+                  case 1:
+                    return 0.3;
+                  case 2:
+                    return 0.1;
+                  default:
+                    return 0.5;
+                }
+              });
+
+              const dropItems: item[] = [];
+
+              const random = Math.random();
+
+              rates.forEach((rate: number, index: number) => {
+                if (random < rate) {
+                  dropItems.push(
+                    JSON.parse(JSON.stringify(this.data.values.drop[index]))
+                  );
+                }
+              });
+
+              if (dropItems.length) {
+                // Draw items
+                dropItems.forEach((item: item) => {
+                  const dropX = this.x + Phaser.Math.Between(-10, 10);
+                  const dropY = this.y + Phaser.Math.Between(-10, 10);
+                  const newItem = this.scene.add
+                    .sprite(dropX, dropY, 'demo_item', item.index)
+                    .setInteractive();
+
+                  if (newItem.preFX) {
+                    newItem.preFX.setPadding(2);
+                    newItem.preFX?.addGlow(16756290);
+                  }
+
+                  if (newItem.input) {
+                    newItem.input.alwaysEnabled = true;
+                  }
+
+                  let newItemGlow: Phaser.Tweens.Tween;
+
+                  newItem.on('pointerover', () => {
+                    //  For PreFX Glow the quality and distance are set in the Game Configuration
+                    newItemGlow = this.scene.tweens.add({
+                      targets: newItem,
+                      outerStrength: 1,
+                      yoyo: true,
+                      loop: -1,
+                      ease: 'sine.inout',
+                    });
+                  });
+
+                  newItem.on('pointerout', () => {
+                    newItemGlow.stop();
+                  });
+
+                  // Simulate drop effect
+                  this.scene.tweens.add({
+                    targets: newItem,
+                    x: dropX + 5,
+                    y: dropY + 5,
+                    duration: 500,
+                    ease: 'Bounce.out',
+                  });
+                });
+              }
+            }
 
             gainExp(this.data.values as enemy);
           }
