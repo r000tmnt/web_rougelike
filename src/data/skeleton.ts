@@ -56,6 +56,7 @@ export default {
       image: '',
       modifier: '',
       amount: 1,
+      index: 0,
       desc: 'The remain of already dead. Can be use as projectile.',
       equip: false,
       effect: {
@@ -71,6 +72,7 @@ export default {
       rarity: 0,
       type: 5,
       amount: 1,
+      index: 0,
     },
     {
       id: 's01',
@@ -80,6 +82,7 @@ export default {
       image: '',
       modifier: '',
       amount: 1,
+      index: 2,
       desc: 'Lesser enemies in the next room.',
       effect: {
         enemy: {

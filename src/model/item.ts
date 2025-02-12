@@ -9,6 +9,7 @@ export interface item {
   equip?: boolean;
   effect?: modifier;
   amount: number;
+  index?: number;
 }
 
 export interface modifier {
