@@ -12,6 +12,7 @@ import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 import phaserJuice from '../lib/phaserJuice.min.js';
 import { resetParams } from 'src/model/dungeon.js';
 import { enemy, player } from 'src/model/character.js';
+import { item } from 'src/model/item.js';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
@@ -27,6 +28,8 @@ export default class Dungeon extends Scene {
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | null;
   doors: Phaser.GameObjects.Zone[];
   doorTouching: number;
+  droppedItems: { group: number; value: item[] }[];
+  itemIndex: number[];
   enemies: Skeleton[];
   enemyContact: number;
   limitWidth: number;
@@ -59,6 +62,8 @@ export default class Dungeon extends Scene {
     this.cursor = null;
     this.doors = [];
     this.doorTouching = -1;
+    this.droppedItems = [];
+    this.itemIndex = [-1, -1];
     this.enemyContact = -1;
     this.limitWidth = 0;
     this.limitHeight = 0;
