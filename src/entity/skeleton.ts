@@ -235,16 +235,11 @@ export default class Skeleton extends unit {
               if (dropItems.length) {
                 // Draw items
                 dropItems.forEach((item: item) => {
-                  const dropX = this.x + Phaser.Math.Between(-10, 10);
-                  const dropY = this.y + Phaser.Math.Between(-10, 10);
+                  const dropX = this.x + Phaser.Math.Between(-10, 58);
+                  const dropY = this.y + Phaser.Math.Between(-10, 58);
                   const newItem = this.scene.add
                     .sprite(dropX, dropY, 'demo_item', item.index)
                     .setInteractive();
-
-                  if (newItem.preFX) {
-                    newItem.preFX.setPadding(2);
-                    newItem.preFX?.addGlow(16756290);
-                  }
 
                   if (newItem.input) {
                     newItem.input.alwaysEnabled = true;
@@ -253,25 +248,36 @@ export default class Skeleton extends unit {
                   let newItemGlow: Phaser.Tweens.Tween;
 
                   newItem.on('pointerover', () => {
-                    //  For PreFX Glow the quality and distance are set in the Game Configuration
-                    newItemGlow = this.scene.tweens.add({
-                      targets: newItem,
-                      outerStrength: 1,
-                      yoyo: true,
-                      loop: -1,
-                      ease: 'sine.inout',
-                    });
+                    if (newItem.preFX) {
+                      newItem.preFX.setPadding(2);
+                      const fx = newItem.preFX?.addGlow(16756290);
+                      // Store the glow effect for later
+                      newItem.setData('fx', fx);
+                      // Store item data
+                      newItem.setData(item);
+
+                      //  For PreFX Glow the quality and distance are set in the Game Configuration
+                      newItemGlow = this.scene.tweens.add({
+                        targets: fx,
+                        outerStrength: 1,
+                        yoyo: true,
+                        loop: -1,
+                        ease: 'sine.inout',
+                      });
+                    }
                   });
 
                   newItem.on('pointerout', () => {
                     newItemGlow.stop();
+                    // Remove glow effect
+                    newItem.preFX?.remove(newItem.data.values.fx);
                   });
 
                   // Simulate drop effect
                   this.scene.tweens.add({
                     targets: newItem,
-                    x: dropX + 5,
-                    y: dropY + 5,
+                    x: dropX + 10,
+                    y: dropY + 10,
                     duration: 500,
                     ease: 'Bounce.out',
                   });
