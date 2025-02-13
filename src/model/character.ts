@@ -1,5 +1,6 @@
 import { item } from './item';
 
+type AllowedAttributeLimits = 'hp' | 'mp' | 'bag' | 'exp' | 'pd' | 'vd';
 export interface position {
   y: number;
   x: number;
@@ -12,10 +13,7 @@ export interface base_attribute {
   def: number;
   int: number;
   spd: number;
-  //ap: number;
   luck: number;
-  //ms: number; // move speed
-  //vd: number // view distant
 }
 
 interface unit {
@@ -26,7 +24,7 @@ interface unit {
   base_attribute: base_attribute;
   add_attribute: base_attribute;
   total_attribute: base_attribute;
-  attribute_limit: base_attribute;
+  attribute_limit: Record<AllowedAttributeLimits, number>;
 }
 
 export type player = unit & {
@@ -41,10 +39,13 @@ export type player = unit & {
   bag: Array<item>;
   exp: number;
   pt: number;
-  attribute_limit: {
-    exp: number; // How much exp need to level up
-    bag: number; // How many items the bag can carry
+  base_attribute: {
+    pd: number; // Pick up distance
   };
+  // attribute_limit: {
+  //   exp: number; // How much exp need to level up
+  //   bag: number; // How many items the bag can carry
+  // };
 };
 
 export type enemy = unit & {
@@ -52,15 +53,9 @@ export type enemy = unit & {
   phase: string;
   elite: boolean;
   boss: boolean;
-  drop: Array<item>;
+  bag: Array<item>;
   pattern: string;
   base_attribute: {
-    vd: number; // view distant
-  };
-  add_attribute: {
-    vd: number; // view distant
-  };
-  attribute_limit: {
     vd: number; // view distant
   };
   position: {
@@ -68,12 +63,10 @@ export type enemy = unit & {
     y: number;
   };
 };
-
 export interface rate {
   name: string;
   value: number;
 }
-
 export interface action {
   [name: string]: number;
 }
