@@ -330,14 +330,15 @@ export default class Player extends unit {
             // and more?
           }
 
-          // Update the limit of the attribute
-          this.data.values.attribute_limit[key] =
-            this.data.values.base_attribute[key] +
-            this.data.values.add_attribute[key];
-
           // Update the total attribute by the difference between the old and the new one
           this.data.values.total_attribute[key] +=
             this.data.values.add_attribute[key] - valueBeforeChange;
+
+          // Update the limit of the attribute
+          if (this.data.values.attribute_limit[key]) {
+            this.data.values.attribute_limit[key] =
+              this.data.values.total_attribute[key];
+          }
           break;
       }
     }
@@ -377,14 +378,15 @@ export default class Player extends unit {
             // and more?
           }
 
-          // Update the limit of the attribute
-          this.data.values.attribute_limit[key] =
-            this.data.values.base_attribute[key] +
-            this.data.values.add_attribute[key];
-
           // Update the total attribute by the difference between the old and the new one
           this.data.values.total_attribute[key] +=
             this.data.values.add_attribute[key] - valueBeforeChange;
+
+          // Update the limit of the attribute
+          if (this.data.values.attribute_limit[key]) {
+            this.data.values.attribute_limit[key] =
+              this.data.values.total_attribute[key];
+          }
           break;
       }
     }
@@ -424,7 +426,13 @@ export default class Player extends unit {
       // Mouse left click
       if (this.pointer.isDown) {
         console.log('mouse left clicked ', this.pointer);
-        if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
+        // If the cursor is placed on an item sprite
+        if (this.scene.itemIndex[0] >= 0) {
+          // TODO - Check pick up distance
+          // TODO - Pick up the item
+          // TODO - Move closer to the item if it is too far
+          // TODO - Remove the sprite on the screen
+        } else if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
           this.keys['mouseLeft'] = 1;
           this?.anims.play(`${this.name}_attack`, true);
         } else {
