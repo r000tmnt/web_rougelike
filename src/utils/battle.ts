@@ -1,4 +1,3 @@
-import { enemy } from './../model/character';
 import { player, enemy, base_attribute, rate } from 'src/model/character';
 import { useGameStore } from 'src/stores/game';
 
@@ -35,15 +34,10 @@ export const setInitialStatus = (data: enemy, randomlv: number) => {
   for (const [key, value] of Object.entries(data.base_attribute)) {
     for (let i = 0; i < over; i++) {
       if (key !== 'vd')
-        data.base_attribute[key as keyof base_attribute] += playerGrows[Math.floor(Math.random() * playerGrows.length)];
+        data.base_attribute[key as keyof base_attribute] +=
+          playerGrows[Math.floor(Math.random() * playerGrows.length)];
     }
   }
-
-  // Update total attribute
-  for (const [key, value] of Object.entries(data.base_attribute)) {
-    data.attribute_limit[key as keyof base_attribute] = value;
-  }
-
   return data;
 };
 
