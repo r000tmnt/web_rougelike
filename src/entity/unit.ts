@@ -64,13 +64,16 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
   calculateData() {
     Object.entries(this.getData('total_attribute')).forEach((a) => {
       const key = a[0];
-      // console.log(key);
       this.data.values.total_attribute[key] =
         this.data.values.base_attribute[key] +
         this.data.values.add_attribute[key];
     });
 
-    console.log('total ', this.data.values.total_attribute);
+    // Update the limit of the attribute
+    this.data.values.attribute_limit.hp = this.data.values.total_attribute.hp;
+    this.data.values.attribute_limit.mp = this.data.values.total_attribute.mp;
+
+    // console.log('total ', this.data.values.total_attribute);
   }
 
   addCollision(target: any, callback: any) {
