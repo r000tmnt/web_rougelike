@@ -1,3 +1,5 @@
+import { enemy } from 'src/model/character';
+
 export default {
   lv: 1,
   // theme: 'demo'
@@ -16,6 +18,8 @@ export default {
     spd: 2,
     luck: 2,
     vd: 3,
+    bag: 0,
+    exp: 0,
   },
   add_attribute: {
     hp: 0,
@@ -40,14 +44,12 @@ export default {
   attribute_limit: {
     hp: 5,
     mp: 1,
-    str: 5,
-    def: 3,
-    int: 3,
-    spd: 3,
-    luck: 2,
+    exp: 0,
+    bag: 0,
+    pd: 0.25,
     vd: 3,
   },
-  drop: [
+  bag: [
     {
       id: 'm01',
       name: 'Bone',
@@ -97,4 +99,4 @@ export default {
     x: 0,
     y: 0,
   },
-};
+} as enemy;
