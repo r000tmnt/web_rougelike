@@ -17,13 +17,7 @@
   <div class="status">
     <ul>
       <li v-for="(key, value) in playerData.base_attribute" :key="value">
-        <template
-          v-if="
-            String(value) === 'hp' ||
-            String(value) === 'mp' ||
-            String(value) === 'exp'
-          "
-        >
+        <template v-if="playerData.attribute_limit[value]">
           <div class="flex edit">
             <span>
               {{
