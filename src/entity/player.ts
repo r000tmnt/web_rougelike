@@ -118,7 +118,7 @@ export default class Player extends unit {
             'id' in e[1] &&
             'name' in e[1]
           ) {
-            this.applyEquip(e[1] as item);
+            this.modifyEquip(e[1] as item, 'equip');
           }
         });
       }
@@ -280,11 +280,11 @@ export default class Player extends unit {
     });
 
     gameStore.emitter.on('player-equip', (item: item) => {
-      this.applyEquip(item);
+      this.modifyEquip(item, 'equip');
     });
 
     gameStore.emitter.on('player-unequip', (item: item) => {
-      this.unEquip(item);
+      this.modifyEquip(item, 'takeoff');
     });
   }
 
@@ -298,60 +298,18 @@ export default class Player extends unit {
     });
   }
 
-  applyEquip(item: item) {
+  modifyEquip(item: item, mode: string) {
     const { effect, modifier } = item;
 
     for (const key in effect) {
       switch (key) {
         case 'bag':
           if ('bag' in this.data.values.attribute_limit)
-            this.data.values.attribute_limit.bag += effect[key].value;
-          break;
-        default:
-          const valueBeforeChange = this.data.values.add_attribute[key];
-
-          switch (effect[key].type) {
-            case 0:
-              this.data.values.add_attribute[key] += effect[key].value;
-              break;
-            case 1:
-              this.data.values.add_attribute[key] +=
-                this.data.values.base_attribute[key] *
-                Math.floor(effect[key].value / 100);
-              break;
-            case 2:
-              this.data.values.add_attribute[key] -= effect[key].value;
-              break;
-            case 3:
-              this.data.values.add_attribute[key] -=
-                this.data.values.base_attribute[key] *
-                Math.floor(effect[key].value / 100);
-              break;
-            // and more?
-          }
-
-          // Update the total attribute by the difference between the old and the new one
-          this.data.values.total_attribute[key] +=
-            this.data.values.add_attribute[key] - valueBeforeChange;
-
-          // Update the limit of the attribute
-          if (this.data.values.attribute_limit[key]) {
-            this.data.values.attribute_limit[key] =
-              this.data.values.total_attribute[key];
-          }
-          break;
-      }
-    }
-  }
-
-  unEquip(item: item) {
-    const { effect, modifier } = item;
-
-    for (const key in effect) {
-      switch (key) {
-        case 'bag':
-          if ('bag' in this.data.values.attribute_limit)
-            this.data.values.attribute_limit.bag -= effect[key].value;
+            if (mode === 'equip') {
+              this.data.values.attribute_limit.bag += effect[key].value;
+            } else {
+              this.data.values.attribute_limit.bag -= effect[key].value;
+            }
           // If the quantity of items are bigger then the size of the bag
           // Drop items
           break;
@@ -360,20 +318,40 @@ export default class Player extends unit {
 
           switch (effect[key].type) {
             case 0:
-              this.data.values.add_attribute[key] -= effect[key].value;
+              if (mode === 'equip') {
+                this.data.values.add_attribute[key] += effect[key].value;
+              } else {
+                this.data.values.add_attribute[key] -= effect[key].value;
+              }
               break;
             case 1:
-              this.data.values.add_attribute[key] -=
-                this.data.values.base_attribute[key] *
-                Math.floor(effect[key].value / 100);
+              if (mode === 'equip') {
+                this.data.values.add_attribute[key] +=
+                  this.data.values.base_attribute[key] *
+                  Math.floor(effect[key].value / 100);
+              } else {
+                this.data.values.add_attribute[key] -=
+                  this.data.values.base_attribute[key] *
+                  Math.floor(effect[key].value / 100);
+              }
               break;
             case 2:
-              this.data.values.add_attribute[key] += effect[key].value;
+              if (mode === 'equip') {
+                this.data.values.add_attribute[key] -= effect[key].value;
+              } else {
+                this.data.values.add_attribute[key] += effect[key].value;
+              }
               break;
             case 3:
-              this.data.values.add_attribute[key] +=
-                this.data.values.base_attribute[key] *
-                Math.floor(effect[key].value / 100);
+              if (mode === 'equip') {
+                this.data.values.add_attribute[key] -=
+                  this.data.values.base_attribute[key] *
+                  Math.floor(effect[key].value / 100);
+              } else {
+                this.data.values.add_attribute[key] +=
+                  this.data.values.base_attribute[key] *
+                  Math.floor(effect[key].value / 100);
+              }
               break;
             // and more?
           }
