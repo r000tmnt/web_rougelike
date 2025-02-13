@@ -206,8 +206,8 @@ export default class Skeleton extends unit {
             // this.scene.events.off('update', this.#update);
 
             // Drop items
-            if (this.data.values.drop.length) {
-              const rates: number[] = this.data.values.drop.map((d: item) => {
+            if (this.data.values.bag.length) {
+              const rates: number[] = this.data.values.bag.map((d: item) => {
                 switch (d.rarity) {
                   case 0:
                     return 0.5;
@@ -233,13 +233,23 @@ export default class Skeleton extends unit {
               });
 
               if (dropItems.length) {
+                // Store items
+                const group = this.scene.droppedItems.length;
+                this.scene.droppedItems.push({ group, value: dropItems });
                 // Draw items
-                dropItems.forEach((item: item) => {
+                dropItems.forEach((item: item, index: number) => {
                   const dropX = this.x + Phaser.Math.Between(-10, 58);
                   const dropY = this.y + Phaser.Math.Between(-10, 58);
                   const newItem = this.scene.add
                     .sprite(dropX, dropY, 'demo_item', item.index)
                     .setInteractive();
+                  const itemText = this.scene.add
+                    .text(newItem.x, newItem.y - 12, '', {
+                      fontSize: this.tileSize * 0.3,
+                      fontFamily: 'pixelify',
+                    })
+                    .setOrigin(0.5)
+                    .setVisible(false);
 
                   if (newItem.input) {
                     newItem.input.alwaysEnabled = true;
@@ -248,6 +258,16 @@ export default class Skeleton extends unit {
                   let newItemGlow: Phaser.Tweens.Tween;
 
                   newItem.on('pointerover', () => {
+                    // Update index
+                    this.scene.itemIndex[0] = group;
+                    this.scene.itemIndex[1] = index;
+
+                    // Display item name
+                    itemText.setText(item.name);
+                    // itemText.setStyle({ color: '#FFB343' });
+                    // itemText.setFontSize(this.tileSize * 0.4);
+                    itemText.setVisible(true);
+
                     if (newItem.preFX) {
                       newItem.preFX.setPadding(2);
                       const fx = newItem.preFX?.addGlow(16756290);
@@ -268,6 +288,12 @@ export default class Skeleton extends unit {
                   });
 
                   newItem.on('pointerout', () => {
+                    // Update index
+                    this.scene.itemIndex[0] = -1;
+                    this.scene.itemIndex[1] = -1;
+                    // Hide item name
+                    itemText.setVisible(false);
+                    // Stop glow effect
                     newItemGlow.stop();
                     // Remove glow effect
                     newItem.preFX?.remove(newItem.data.values.fx);
