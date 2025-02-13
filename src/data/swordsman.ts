@@ -13,6 +13,7 @@ export default {
     int: 3,
     spd: 3,
     luck: 2,
+    pd: 0.25,
   },
   add_attribute: {
     hp: 0,
@@ -22,6 +23,7 @@ export default {
     int: 0,
     spd: 0,
     luck: 0,
+    pd: 0,
   },
   total_attribute: {
     hp: 0,
@@ -31,17 +33,15 @@ export default {
     int: 0,
     spd: 0,
     luck: 0,
+    pd: 0,
   },
   attribute_limit: {
     hp: 10,
     mp: 5,
-    str: 5,
-    def: 3,
-    int: 3,
-    spd: 3,
-    luck: 2,
     exp: 100,
     bag: 200,
+    pd: 0.25,
+    vd: 0,
   },
   equip: {
     head: {},
