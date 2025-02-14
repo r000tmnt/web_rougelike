@@ -15,9 +15,12 @@
       :style="`width: ${gameStore.tileSize}px; height: ${gameStore.tileSize}px`"
     />
     <ul>
-      <div class="item-header flex">
-        <span class="q-mr-sm">{{ itemData.name }}</span>
-        <small>Rarity {{ itemData.rarity }}</small>
+      <div class="item-header text-center">
+        <span
+          class="q-mr-sm"
+          :style="`color: ${RARITY_COLORS[itemData.rarity].color}`"
+          >{{ itemData.name }}</span
+        >
       </div>
 
       <p>{{ itemData.desc }}</p>
@@ -34,6 +37,7 @@
 <script setup lang="ts">
 import { item } from '../model/item';
 import { useGameStore } from '../stores/game';
+import { RARITY_COLORS } from '../model/item';
 // import { ref, computed, onMounted } from 'vue';
 
 const gameStore = useGameStore();
