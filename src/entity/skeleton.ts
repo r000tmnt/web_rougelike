@@ -207,108 +207,7 @@ export default class Skeleton extends unit {
 
             // Drop items
             if (this.data.values.bag.length) {
-              const rates: number[] = this.data.values.bag.map((d: item) => {
-                switch (d.rarity) {
-                  case 0:
-                    return 0.5;
-                  case 1:
-                    return 0.3;
-                  case 2:
-                    return 0.1;
-                  default:
-                    return 0.5;
-                }
-              });
-
-              const dropItems: item[] = [];
-
-              const random = Math.random();
-
-              rates.forEach((rate: number, index: number) => {
-                if (random < rate) {
-                  dropItems.push(
-                    JSON.parse(JSON.stringify(this.data.values.drop[index]))
-                  );
-                }
-              });
-
-              if (dropItems.length) {
-                // Store items
-                const group = this.scene.droppedItems.length;
-                this.scene.droppedItems.push({ group, value: dropItems });
-                // Draw items
-                dropItems.forEach((item: item, index: number) => {
-                  const dropX = this.x + Phaser.Math.Between(-10, 58);
-                  const dropY = this.y + Phaser.Math.Between(-10, 58);
-                  const newItem = this.scene.add
-                    .sprite(dropX, dropY, 'demo_item', item.index)
-                    .setInteractive();
-                  const itemText = this.scene.add
-                    .text(newItem.x, newItem.y - 12, '', {
-                      fontSize: this.tileSize * 0.3,
-                      fontFamily: 'pixelify',
-                    })
-                    .setOrigin(0.5)
-                    .setVisible(false);
-
-                  if (newItem.input) {
-                    newItem.input.alwaysEnabled = true;
-                  }
-
-                  let newItemGlow: Phaser.Tweens.Tween;
-
-                  newItem.on('pointerover', () => {
-                    // Update index
-                    this.scene.itemIndex[0] = group;
-                    this.scene.itemIndex[1] = index;
-
-                    // Display item name
-                    itemText.setText(item.name);
-                    // itemText.setStyle({ color: '#FFB343' });
-                    // itemText.setFontSize(this.tileSize * 0.4);
-                    itemText.setVisible(true);
-
-                    if (newItem.preFX) {
-                      newItem.preFX.setPadding(2);
-                      const fx = newItem.preFX?.addGlow(16756290);
-                      // Store the glow effect for later
-                      newItem.setData('fx', fx);
-                      // Store item data
-                      newItem.setData(item);
-
-                      //  For PreFX Glow the quality and distance are set in the Game Configuration
-                      newItemGlow = this.scene.tweens.add({
-                        targets: fx,
-                        outerStrength: 1,
-                        yoyo: true,
-                        loop: -1,
-                        ease: 'sine.inout',
-                      });
-                    }
-                  });
-
-                  newItem.on('pointerout', () => {
-                    // Update index
-                    this.scene.itemIndex[0] = -1;
-                    this.scene.itemIndex[1] = -1;
-                    // Hide item name
-                    itemText.setVisible(false);
-                    // Stop glow effect
-                    newItemGlow.stop();
-                    // Remove glow effect
-                    newItem.preFX?.remove(newItem.data.values.fx);
-                  });
-
-                  // Simulate drop effect
-                  this.scene.tweens.add({
-                    targets: newItem,
-                    x: dropX + 10,
-                    y: dropY + 10,
-                    duration: 500,
-                    ease: 'Bounce.out',
-                  });
-                });
-              }
+              this.prepareDropItems();
             }
 
             gainExp(this.data.values as enemy);
@@ -503,7 +402,7 @@ export default class Skeleton extends unit {
           p.y += this.scene.offsetY;
         });
 
-        console.log('path :>>>', this.path);
+        // console.log('path :>>>', this.path);
 
         // this.navMesh.debugDrawPath(this.path, 0xffd900);
 
