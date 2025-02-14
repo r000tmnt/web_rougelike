@@ -94,47 +94,14 @@
                   :style="`font-size:${Math.floor(windowWidth / 100) * 0.9}px`"
                 >
                   {{ player.bag[index].name }}
+                  <span>{{
+                    player.bag[index].amount > 1 ? player.bag[index].amount : ''
+                  }}</span>
                 </div>
               </template>
             </label>
           </div>
         </div>
-        <!-- <table class="q-mx-auto" style="width: 80%">
-          <tbody>
-            <template v-for="(row, rowIndex) in rows" :key="row">
-              <tr>
-                <td
-                  v-for="(col, colIndex) in 10"
-                  :key="col"
-                  :class="{
-                    hidden:
-                      colIndex + rowIndex * 10 >
-                      player.attribute_limit.bag - 1,
-                  }"
-                  :data-index="colIndex + rowIndex * 10"
-                >
-                  <div
-                    class="grid rounded-borders"
-                    :style="`width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${gameStore.pixelatedBorder(
-                      borderSize,
-                      colIndex + rowIndex * 10,
-                      hoveredIndex
-                    )}`"
-                    @mouseover="(e) => getItemPosition(e, colIndex, rowIndex)"
-                    @mouseleave="resetPosition"
-                    @contextmenu="
-                      (e) => {
-                        console.log('mouse right click ', e);
-                      }
-                    "
-                  >
-                    {{ colIndex + rowIndex * 10 }}
-                  </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table> -->
       </div>
 
       <Item_desc
