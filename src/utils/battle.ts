@@ -184,5 +184,3 @@ export const gainExp = (enemy: enemy) => {
     gameStore.setPlayerStatus(player);
   }
 };
-
-// export const prepareDropItems = (player, enemy) => {};
