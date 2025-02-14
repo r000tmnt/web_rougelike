@@ -28,7 +28,7 @@ export default class Dungeon extends Scene {
   cursor: Phaser.Types.Input.Keyboard.CursorKeys | null;
   doors: Phaser.GameObjects.Zone[];
   doorTouching: number;
-  droppedItems: { group: number; value: item[] }[];
+  droppedItems: { group: number; value: Phaser.GameObjects.Sprite[] }[];
   itemIndex: number[];
   enemies: Skeleton[];
   enemyContact: number;
