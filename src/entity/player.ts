@@ -40,6 +40,8 @@ export default class Player extends unit {
     groundLayer: Phaser.Tilemaps.TilemapLayer,
     reset: boolean
   ) {
+    // Set Sprite order (Place it forward)
+    this.setDepth(5);
     //Prepare textures
     addTexture(
       this.scene,
@@ -404,13 +406,7 @@ export default class Player extends unit {
       // Mouse left click
       if (this.pointer.isDown) {
         console.log('mouse left clicked ', this.pointer);
-        // If the cursor is placed on an item sprite
-        if (this.scene.itemIndex[0] >= 0) {
-          // TODO - Check pick up distance
-          // TODO - Pick up the item
-          // TODO - Move closer to the item if it is too far
-          // TODO - Remove the sprite on the screen
-        } else if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
+        if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
           this.keys['mouseLeft'] = 1;
           this?.anims.play(`${this.name}_attack`, true);
         } else {
