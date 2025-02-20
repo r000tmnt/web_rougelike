@@ -63,7 +63,7 @@ export default {
       equip: false,
       effect: {
         hp: {
-          type: 0,
+          type: 2,
           value: 1,
         },
       },
