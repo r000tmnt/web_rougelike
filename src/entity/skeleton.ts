@@ -6,7 +6,6 @@ import unit from './unit';
 import { addTexture, setAnimation } from 'src/utils/asset';
 import { useGameStore } from 'src/stores/game';
 import Dungeon from 'src/scene/dungeon';
-import { item } from 'src/model/item';
 
 export default class Skeleton extends unit {
   index: number;
@@ -374,7 +373,7 @@ export default class Skeleton extends unit {
     );
 
     if (index >= 0) this.scene.walkable[index].checked = true;
-    setTimeout(() => this.#getRandomDirection(), 1000);
+    if (!target.checked) setTimeout(() => this.#getRandomDirection(), 1000);
   }
 
   #GetPath() {
@@ -414,50 +413,6 @@ export default class Skeleton extends unit {
     } else {
       this.#markTileAsChecked(this.target);
     }
-  }
-
-  #getVisibleObjects() {
-    if (this.ray && this.ray.body) {
-      let visibleObjects = this.ray.overlap();
-
-      console.log('visibleObjects :>>>', visibleObjects);
-
-      // Filter out the enemy itself is exist
-      visibleObjects = visibleObjects.filter(
-        (obj: any) => obj.name !== `enemy_${this.index}`
-      );
-
-      return visibleObjects;
-    } else {
-      return [];
-    }
-  }
-
-  #getAvoidanceDirection(
-    sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
-    obstacle: any
-  ) {
-    const spriteToObstacle = new Phaser.Math.Vector2(
-      obstacle.x - sprite.x,
-      obstacle.y - sprite.y
-    );
-
-    const facingVector = new Phaser.Math.Vector2(
-      this.body?.velocity.x,
-      this.body?.velocity.y
-    );
-
-    // If the sprite is stationary, assume default direction (e.g., facing right)
-    if (facingVector.length() === 0) {
-      facingVector.set(!this.flipX ? -1 : 1, 0); // Facing left or right
-    } else {
-      facingVector.normalize();
-    }
-
-    const cross = facingVector.cross(spriteToObstacle.normalize());
-
-    // Return avoidance direction based on the sign of the cross product
-    return cross > 0 ? 'right' : 'left';
   }
 
   #moveToTarget(target: Phaser.Geom.Point) {
@@ -550,6 +505,82 @@ export default class Skeleton extends unit {
     }
   }
 
+  #shouldAvoidObstacle(target: any) {
+    const selfDirection = new Phaser.Math.Vector2(
+      this.body?.velocity.x,
+      this.body?.velocity.y
+    ).normalize();
+    const targetDirection = new Phaser.Math.Vector2(
+      target.body.velocity.x,
+      target.body.velocity.y
+    ).normalize();
+
+    const dot = selfDirection.dot(targetDirection);
+
+    return dot < 0; // If moving toward each other, try to avoid
+  }
+
+  #steerAway(target: any) {
+    const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
+
+    // Offset angle slightly to steer away
+    const newAngle1 = angle + Phaser.Math.DegToRad(45);
+    const newAngle2 = angle - Phaser.Math.DegToRad(45);
+
+    this.body?.setVelocity(
+      Math.cos(newAngle1) * 100,
+      Math.sin(newAngle1) * 100
+    );
+    target.body.setVelocity(
+      Math.cos(newAngle2) * 100,
+      Math.sin(newAngle2) * 100
+    );
+  }
+
+  #recalculationPath(target: any) {
+    // Try to pause the target
+    if (target.awaitTimer) {
+      clearInterval(target.awaitTimer);
+      target.awaitTimer = null;
+      target.anims.play('enemy_idle');
+    }
+    target.body.setVelocity(0);
+
+    this.scene.time.delayedCall(500, () => {
+      if (this.target) {
+        this.#moveToTarget(this.target);
+      } else {
+        this.#GetPath();
+      }
+    });
+  }
+
+  #changeDirection(target: any) {
+    const distance = Phaser.Math.Distance.Between(
+      this.x,
+      this.y,
+      target.x,
+      target.y
+    );
+
+    if (distance <= this.tileSize * 2) {
+      if (this.#shouldAvoidObstacle(target)) {
+        console.log('should avoid');
+        // Mark the collided target position as checked
+        const { x, y } = getPosition(
+          target,
+          this.scene.offsetX,
+          this.scene.offsetY,
+          this.tileSize
+        );
+        this.#markTileAsChecked({ x, y, checked: true });
+        this.#steerAway(target);
+      } else {
+        this.#recalculationPath(target);
+      }
+    }
+  }
+
   onCollide(self: any, target: any) {
     if (this.data.values.total_attribute.hp > 0) {
       // this.body.setVelocity(0);
@@ -557,7 +588,7 @@ export default class Skeleton extends unit {
       // console.log('enemy collide with target', target);
       if (target.name && target.name.includes('enemy')) {
         this.anims.play('enemy_idle');
-        // this.#changeDirection();
+        this.#changeDirection(target);
       }
 
       // If collide with player but player not in sight
