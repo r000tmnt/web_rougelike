@@ -8,12 +8,13 @@
       dynamicWidth * 3
     }px;top:0;box-shadow: ${pixelatedBorder};${descElementPosition}`"
   >
-    <img
+    <!-- <img
       class="q-mx-auto"
       src=""
       alt="image"
       :style="`width: ${gameStore.tileSize}px; height: ${gameStore.tileSize}px`"
-    />
+    /> -->
+    <Sprite_image :index="itemData.index" />
     <ul>
       <div class="item-header text-center">
         <span
@@ -26,7 +27,7 @@
       <p>{{ itemData.desc }}</p>
 
       <ul>
-        <li v-for="(eKey, eVal, index) in itemData.effect" :key="index">
+        <li v-for="(eKey, eVal) in itemData.effect" :key="eKey">
           {{ eVal }} {{ getEffectValue(eKey) }}
         </li>
       </ul>
@@ -38,6 +39,7 @@
 import { item } from '../model/item';
 import { useGameStore } from '../stores/game';
 import { RARITY_COLORS } from '../model/item';
+import Sprite_image from './Sprite_image.vue';
 // import { ref, computed, onMounted } from 'vue';
 
 const gameStore = useGameStore();

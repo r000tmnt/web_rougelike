@@ -93,7 +93,8 @@
                   :data-type="player.bag[index].type"
                   :style="`font-size:${Math.floor(windowWidth / 100) * 0.9}px`"
                 >
-                  {{ player.bag[index].name }}
+                  <!-- {{ player.bag[index].name }} -->
+                  <Sprite_image :index="player.bag[index].index" />
                   <span>{{
                     player.bag[index].amount > 1 ? player.bag[index].amount : ''
                   }}</span>
@@ -118,11 +119,12 @@
 <script setup lang="ts">
 import { useGameStore } from '../stores/game';
 import { storeToRefs } from 'pinia';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { item } from '../model/item';
 import Item_desc from './Item_desc.vue';
 import Player_equip from './Player_equip.vue';
 import Player_status from './Player_status.vue';
+import Sprite_image from './Sprite_image.vue';
 
 const gameStore = useGameStore();
 
@@ -151,6 +153,12 @@ const inventoryContent = ref<HTMLDivElement>();
 const inventoryHeaderHeight = ref<number>(0);
 
 const draggingIndex = ref<number>(-1);
+
+const sprite = computed(() => {
+  const sheet = new Image();
+  sheet.src = require('@/assets/spritesheet.png');
+  return sheet;
+});
 
 // const activeFilter = ref<number[]>([]);
 
