@@ -129,10 +129,7 @@ export default class Skeleton extends unit {
     this.zone.setOrigin(0, 0);
     this.scene.physics.world.enable(this.zone);
 
-    this.scene.physics.add.overlap(this.zone, player, () => {
-      // console.log('overlap with player');
-      this.overlap = true;
-    });
+    this.addOverlap(player);
   }
 
   #markPlayerInSight(target: Phaser.Types.Physics.ArcadeWithDynamicBody) {
@@ -437,6 +434,8 @@ export default class Skeleton extends unit {
             );
             // If the player is in the range of attack
             if (distanceToPlayer <= this.tileSize + 5) {
+              // Mark the point as checked
+              this.#markTileAsChecked(this.target);
               // Attack
               if (this.scene.player.active) {
                 this.data.values.phase = 'aggro';
@@ -464,11 +463,7 @@ export default class Skeleton extends unit {
               this.#moveToTarget(this.target);
             } else {
               // Mark the point as checked
-              const index = this.scene.walkable.findIndex(
-                (w) => w.x === this.target.x && w.y === this.target.y
-              );
-
-              if (index >= 0) this.scene.walkable[index].checked = true;
+              this.#markTileAsChecked(this.target);
               this.#stopMoving();
             }
           } else {
@@ -505,97 +500,48 @@ export default class Skeleton extends unit {
     }
   }
 
-  #shouldAvoidObstacle(target: any) {
-    const selfDirection = new Phaser.Math.Vector2(
+  shouldAvoid(target: any) {
+    const dir1 = new Phaser.Math.Vector2(
       this.body?.velocity.x,
       this.body?.velocity.y
     ).normalize();
-    const targetDirection = new Phaser.Math.Vector2(
-      target.body.velocity.x,
-      target.body.velocity.y
-    ).normalize();
+    const dir2 = new Phaser.Math.Vector2(target.x, target.y).normalize();
 
-    const dot = selfDirection.dot(targetDirection);
+    // Calculate dot product to see if they are moving toward each other
+    const dot = dir1.dot(dir2);
 
     return dot < 0; // If moving toward each other, try to avoid
   }
 
-  #steerAway(target: any) {
+  steerAway(target: any) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
 
     // Offset angle slightly to steer away
     const newAngle1 = angle + Phaser.Math.DegToRad(45);
-    const newAngle2 = angle - Phaser.Math.DegToRad(45);
 
     this.body?.setVelocity(
       Math.cos(newAngle1) * 100,
       Math.sin(newAngle1) * 100
     );
-    target.body.setVelocity(
-      Math.cos(newAngle2) * 100,
-      Math.sin(newAngle2) * 100
-    );
-  }
-
-  #recalculationPath(target: any) {
-    // Try to pause the target
-    if (target.awaitTimer) {
-      clearInterval(target.awaitTimer);
-      target.awaitTimer = null;
-      target.anims.play('enemy_idle');
-    }
-    target.body.setVelocity(0);
-
-    this.scene.time.delayedCall(500, () => {
-      if (this.target) {
-        this.#moveToTarget(this.target);
-      } else {
-        this.#GetPath();
-      }
-    });
-  }
-
-  #changeDirection(target: any) {
-    const distance = Phaser.Math.Distance.Between(
-      this.x,
-      this.y,
-      target.x,
-      target.y
-    );
-
-    if (distance <= this.tileSize * 2) {
-      if (this.#shouldAvoidObstacle(target)) {
-        console.log('should avoid');
-        // Mark the collided target position as checked
-        const { x, y } = getPosition(
-          target,
-          this.scene.offsetX,
-          this.scene.offsetY,
-          this.tileSize
-        );
-        this.#markTileAsChecked({ x, y, checked: true });
-        this.#steerAway(target);
-      } else {
-        this.#recalculationPath(target);
-      }
-    }
   }
 
   onCollide(self: any, target: any) {
     if (this.data.values.total_attribute.hp > 0) {
-      // this.body.setVelocity(0);
-      // console.log('self', self);
-      // console.log('enemy collide with target', target);
-      if (target.name && target.name.includes('enemy')) {
-        this.anims.play('enemy_idle');
-        this.#changeDirection(target);
-      }
-
       // If collide with player but player not in sight
       if (target.name && target.name.includes('player')) {
         if (this.data.values.phase !== 'chasing') {
           this.data.values.phase = 'chasing';
           this.#markPlayerInSight(target);
+        }
+      } else {
+        if (this.shouldAvoid(target)) {
+          this.steerAway(target);
+        } else {
+          if (this.awaitTimer) {
+            clearInterval(this.awaitTimer);
+            this.awaitTimer = null;
+          }
+          this.#stopMoving();
         }
       }
     }
