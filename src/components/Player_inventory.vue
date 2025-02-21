@@ -69,8 +69,9 @@
               index,
               hoveredIndex
             )}`"
-            @mouseover="mouseOverEventWrapper"
+            @mouseenter="mouseOverEventWrapper"
             @mouseleave="resetPosition"
+            @contextmenu.prevent="useItem(player.bag[index])"
             :draggable="player.bag[index] ? true : false"
             @dragstart="
               dragStart(
@@ -89,15 +90,21 @@
 
               <template v-if="player.bag[index]">
                 <div
-                  class="item"
+                  class="q-pa-sm"
                   :data-type="player.bag[index].type"
-                  :style="`font-size:${Math.floor(windowWidth / 100) * 0.9}px`"
+                  :style="`font-size:${
+                    Math.floor(windowWidth / 100) * 0.9
+                  }px;pointer-events:none;height:100%;`"
                 >
                   <!-- {{ player.bag[index].name }} -->
                   <Sprite_image :index="player.bag[index].index" />
-                  <span>{{
-                    player.bag[index].amount > 1 ? player.bag[index].amount : ''
-                  }}</span>
+                  <div
+                    v-if="player.bag[index].amount > 1"
+                    class="text-right"
+                    style="transform: translate(12%, 140%)"
+                  >
+                    {{ player.bag[index].amount }}
+                  </div>
                 </div>
               </template>
             </label>
@@ -119,7 +126,7 @@
 <script setup lang="ts">
 import { useGameStore } from '../stores/game';
 import { storeToRefs } from 'pinia';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { item } from '../model/item';
 import Item_desc from './Item_desc.vue';
 import Player_equip from './Player_equip.vue';
@@ -153,12 +160,6 @@ const inventoryContent = ref<HTMLDivElement>();
 const inventoryHeaderHeight = ref<number>(0);
 
 const draggingIndex = ref<number>(-1);
-
-const sprite = computed(() => {
-  const sheet = new Image();
-  sheet.src = require('@/assets/spritesheet.png');
-  return sheet;
-});
 
 // const activeFilter = ref<number[]>([]);
 
@@ -209,6 +210,10 @@ const mouseOverEventWrapper = (e: MouseEvent) => {
 
 const resetPosition = () => {
   hoveredIndex.value = -1;
+};
+
+const useItem = (item: item) => {
+  console.log('use item ', item);
 };
 
 const dragStart = (e: DragEvent, item: item | object, index: number) => {
