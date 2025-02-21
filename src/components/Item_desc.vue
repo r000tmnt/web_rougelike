@@ -8,12 +8,6 @@
       dynamicWidth * 3
     }px;top:0;box-shadow: ${pixelatedBorder};${descElementPosition}`"
   >
-    <!-- <img
-      class="q-mx-auto"
-      src=""
-      alt="image"
-      :style="`width: ${gameStore.tileSize}px; height: ${gameStore.tileSize}px`"
-    /> -->
     <Sprite_image :index="itemData.index" />
     <ul>
       <div class="item-header text-center">
