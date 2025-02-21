@@ -641,7 +641,7 @@ export default class Dungeon extends Scene {
       this.player?.addCollision(enemy, this.player?.onCollide);
       const others = this.enemies.filter((e, n) => n !== i);
 
-      others.forEach((o) => enemy.addCollision(o, o.onCollide));
+      others.forEach((o) => enemy.addOverlap(o));
     });
 
     // Enable zone
