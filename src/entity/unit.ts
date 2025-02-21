@@ -345,13 +345,25 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         });
 
         // Check if the same item is in the bag
-        const itemInBag: item = data.values.bag.find(
+        const itemsInBag: item[] = data.values.bag.filter(
           (e: item) => e.id === item.data.values.id
         );
 
-        if (itemInBag?.amount < itemInBag?.limit) {
-          itemInBag.amount += 1;
-        } else {
+        // Check each item that is the same
+        let isInTheBag = false;
+        for (let i = 0; i < itemsInBag.length; i++) {
+          // If the item is not full
+          if (itemsInBag[i].amount < itemsInBag[i].limit) {
+            itemsInBag[i].amount += 1;
+            isInTheBag = true;
+            break;
+          }
+        }
+
+        if (
+          !isInTheBag &&
+          data.values.bag.length < data.values.attribute_limit.bag
+        ) {
           data.values.bag.push(JSON.parse(JSON.stringify(item.data.values)));
         }
 
