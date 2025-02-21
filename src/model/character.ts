@@ -39,9 +39,7 @@ export type player = unit & {
   bag: Array<item>;
   exp: number;
   pt: number;
-  base_attribute: {
-    pd: number; // Pick up distance
-  };
+  pd: number; // Pick up distance
   // attribute_limit: {
   //   exp: number; // How much exp need to level up
   //   bag: number; // How many items the bag can carry
