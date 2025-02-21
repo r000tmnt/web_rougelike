@@ -107,7 +107,7 @@ gameStore.emitter.on('player-attribute-change', (data: player) => {
 
   .meter {
     width: 100%;
-    background: gray;
+    transition: width 0.3s;
   }
 }
 </style>
