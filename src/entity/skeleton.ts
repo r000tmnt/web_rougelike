@@ -10,8 +10,6 @@ import Dungeon from 'src/scene/dungeon';
 export default class Skeleton extends unit {
   index: number;
   facingAngle: number;
-  awaitTimer: NodeJS.Timeout | null;
-  angle: number[];
   inSight: boolean;
   step: number;
   target: any;
@@ -45,10 +43,8 @@ export default class Skeleton extends unit {
     this.target = null;
     this.collidedTarget = null;
     this.ray = null;
-    this.angle = [0, 45, 90, 135, 180, -180, -135, -90, -45, -0];
     this.facingAngle = 0;
     this.idleTimer = null;
-    this.awaitTimer = null;
     // this.data.values.phase = 'roaming'; // roaming, searching, aggro
     this.step = 0;
     this.navMesh = navMesh;
@@ -193,10 +189,6 @@ export default class Skeleton extends unit {
             this.zone?.destroy();
             if (this.path) this.path = null;
             this.target = null;
-            if (this.awaitTimer) {
-              clearInterval(this.awaitTimer);
-              this.awaitTimer = null;
-            }
             // this.scene.removeEnemyIntheRoom(this.index);
             this.disableBody();
             // this.scene.events.off('update', this.#update);
@@ -296,15 +288,16 @@ export default class Skeleton extends unit {
   }
 
   #alterRayAngle() {
-    if (this.ray && this.ray.origin && this.target && this.scene.player) {
+    if (this.ray && this.ray.origin && this.body && this.scene.player) {
       const half = this.tileSize / 2;
-      const radain = Phaser.Math.Angle.BetweenPoints(
-        this,
+
+      // Get the angle between the enemy and the player or the angle of moving direction
+      const radain =
         this.data.values.phase === 'aggro' ||
-          this.data.values.phase === 'chasing'
-          ? this.scene.player
-          : this.target
-      );
+        this.data.values.phase === 'chasing'
+          ? Phaser.Math.Angle.BetweenPoints(this, this.scene.player)
+          : Math.atan2(this.body.velocity.y, this.body.velocity.x);
+
       this.facingAngle = Phaser.Math.RadToDeg(radain);
 
       this.ray.setAngleDeg(this.facingAngle);
@@ -370,7 +363,7 @@ export default class Skeleton extends unit {
     );
 
     if (index >= 0) this.scene.walkable[index].checked = true;
-    if (!target.checked) setTimeout(() => this.#getRandomDirection(), 1000);
+    this.#stopMoving();
   }
 
   #GetPath() {
@@ -413,75 +406,68 @@ export default class Skeleton extends unit {
   }
 
   #moveToTarget(target: Phaser.Geom.Point) {
-    if (this.ray && target && this.awaitTimer === null) {
+    if (this.ray && target) {
+      this.#alterRayAngle();
       this.anims.play('enemy_walking');
       const half = this.tileSize / 2;
-      this.awaitTimer = setInterval(() => {
-        if (this.status !== 'dead') {
-          const distance = Phaser.Math.Distance.Between(
+      if (this.status !== 'dead') {
+        const distance = Phaser.Math.Distance.Between(
+          this.x + half,
+          this.y + half,
+          target.x,
+          target.y
+        );
+
+        if (this.inSight && this.scene.player) {
+          const distanceToPlayer = Phaser.Math.Distance.Between(
+            this.x + half,
+            this.y + half,
+            this.scene.player.x + half,
+            this.scene.player.y + half
+          );
+          // If the player is in the range of attack
+          if (distanceToPlayer <= this.tileSize + 5) {
+            // Attack
+            if (this.scene.player.active) {
+              this.data.values.phase = 'aggro';
+              this.path = null;
+              this.body?.setVelocity(0);
+              this.#alterRayAngle();
+              if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
+                this?.anims.play('enemy_attack', true);
+                this.keys['mouseLeft'] = 1;
+              }
+            }
+          }
+        }
+
+        if (distance <= 0 && !this.keys['mouseLeft']) {
+          // If there are path to go
+          if (this.path.length) {
+            this.target = this.path.shift();
+            this.body?.setVelocity(0);
+            this.scene.time.delayedCall(300, () => {
+              this.#moveToTarget(this.target);
+            });
+          } else {
+            // Mark the point as checked
+            this.#markTileAsChecked(this.target);
+          }
+        } else {
+          const angleToTarget = Phaser.Math.Angle.Between(
             this.x + half,
             this.y + half,
             target.x,
             target.y
           );
 
-          if (this.inSight && this.scene.player) {
-            const distanceToPlayer = Phaser.Math.Distance.Between(
-              this.x + half,
-              this.y + half,
-              this.scene.player.x + half,
-              this.scene.player.y + half
+          if (this && this.active)
+            this.body?.setVelocity(
+              Math.cos(angleToTarget) * this.tileSize,
+              Math.sin(angleToTarget) * this.tileSize
             );
-            // If the player is in the range of attack
-            if (distanceToPlayer <= this.tileSize + 5) {
-              // Mark the point as checked
-              this.#markTileAsChecked(this.target);
-              // Attack
-              if (this.scene.player.active) {
-                this.data.values.phase = 'aggro';
-                this.path = null;
-                this.body?.setVelocity(0);
-                this.#alterRayAngle();
-                if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
-                  this?.anims.play('enemy_attack', true);
-                  this.keys['mouseLeft'] = 1;
-                }
-                // this.#setZone(this.scene.player);
-              }
-            }
-          }
-
-          if (distance <= 5 && !this.keys['mouseLeft']) {
-            if (this.awaitTimer !== null) {
-              clearInterval(this.awaitTimer);
-              this.awaitTimer = null;
-            }
-            // If there are path to go
-            if (this.path.length) {
-              this.target = this.path.shift();
-              // this.#followThePath();
-              this.#moveToTarget(this.target);
-            } else {
-              // Mark the point as checked
-              this.#markTileAsChecked(this.target);
-              this.#stopMoving();
-            }
-          } else {
-            const angleToTarget = Phaser.Math.Angle.Between(
-              this.x + half,
-              this.y + half,
-              target.x,
-              target.y
-            );
-
-            if (this && this.active)
-              this.body?.setVelocity(
-                Math.cos(angleToTarget) * this.tileSize,
-                Math.sin(angleToTarget) * this.tileSize
-              );
-          }
         }
-      }, 200);
+      }
     }
   }
 
@@ -520,9 +506,17 @@ export default class Skeleton extends unit {
     const newAngle1 = angle + Phaser.Math.DegToRad(45);
 
     this.body?.setVelocity(
-      Math.cos(newAngle1) * 100,
-      Math.sin(newAngle1) * 100
+      Math.cos(newAngle1) * this.tileSize,
+      Math.sin(newAngle1) * this.tileSize
     );
+
+    this.scene.time.delayedCall(500, () => {
+      if (this.target) {
+        this.#moveToTarget(this.target);
+      } else {
+        this.#stopMoving();
+      }
+    });
   }
 
   onCollide(self: any, target: any) {
@@ -537,10 +531,6 @@ export default class Skeleton extends unit {
         if (this.shouldAvoid(target)) {
           this.steerAway(target);
         } else {
-          if (this.awaitTimer) {
-            clearInterval(this.awaitTimer);
-            this.awaitTimer = null;
-          }
           this.#stopMoving();
         }
       }
