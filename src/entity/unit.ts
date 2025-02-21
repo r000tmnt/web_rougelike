@@ -86,6 +86,13 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  addOverlap(target: any) {
+    this.scene.physics.add.overlap(this, target, () => {
+      console.log('overlap with ', target);
+      this.overlap = true;
+    });
+  }
+
   attack(target: any, isPlayer: boolean) {
     const result = calculateDamage(this.data.values, target.data.values);
 
@@ -236,7 +243,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
           const pointedItem = this.scene.droppedItems[group].value[index];
 
           if (this.scene.player) {
-            const { x, y, data } = this.scene.player;
+            const { x, y } = this.scene.player;
             // If the item is with the pick up range
             const distance = Phaser.Math.Distance.Between(
               x,
@@ -244,9 +251,8 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
               pointedItem.x,
               pointedItem.y
             );
-            if (distance <= this.tileSize) {
+            if (distance <= this.tileSize)
               this.pickUpItem(newItem, group, index);
-            }
           }
         }
       });
