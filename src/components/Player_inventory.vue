@@ -69,23 +69,23 @@
               index,
               hoveredIndex
             )}`"
+            :draggable="false"
             @mouseenter="mouseOverEventWrapper"
             @mouseleave="resetPosition"
             @contextmenu.prevent="useItem(player.bag[index])"
-            :draggable="player.bag[index] ? true : false"
-            @dragstart="
-              dragStart(
-                $event,
-                player.bag[index] ? player.bag[index] : {},
-                index
-              )
+            @mousedown="
+              ($event) =>
+                dragStart(
+                  $event,
+                  player.bag[index] ? player.bag[index] : {},
+                  index
+                )
             "
-            @drop="onDrop($event, index)"
+            @mousemove="onDrag"
+            @mouseup="onDrop"
             @dragover.prevent
-            @dragenter="dragEnter($event)"
-            @dragleave="dragLeave($event)"
           >
-            <label :for="String(index)">
+            <label :for="String(index)" v-if="draggingIndex !== index">
               <!-- {{ index }} -->
 
               <template v-if="player.bag[index]">
@@ -96,7 +96,6 @@
                     Math.floor(windowWidth / 100) * 0.9
                   }px;pointer-events:none;height:100%;`"
                 >
-                  <!-- {{ player.bag[index].name }} -->
                   <Sprite_image :index="player.bag[index].index" />
                   <div
                     v-if="player.bag[index].amount > 1"
@@ -106,6 +105,16 @@
                     {{ player.bag[index].amount }}
                   </div>
                 </div>
+              </template>
+            </label>
+
+            <label :for="String(index)" v-else>
+              <template v-if="player.bag[index]">
+                <Sprite_image
+                  id="draggable"
+                  :index="player.bag[index].index"
+                  :style="`left: ${draggingPosition.x}px; top:${draggingPosition.y}px;`"
+                />
               </template>
             </label>
           </div>
@@ -140,6 +149,7 @@ const {
   windowWidth,
   windowHeight,
   dynamicWidth,
+  tileSize,
   borderSize,
 } = storeToRefs(gameStore);
 
@@ -160,6 +170,15 @@ const inventoryContent = ref<HTMLDivElement>();
 const inventoryHeaderHeight = ref<number>(0);
 
 const draggingIndex = ref<number>(-1);
+
+// const dragging = ref<boolean>(false);
+
+const draggingItem = ref<item | object>({});
+
+const draggingPosition = ref({
+  x: 0,
+  y: 0,
+});
 
 // const activeFilter = ref<number[]>([]);
 
@@ -216,95 +235,84 @@ const useItem = (item: item) => {
   console.log('use item ', item);
 };
 
-const dragStart = (e: DragEvent, item: item | object, index: number) => {
+const dragStart = (e: MouseEvent, item: item | object, index: number) => {
   console.log('inventory drag start ', e);
   // console.log('drag item ', item);
-  if (Object.entries(item).length && e.dataTransfer) {
-    draggingIndex.value = index;
-    e.dataTransfer.dropEffect = 'move';
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(
-      'item',
-      JSON.stringify({ fromEquip: false, data: item })
-    );
-  }
+  // dragging.value = true;
+  draggingIndex.value = index;
+  draggingItem.value = item;
 };
 
-const dragEnter = (e: DragEvent) => {
-  console.log('inventory drag enter ', e);
-  if (e.target) {
-    const target = e.target as HTMLDivElement;
-    target.classList.add('drag-highlight');
-  }
+const onDrag = (e: MouseEvent) => {
+  // console.log('dragging :>>>', e);
+  draggingPosition.value = {
+    x: e.clientX - tileSize.value / 2,
+    y: e.clientY - tileSize.value / 2,
+  };
 };
 
-const dragLeave = (e: DragEvent) => {
-  console.log('inventory drag leave ', e);
-  if (e.target) {
-    const target = e.target as HTMLDivElement;
-    target.classList.remove('drag-highlight');
-  }
-};
-
-const onDrop = (e: DragEvent, index: number) => {
+const onDrop = (e: MouseEvent) => {
   console.log('On drop ', e);
-  if (e.target) {
-    const target = e.target as HTMLDivElement;
-    target.classList.remove('drag-highlight');
-  }
 
-  if (e.dataTransfer) {
-    const { fromEquip, data } = JSON.parse(e.dataTransfer.getData('item'));
-    console.log('inventory drop ', data);
+  if (hoveredIndex.value >= 0) {
+    const tempItem = JSON.parse(JSON.stringify(draggingItem.value));
+    console.log('tempItem ', tempItem);
     // If the bag is not full
     if (player.value.bag.length < player.value.attribute_limit.bag) {
       // If the room is occupied
-      if (player.value.bag[index]) {
-        if (data.type >= 5) {
-          if (data.type === player.value.bag[index].type) {
-            player.value.bag[index].amount += data.amount;
+      if (player.value.bag[hoveredIndex.value]) {
+        // If the item is not an equipment
+        if (tempItem.type >= 5) {
+          // If the item is stackable
+          if (tempItem.type === player.value.bag[hoveredIndex.value].type) {
+            const { amount, limit } = player.value.bag[hoveredIndex.value];
+            if (amount + tempItem.amount > limit) {
+              const over = tempItem.amount - (limit - amount);
+              player.value.bag[hoveredIndex.value].amount = limit;
+              // Find space for the remaining item
+              let empty = player.value.bag.find((item) => !item.index);
+              empty = tempItem;
+              if (empty) empty.amount = over;
+            } else {
+              player.value.bag[hoveredIndex.value].amount += tempItem.amount;
+            }
           } else {
-            // Trigger dragstart event
-            e.target?.dispatchEvent(
-              new DragEvent('dragstart', {
-                bubbles: false,
-                cancelable: true,
-              })
+            // Swap the items
+            const itemToSwap = JSON.parse(
+              JSON.stringify(player.value.bag[hoveredIndex.value])
             );
-
-            player.value.bag[index] = data;
+            player.value.bag[hoveredIndex.value] = tempItem;
+            player.value.bag[draggingIndex.value] = itemToSwap;
           }
+        } else {
+          // If the item is an equipment
+          switch (tempItem.type) {
+            case 0:
+              player.value.equip.head = {} as item;
+              break;
+            case 1:
+              player.value.equip.body = {} as item;
+              break;
+            case 2:
+              player.value.equip.hand = {} as item;
+              break;
+            case 3:
+              player.value.equip.feet = {} as item;
+              break;
+            case 4:
+              player.value.equip.accessory = {} as item;
+              break;
+          }
+
+          // Deduct the un-equip item attributes
+          emitter.emit('player-unequip', tempItem);
         }
       } else {
-        player.value.bag[index] = data;
-      }
-
-      // If the item is an equipment
-      if (data.type < 5 && fromEquip) {
-        switch (data.type) {
-          case 0:
-            player.value.equip.head = {} as item;
-            break;
-          case 1:
-            player.value.equip.body = {} as item;
-            break;
-          case 2:
-            player.value.equip.hand = {} as item;
-            break;
-          case 3:
-            player.value.equip.feet = {} as item;
-            break;
-          case 4:
-            player.value.equip.accessory = {} as item;
-            break;
-        }
-
-        // Deduct the un-equip item attributes
-        emitter.emit('player-unequip', data);
-      } else {
+        player.value.bag[hoveredIndex.value] = tempItem;
       }
     }
   }
+  draggingIndex.value = -1;
 };
 
 onMounted(() => {
@@ -328,3 +336,9 @@ onMounted(() => {
   gameStore.setBorderSize(Math.floor(dynamicWidth.value / 40));
 });
 </script>
+
+<style scoped lang="scss">
+#draggable {
+  position: absolute;
+}
+</style>
