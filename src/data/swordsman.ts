@@ -13,7 +13,6 @@ export default {
     int: 3,
     spd: 3,
     luck: 2,
-    pd: 0.25,
   },
   add_attribute: {
     hp: 0,
@@ -23,7 +22,6 @@ export default {
     int: 0,
     spd: 0,
     luck: 0,
-    pd: 0,
   },
   total_attribute: {
     hp: 0,
@@ -33,7 +31,6 @@ export default {
     int: 0,
     spd: 0,
     luck: 0,
-    pd: 0,
   },
   attribute_limit: {
     hp: 10,
@@ -55,6 +52,7 @@ export default {
       amount: 1,
       desc: 'Simple outfit with a few pockets',
       equip: true,
+      index: 0,
       effect: {
         def: {
           type: 0,
@@ -75,6 +73,7 @@ export default {
       modifier: '',
       amount: 1,
       equip: true,
+      index: 0,
       desc: 'Used for practice mostly',
       effect: {
         str: {
@@ -91,6 +90,7 @@ export default {
       image: '',
       modifier: '',
       amount: 1,
+      index: 0,
       desc: "Good to protect the wearer's feet",
       equip: true,
       effect: {
@@ -104,6 +104,7 @@ export default {
   },
   exp: 90,
   pt: 0,
+  pd: 0.25,
   gold: 0,
   bag: [],
 } as player;
