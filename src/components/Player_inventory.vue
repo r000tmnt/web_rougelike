@@ -29,7 +29,13 @@
           >
         </div>
       </div>
-      <Player_equip v-if="currentSideView === 0" :player-data="player" />
+      <Player_equip
+        v-if="currentSideView === 0"
+        :player-data="player"
+        ref="equipRef"
+        :insideInventory="insideInventory"
+        @insideEquip="(v) => (insideEquip = v)"
+      />
       <Player_status v-else :player-data="player" />
     </div>
 
@@ -57,6 +63,8 @@
           class="col q-mx-auto flex"
           ref="inventoryContent"
           :style="`margin:${borderSize}px ${borderSize}px ${borderSize}px ${borderSize}px;`"
+          @mouseenter="insideInventory = true"
+          @mouseleave="insideInventory = false"
         >
           <div
             v-for="(space, index) in player.attribute_limit.bag"
@@ -153,7 +161,7 @@ const {
   borderSize,
 } = storeToRefs(gameStore);
 
-const { emitter, pixelatedBorder } = gameStore;
+const { pixelatedBorder } = gameStore;
 
 const rows = ref<number>(0);
 
@@ -171,8 +179,6 @@ const inventoryHeaderHeight = ref<number>(0);
 
 const draggingIndex = ref<number>(-1);
 
-// const dragging = ref<boolean>(false);
-
 const draggingItem = ref<item | object>({});
 
 const draggingPosition = ref({
@@ -180,13 +186,13 @@ const draggingPosition = ref({
   y: 0,
 });
 
-// const activeFilter = ref<number[]>([]);
+const insideInventory = ref<boolean>(false);
 
-emitter.on('remove-item', () => {
-  if (draggingIndex.value >= 0) {
-    player.value.bag[draggingIndex.value] = {} as item;
-  }
-});
+const insideEquip = ref<boolean>(false);
+
+const equipRef = ref<{ onDrop: (item: item) => void } | null>(null);
+
+// const activeFilter = ref<number[]>([]);
 
 const getItemPosition = (e: MouseEvent, colIndex: number) => {
   // console.log(e);
@@ -238,7 +244,6 @@ const useItem = (item: item) => {
 const dragStart = (e: MouseEvent, item: item | object, index: number) => {
   console.log('inventory drag start ', e);
   // console.log('drag item ', item);
-  // dragging.value = true;
   draggingIndex.value = index;
   draggingItem.value = item;
 };
@@ -251,14 +256,29 @@ const onDrag = (e: MouseEvent) => {
   };
 };
 
+const swapeItems = (item1: item, item2: item) => {
+  const itemToSwap = JSON.parse(JSON.stringify(item2));
+  player.value.bag[hoveredIndex.value] = item1;
+  player.value.bag[draggingIndex.value] = itemToSwap;
+};
+
 const onDrop = (e: MouseEvent) => {
   console.log('On drop ', e);
 
   if (hoveredIndex.value >= 0) {
     const tempItem = JSON.parse(JSON.stringify(draggingItem.value));
     console.log('tempItem ', tempItem);
+
+    // If the cursor is hover on equip
+    if (insideEquip.value) {
+      equipRef.value?.onDrop(
+        JSON.parse(JSON.stringify(draggingItem.value)) as item
+      );
+      player.value.bag[draggingIndex.value] = {} as item;
+    }
+    // If the cursor is hover on inventory
     // If the bag is not full
-    if (player.value.bag.length < player.value.attribute_limit.bag) {
+    else if (player.value.bag.length < player.value.attribute_limit.bag) {
       // If the room is occupied
       if (player.value.bag[hoveredIndex.value]) {
         // If the item is not an equipment
@@ -278,34 +298,11 @@ const onDrop = (e: MouseEvent) => {
             }
           } else {
             // Swap the items
-            const itemToSwap = JSON.parse(
-              JSON.stringify(player.value.bag[hoveredIndex.value])
-            );
-            player.value.bag[hoveredIndex.value] = tempItem;
-            player.value.bag[draggingIndex.value] = itemToSwap;
+            swapeItems(tempItem, player.value.bag[hoveredIndex.value]);
           }
         } else {
           // If the item is an equipment
-          switch (tempItem.type) {
-            case 0:
-              player.value.equip.head = {} as item;
-              break;
-            case 1:
-              player.value.equip.body = {} as item;
-              break;
-            case 2:
-              player.value.equip.hand = {} as item;
-              break;
-            case 3:
-              player.value.equip.feet = {} as item;
-              break;
-            case 4:
-              player.value.equip.accessory = {} as item;
-              break;
-          }
-
-          // Deduct the un-equip item attributes
-          emitter.emit('player-unequip', tempItem);
+          swapeItems(tempItem, player.value.bag[hoveredIndex.value]);
         }
       } else {
         player.value.bag[hoveredIndex.value] = tempItem;

@@ -1,24 +1,23 @@
 <template>
   <div>
-    <div id="equip" class="q-ma-auto">
+    <div
+      id="equip"
+      class="q-ma-auto"
+      @mouseenter="emit('insideEquip', true)"
+      @mouseleave="emit('insideEquip', false)"
+    >
       <div
         class="rounded-borders equip"
         v-for="(key, value, index) in player.equip"
         :key="value"
         :data-type="index"
-        :draggable="Object.entries(player.equip[value]).length ? true : false"
-        @dragstart="
-          dragStart(
-            $event,
-            Object.entries(player.equip[value]).length
-              ? player.equip[value]
-              : {}
-          )
-        "
-        @drop="onDrop($event, index)"
+        :draggable="false"
+        @mouseenter="(e) => getItemPosition(e, player.equip[value] as item, index)"
+        @mouseleave="resetPosition"
+        @mousedown="($event) => dragStart($event, value, index)"
+        @mousemove="onDrag"
+        @mouseup="onDrop"
         @dragover.prevent
-        @dragenter="dragEnter($event)"
-        @dragleave="dragLeave($event)"
       >
         <label :for="value">
           <template v-if="Object.entries(player.equip[value]).length">
@@ -29,10 +28,9 @@
                 index,
                 hoveredIndex
               )}`"
-              @mouseover="(e) => getItemPosition(e, player.equip[value], index)"
-              @mouseleave="resetPosition"
             >
-              {{ player.equip[value].name }}
+              <Sprite_image :index="(player.equip[value] as item).index" />
+              <!-- {{ (player.equip[value] as item).name }} -->
             </div>
           </template>
           <template v-else>
@@ -42,7 +40,7 @@
                 index,
                 hoveredIndex
               )}`"
-              @mouseover="mouseOverEventWrapper"
+              @mouseenter="mouseOverEventWrapper"
               @mouseleave="resetPosition"
             >
               {{ value }}
@@ -68,6 +66,8 @@ import { storeToRefs } from 'pinia';
 import { item } from '../model/item';
 import { ref, onMounted } from 'vue';
 import Item_desc from './Item_desc.vue';
+import Sprite_image from './Sprite_image.vue';
+import { AllowedEquipType } from 'src/model/character';
 
 const descElementPosition = ref<string>('');
 
@@ -77,6 +77,7 @@ const {
   getPlayer: player,
   dynamicWidth,
   borderSize,
+  tileSize,
   windowWidth,
 } = storeToRefs(gameStore);
 
@@ -87,6 +88,24 @@ const hoveredItem = ref<item | object>({});
 const hoveredIndex = ref<number>(-1);
 
 const itemFontSize = ref<number>(0);
+
+const draggingIndex = ref<number>(-1);
+
+const draggingItem = ref<item | object>({});
+
+const draggingPosition = ref({
+  x: 0,
+  y: 0,
+});
+
+const props = defineProps({
+  insideInventory: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const emit = defineEmits(['insideEquip', 'passItem']);
 
 const getItemPosition = (e: MouseEvent, item: item, index: number) => {
   // console.log(e);
@@ -113,7 +132,7 @@ const mouseOverEventWrapper = (e: MouseEvent) => {
       const type = Number(target.dataset.type);
       const equips = Object.entries(player.value.equip).map((e) => e);
       console.log(equips);
-      getItemPosition(e, equips[type][1], type);
+      getItemPosition(e, equips[type][1] as item, type);
     }
   }
 };
@@ -123,92 +142,96 @@ const resetPosition = () => {
   hoveredItem.value = {};
 };
 
-const checkingEquip = (equip: item, e: DragEvent) => {
+const checkingEquip = (equip: item) => {
   if (Object.entries(equip).length) {
     // Deduct the un-equip item attributes
     emitter.emit('player-unequip', equip);
-    // Trigger dragstart event
-    e.target?.dispatchEvent(
-      new DragEvent('dragstart', {
-        bubbles: false,
-        cancelable: true,
-      })
-    );
   }
 };
 
-const dragStart = (e: DragEvent, item: item | object) => {
-  console.log('equip drag start ', e);
+const dragStart = (e: MouseEvent, part: AllowedEquipType, index: number) => {
+  console.log('inventory drag start ', e);
   // console.log('drag item ', item);
-  if (Object.entries(item).length && e.dataTransfer) {
-    e.dataTransfer.dropEffect = 'move';
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(
-      'item',
-      JSON.stringify({ fromEquip: true, data: item })
-    );
+  if ((player.value.equip[part] as item).id) {
+    draggingItem.value = player.value.equip[part] as item;
+    draggingIndex.value = index;
   }
 };
 
-const dragEnter = (e: DragEvent) => {
-  console.log('equip drag enter ', e);
-  if (e.target) {
-    const target = e.target as HTMLDivElement;
-    target.classList.add('drag-highlight');
-  }
+const onDrag = (e: MouseEvent) => {
+  // console.log('dragging :>>>', e);
+  draggingPosition.value = {
+    x: e.clientX - tileSize.value / 2,
+    y: e.clientY - tileSize.value / 2,
+  };
 };
 
-const dragLeave = (e: DragEvent) => {
-  console.log('equip drag leave ', e);
-  if (e.target) {
-    const target = e.target as HTMLDivElement;
-    target.classList.remove('drag-highlight');
-  }
-};
-
-const onDrop = (e: DragEvent, type: number) => {
+const onDrop = (e: MouseEvent, item = null) => {
   console.log('On drop ', e);
-  if (e.target) {
-    const target = e.target as HTMLDivElement;
-    target.classList.remove('drag-highlight');
-  }
 
-  if (e.dataTransfer) {
-    const { data } = JSON.parse(e.dataTransfer.getData('item'));
-    console.log('equip drop ', data);
-    if (data.type === type) {
-      // Accept the item
-      switch (type) {
-        case 0:
-          checkingEquip(player.value.equip.head, e);
-          player.value.equip.head = data;
-          break;
-        case 1:
-          checkingEquip(player.value.equip.body, e);
-          player.value.equip.body = data;
-          break;
-        case 2:
-          checkingEquip(player.value.equip.hand, e);
-          player.value.equip.hand = data;
-          break;
-        case 3:
-          checkingEquip(player.value.equip.feet, e);
-          player.value.equip.feet = data;
-          break;
-        case 4:
-          checkingEquip(player.value.equip.accessory, e);
-          player.value.equip.accessory = data;
-          break;
-      }
+  const targetItem = item ? item : draggingItem.value;
 
-      // Apply whatever attributes the item holds
-      emitter.emit('player-equip', data);
-      emitter.emit('remove-item');
+  // If the cursor is hover on inventory
+  if (props.insideInventory) {
+    emit('passItem', targetItem);
+
+    switch ((targetItem as item).type) {
+      case 0:
+        player.value.equip.head = {} as item;
+        break;
+      case 1:
+        player.value.equip.body = {} as item;
+        break;
+      case 2:
+        player.value.equip.hand = {} as item;
+        break;
+      case 3:
+        player.value.equip.feet = {} as item;
+        break;
+      case 4:
+        player.value.equip.accessory = {} as item;
+        break;
     }
+
+    // Deduct the un-equip item attributes
+    emitter.emit('player-unequip', targetItem);
+    return;
   }
+
+  // If the cursor is hover on equip
+  // Accept the item
+  switch ((targetItem as item).type) {
+    case 0:
+      checkingEquip(player.value.equip.head as item);
+      player.value.equip.head = targetItem;
+      break;
+    case 1:
+      checkingEquip(player.value.equip.body as item);
+      player.value.equip.body = targetItem;
+      break;
+    case 2:
+      checkingEquip(player.value.equip.hand as item);
+      player.value.equip.hand = targetItem;
+      break;
+    case 3:
+      checkingEquip(player.value.equip.feet as item);
+      player.value.equip.feet = targetItem;
+      break;
+    case 4:
+      checkingEquip(player.value.equip.accessory as item);
+      player.value.equip.accessory = targetItem;
+      break;
+  }
+
+  // Apply whatever attributes the item holds
+  emitter.emit('player-equip', targetItem);
 };
 
 onMounted(() => {
   itemFontSize.value = Math.floor(windowWidth.value / 100) * 0.9;
+});
+
+defineExpose({
+  onDrop,
 });
 </script>
