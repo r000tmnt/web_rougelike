@@ -1,6 +1,9 @@
 import { item } from './item';
 
 type AllowedAttributeLimits = 'hp' | 'mp' | 'bag' | 'exp' | 'pd' | 'vd';
+
+export type AllowedEquipType = 'head' | 'body' | 'hand' | 'feet' | 'accessory';
+
 export interface position {
   y: number;
   x: number;
@@ -27,14 +30,10 @@ interface unit {
   attribute_limit: Record<AllowedAttributeLimits, number>;
 }
 
+type equipType = Record<AllowedEquipType, item | object>;
+
 export type player = unit & {
-  equip: {
-    head: item | object;
-    body: item | object;
-    hand: item | object;
-    feet: item | object;
-    accessory: item | object;
-  };
+  equip: equipType;
   gold: number;
   bag: Array<item>;
   exp: number;
