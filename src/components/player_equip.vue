@@ -146,6 +146,7 @@ const checkingEquip = (equip: item) => {
   if (Object.entries(equip).length) {
     // Deduct the un-equip item attributes
     emitter.emit('player-unequip', equip);
+    emit('passItem', equip);
   }
 };
 
@@ -166,65 +167,74 @@ const onDrag = (e: MouseEvent) => {
   };
 };
 
-const onDrop = (e: MouseEvent, item = null) => {
-  console.log('On drop ', e);
-
-  const targetItem = item ? item : draggingItem.value;
-
-  // If the cursor is hover on inventory
-  if (props.insideInventory) {
-    emit('passItem', targetItem);
-
-    switch ((targetItem as item).type) {
-      case 0:
-        player.value.equip.head = {} as item;
-        break;
-      case 1:
-        player.value.equip.body = {} as item;
-        break;
-      case 2:
-        player.value.equip.hand = {} as item;
-        break;
-      case 3:
-        player.value.equip.feet = {} as item;
-        break;
-      case 4:
-        player.value.equip.accessory = {} as item;
-        break;
-    }
-
-    // Deduct the un-equip item attributes
-    emitter.emit('player-unequip', targetItem);
-    return;
-  }
-
+const storeItem = (item: item) => {
   // If the cursor is hover on equip
   // Accept the item
-  switch ((targetItem as item).type) {
+  switch ((item as item).type) {
     case 0:
       checkingEquip(player.value.equip.head as item);
-      player.value.equip.head = targetItem;
+      player.value.equip.head = item;
       break;
     case 1:
       checkingEquip(player.value.equip.body as item);
-      player.value.equip.body = targetItem;
+      player.value.equip.body = item;
       break;
     case 2:
       checkingEquip(player.value.equip.hand as item);
-      player.value.equip.hand = targetItem;
+      player.value.equip.hand = item;
       break;
     case 3:
       checkingEquip(player.value.equip.feet as item);
-      player.value.equip.feet = targetItem;
+      player.value.equip.feet = item;
       break;
     case 4:
       checkingEquip(player.value.equip.accessory as item);
-      player.value.equip.accessory = targetItem;
+      player.value.equip.accessory = item;
       break;
   }
 
   // Apply whatever attributes the item holds
-  emitter.emit('player-equip', targetItem);
+  emitter.emit('player-equip', item);
+};
+
+const onDrop = (e: MouseEvent) => {
+  console.log('On drop ', e);
+
+  if (Object.entries(draggingItem.value).length) {
+    // If the cursor is hover on inventory
+    if (props.insideInventory) {
+      emit('passItem', draggingItem.value);
+
+      switch ((draggingItem.value as item).type) {
+        case 0:
+          player.value.equip.head = {} as item;
+          break;
+        case 1:
+          player.value.equip.body = {} as item;
+          break;
+        case 2:
+          player.value.equip.hand = {} as item;
+          break;
+        case 3:
+          player.value.equip.feet = {} as item;
+          break;
+        case 4:
+          player.value.equip.accessory = {} as item;
+          break;
+      }
+
+      // Deduct the un-equip item attributes
+      emitter.emit('player-unequip', draggingItem.value);
+      return;
+    }
+
+    if (hoveredIndex.value >= 0) {
+      storeItem(draggingItem.value as item);
+    } else {
+      // TODO - Drop item
+      emitter.emit('item-drop', [draggingItem.value]);
+    }
+  }
 };
 
 onMounted(() => {
@@ -232,6 +242,6 @@ onMounted(() => {
 });
 
 defineExpose({
-  onDrop,
+  storeItem,
 });
 </script>

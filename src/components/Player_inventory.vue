@@ -35,6 +35,7 @@
         ref="equipRef"
         :insideInventory="insideInventory"
         @insideEquip="(v) => (insideEquip = v)"
+        @passItem="storeItem"
       />
       <Player_status v-else :player-data="player" />
     </div>
@@ -161,7 +162,7 @@ const {
   borderSize,
 } = storeToRefs(gameStore);
 
-const { pixelatedBorder } = gameStore;
+const { emitter, pixelatedBorder } = gameStore;
 
 const rows = ref<number>(0);
 
@@ -190,7 +191,7 @@ const insideInventory = ref<boolean>(false);
 
 const insideEquip = ref<boolean>(false);
 
-const equipRef = ref<{ onDrop: (item: item) => void } | null>(null);
+const equipRef = ref<{ storeItem: (item: item) => void } | null>(null);
 
 // const activeFilter = ref<number[]>([]);
 
@@ -262,52 +263,83 @@ const swapeItems = (item1: item, item2: item) => {
   player.value.bag[draggingIndex.value] = itemToSwap;
 };
 
-const onDrop = (e: MouseEvent) => {
-  console.log('On drop ', e);
+const appendOrDropItem = (item: item, index: number) => {
+  // If the bag is not full
+  if (index <= player.value.attribute_limit.bag - 1) {
+    swapeItems(
+      item,
+      player.value.bag[index] ? player.value.bag[index] : ({} as item)
+    );
+  } else {
+    // TODO - Bag is full, drop item
+    emitter.emit('item-drop', [item]);
+  }
+};
 
-  if (hoveredIndex.value >= 0) {
-    const tempItem = JSON.parse(JSON.stringify(draggingItem.value));
-    console.log('tempItem ', tempItem);
+const stackOrAppendItem = (item: item) => {
+  const { amount, limit } = player.value.bag[hoveredIndex.value];
+  if (amount + item.amount > limit) {
+    const over = item.amount - (limit - amount);
+    player.value.bag[hoveredIndex.value].amount = limit;
+    item.amount = over;
+    // Find space for the remaining item
+    // Drop the remaining items
+    appendOrDropItem(item, player.value.bag.length);
+  } else {
+    player.value.bag[hoveredIndex.value].amount += item.amount;
+  }
+};
 
-    // If the cursor is hover on equip
-    if (insideEquip.value) {
-      equipRef.value?.onDrop(
-        JSON.parse(JSON.stringify(draggingItem.value)) as item
-      );
-      player.value.bag[draggingIndex.value] = {} as item;
-    }
-    // If the cursor is hover on inventory
-    // If the bag is not full
-    else if (player.value.bag.length < player.value.attribute_limit.bag) {
-      // If the room is occupied
-      if (player.value.bag[hoveredIndex.value]) {
-        // If the item is not an equipment
-        if (tempItem.type >= 5) {
-          // If the item is stackable
-          if (tempItem.type === player.value.bag[hoveredIndex.value].type) {
-            const { amount, limit } = player.value.bag[hoveredIndex.value];
-            if (amount + tempItem.amount > limit) {
-              const over = tempItem.amount - (limit - amount);
-              player.value.bag[hoveredIndex.value].amount = limit;
-              // Find space for the remaining item
-              let empty = player.value.bag.find((item) => !item.index);
-              empty = tempItem;
-              if (empty) empty.amount = over;
-            } else {
-              player.value.bag[hoveredIndex.value].amount += tempItem.amount;
-            }
-          } else {
-            // Swap the items
-            swapeItems(tempItem, player.value.bag[hoveredIndex.value]);
-          }
-        } else {
-          // If the item is an equipment
-          swapeItems(tempItem, player.value.bag[hoveredIndex.value]);
-        }
+const storeItem = (item: item) => {
+  console.log('store item ', item);
+
+  // If the room is occupied
+  if (player.value.bag[hoveredIndex.value]) {
+    // If the item is not an equipment
+    if (item.type >= 5) {
+      // If the item is stackable
+      if (item.type === player.value.bag[hoveredIndex.value].type) {
+        stackOrAppendItem(item);
       } else {
-        player.value.bag[hoveredIndex.value] = tempItem;
+        // Swap the items
+        swapeItems(item, player.value.bag[hoveredIndex.value]);
+      }
+    } else {
+      // If the item is an equipment
+      // If move items inside inventory
+      if (draggingIndex.value >= 0) {
+        swapeItems(item, player.value.bag[hoveredIndex.value]);
+      } else {
+        // If the item is move from equip section
+        const next = player.value.bag.length;
+        player.value.bag[next] = item;
       }
     }
+  } else {
+    // If the bag is not full
+    // Bag is full, drop the item
+    appendOrDropItem(item, hoveredIndex.value);
+  }
+};
+
+const onDrop = (e: MouseEvent) => {
+  console.log('On drop ', e);
+  const tempItem = JSON.parse(JSON.stringify(draggingItem.value));
+  console.log('tempItem ', tempItem);
+
+  // If the cursor is hover on inventory
+  if (hoveredIndex.value >= 0) {
+    storeItem(tempItem);
+  }
+
+  // If the cursor is hover on equip section
+  if (insideEquip.value) {
+    // TODO - Equip item
+    equipRef.value?.storeItem(tempItem as item);
+    player.value.bag[draggingIndex.value] = {} as item;
+  } else {
+    // TODO - Drop item
+    emitter.emit('item-drop', [tempItem]);
   }
   draggingIndex.value = -1;
 };
