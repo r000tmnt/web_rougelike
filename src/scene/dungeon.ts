@@ -71,10 +71,13 @@ export default class Dungeon extends Scene {
     this.eventsToRemove = [
       'chase-countdown-start',
       'chase-countdown-calling',
+      'player-update',
       'player-equip',
       'player-unequip',
+      'item-drop',
       'enemy-take-damage',
       'player-take-damage',
+      'player-level-up',
       'open-door',
       'reset',
       'pause',
