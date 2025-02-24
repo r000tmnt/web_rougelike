@@ -288,6 +288,10 @@ export default class Player extends unit {
     gameStore.emitter.on('player-unequip', (item: item) => {
       this.modifyEquip(item, 'takeoff');
     });
+
+    gameStore.emitter.on('item-drop', (items: Array<item>) => {
+      this.dropItems(items);
+    });
   }
 
   addOverlap(target: any) {
