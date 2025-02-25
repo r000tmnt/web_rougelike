@@ -176,6 +176,11 @@ export default class Skeleton extends unit {
         const { index, result } = data;
 
         if (index === this.index) {
+          // Need a value to decide if the enemy should stop moving
+          this.body?.setVelocity(0);
+
+          this.scene.anims.get('enemy_lose').frames[0].textureFrame;
+
           this.data.values.total_attribute.hp -=
             result > this.data.values.total_attribute.hp
               ? this.data.values.total_attribute.hp
@@ -199,6 +204,13 @@ export default class Skeleton extends unit {
             }
 
             gainExp(this.data.values as enemy);
+          } else {
+            this.scene.time.delayedCall(200, () => {
+              if (!this.inSight) {
+                this.anims?.play('enemy_idle');
+                this.#getRandomDirection();
+              }
+            });
           }
         }
       }
@@ -267,17 +279,40 @@ export default class Skeleton extends unit {
 
   #getRandomDirection() {
     if (!this.inSight && this.ray) {
-      let tempMap = JSON.parse(JSON.stringify(this.scene.walkable));
+      // Define a range of pixels to move
+      const { x, y } = getPosition(
+        this,
+        this.scene.offsetX,
+        this.scene.offsetY,
+        this.tileSize
+      );
+
+      const defaultBorder = this.tileSize * this.data.values.total_attribute.vd;
+
+      let tempMap = JSON.parse(JSON.stringify(this.scene.walkable)).filter(
+        (t: { x: number; y: number }) => {
+          if (
+            t.x >= this.x - defaultBorder &&
+            t.x <= this.x + defaultBorder &&
+            t.y >= this.y - defaultBorder &&
+            t.y <= this.y + defaultBorder
+          ) {
+            return t;
+          }
+        }
+      );
+
+      console.log(tempMap);
 
       tempMap = tempMap.filter(
         (t: { x: number; y: number; check: boolean }) => !t.check
       );
 
       if (!tempMap.length) {
-        tempMap = tempMap.map((t: { x: number; y: number; check: boolean }) => {
-          t.check = false;
-          return t;
-        });
+        this.target =
+          this.scene.walkable[
+            Phaser.Math.Between(0, this.scene.walkable.length - 1)
+          ];
       }
 
       this.target = tempMap[Phaser.Math.Between(0, tempMap.length - 1)];
@@ -400,6 +435,10 @@ export default class Skeleton extends unit {
       } else {
         this.#markTileAsChecked(this.target);
       }
+    }
+    // If the target/player is too close to get a path with navmesh
+    else if (!validTarget && this.inSight) {
+      this.#moveToTarget(this.target);
     } else {
       this.#markTileAsChecked(this.target);
     }
