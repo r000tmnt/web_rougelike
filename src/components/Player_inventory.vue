@@ -216,21 +216,14 @@ const getItemPosition = (e: MouseEvent, colIndex: number) => {
       el.left - Math.floor(windowWidth.value / 4) - dynamicWidth.value * 3
     }px, ${e.clientY >= 500 ? el.top - dynamicWidth.value : el.top}px)`;
   }
-
-  // Display the information
-  hoveredIndex.value = colIndex;
-
-  // console.log(
-  //   `hovered ${hoveredIndex.value} :>>>`,
-  //   player.value.bag[hoveredIndex.value]
-  // );
 };
 
 const mouseOverEventWrapper = (e: MouseEvent) => {
   // console.log(e);
   if (e.target) {
     const target = e.target as HTMLDivElement;
-    getItemPosition(e, Number(target.dataset.index));
+    hoveredIndex.value = Number(target.dataset.index);
+    getItemPosition(e, hoveredIndex.value);
   }
 };
 
@@ -257,19 +250,17 @@ const onDrag = (e: MouseEvent) => {
   };
 };
 
-const swapeItems = (item1: item, item2: item) => {
-  const itemToSwap = JSON.parse(JSON.stringify(item2));
+const swapeItems = (item1: item, item2: item | null) => {
   player.value.bag[hoveredIndex.value] = item1;
-  player.value.bag[draggingIndex.value] = itemToSwap;
+  player.value.bag[draggingIndex.value] = item2
+    ? JSON.parse(JSON.stringify(item2))
+    : undefined;
 };
 
 const appendOrDropItem = (item: item, index: number) => {
   // If the bag is not full
-  if (index <= player.value.attribute_limit.bag - 1) {
-    swapeItems(
-      item,
-      player.value.bag[index] ? player.value.bag[index] : ({} as item)
-    );
+  if (index >= 0 && index <= player.value.attribute_limit.bag - 1) {
+    swapeItems(item, player.value.bag[index] ? player.value.bag[index] : null);
   } else {
     // TODO - Bag is full, drop item
     emitter.emit('item-drop', [item]);
@@ -283,8 +274,9 @@ const stackOrAppendItem = (item: item) => {
     player.value.bag[hoveredIndex.value].amount = limit;
     item.amount = over;
     // Find space for the remaining item
+    const empty = player.value.bag.findIndex((i) => !i);
     // Drop the remaining items
-    appendOrDropItem(item, player.value.bag.length);
+    appendOrDropItem(item, empty);
   } else {
     player.value.bag[hoveredIndex.value].amount += item.amount;
   }
