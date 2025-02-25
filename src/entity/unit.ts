@@ -3,6 +3,7 @@ import { player, enemy, action } from 'src/model/character';
 import Dungeon from 'src/scene/dungeon';
 import { useGameStore } from 'src/stores/game';
 import { calculateDamage } from 'src/utils/battle';
+import { getPosition } from 'src/utils/path';
 
 export default class unit extends Phaser.Physics.Arcade.Sprite {
   scene: Dungeon;
@@ -88,7 +89,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
 
   addOverlap(target: any) {
     this.scene.physics.add.overlap(this, target, () => {
-      console.log('overlap with ', target);
+      // console.log('overlap with ', target);
       this.overlap = true;
     });
   }
@@ -174,8 +175,53 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
     const itemSprites: Phaser.GameObjects.Sprite[] = [];
     // Draw items
     dropItems.forEach((item: item, index: number) => {
-      const dropX = this.x + Phaser.Math.Between(-10, 58);
-      const dropY = this.y + Phaser.Math.Between(-10, 58);
+      // Check the surrounding tiles
+      const { x, y } = getPosition(
+        this,
+        this.scene.offsetX,
+        this.scene.offsetY,
+        this.tileSize
+      );
+
+      // TOP, RIGHT, BOTTOM, LEFT
+      const surroundingTiles = [
+        [x, y - 1],
+        [x + 1, y],
+        [x, y + 1],
+        [x - 1, y],
+      ];
+      const blockedTiles = surroundingTiles.filter(
+        (tile) => this.map[tile[1]][tile[0]] > 0
+      );
+
+      // Define a range of pixels to drop the item
+      const defaultStart = 0 - this.tileSize * 0.5;
+      const defaultLimit = this.tileSize * 1.5;
+      let startX = defaultStart,
+        endX = defaultLimit,
+        startY = defaultStart,
+        endY = defaultLimit;
+
+      blockedTiles.forEach((tile) => {
+        if (tile[0] < x) {
+          startX = 0;
+        }
+
+        if (tile[0] > x) {
+          endX = this.tileSize;
+        }
+
+        if (tile[1] < y) {
+          startY = 0;
+        }
+
+        if (tile[1] > y) {
+          endY = this.tileSize;
+        }
+      });
+
+      const dropX = this.x + Phaser.Math.Between(startX, endX);
+      const dropY = this.y + Phaser.Math.Between(startY, endY);
       const newItem = this.scene.add
         .sprite(dropX, dropY, 'demo_item', item.index)
         .setInteractive()
