@@ -132,9 +132,11 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
 
     this.body?.setVelocity(0);
 
-    this.data.values.total_attribute.hp -=
-      dmg > this.data.values.total_attribute.hp
-        ? this.data.values.total_attribute.hp
+    const data = (isPlayer)? gameStore.getPlayer : this.data.values
+
+    data.total_attribute.hp -=
+      dmg > data.total_attribute.hp
+        ? data.total_attribute.hp
         : dmg;
 
     const name = isPlayer ? this.name : this.name.split('_')[0];
@@ -146,7 +148,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
     this.scene.juice.shake(this, { x: 1, repeat: 2 });
 
     // If this unit run out of hp
-    if (this.data.values.total_attribute.hp === 0) {
+    if (data.total_attribute.hp === 0) {
       this.status = 'dead';
       // If the player is taking damage
       if (isPlayer) {
@@ -192,7 +194,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
       });
     }
 
-    if (isPlayer) gameStore.setPlayerStatus(this.data.values as player);
+    if (isPlayer) gameStore.setPlayerStatus(data as player);
   }
 
   prepareDropItems() {
