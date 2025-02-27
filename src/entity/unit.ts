@@ -116,7 +116,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         this.dmgText.setVisible(true);
       }
 
-      target.takeDamage(result.value, !isPlayer);
+      target.takeDamage(result.value, !isPlayer, target);
     }
 
     this.scene.time.delayedCall(500, () => {
@@ -126,7 +126,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  takeDamage(dmg: number, isPlayer: boolean) {
+  takeDamage(dmg: number, isPlayer: boolean, self: any) {
     const gameStore = useGameStore();
     this.status = 'hit';
 
@@ -137,7 +137,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         ? this.data.values.total_attribute.hp
         : dmg;
 
-    const name = this.name.split('_')[0];
+    const name = isPlayer ? this.name : this.name.split('_')[0];
 
     // console.log('current hp ', this.data.values.base_attribute.hp
     this.setFrame(
@@ -181,15 +181,14 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         });
       } else {
         // Enemy taking damage
-        if (this.active)
-          gameStore.emitter.emit('enemy-lose', Number(this.name.split('_')[1]));
+        if (this.active) self.enemyLose();
       }
     } else {
       this.scene.time.delayedCall(200, () => {
         this.status = '';
         this.anims.play(`${name}_idle`);
         this.keys['mouseLeft'] = 0;
-        gameStore.emitter.emit('enemy-resume', Number(this.name.split('_')[1]));
+        if (!isPlayer && !self.inSight) self.getRandomDirection();
       });
     }
 
