@@ -88,6 +88,15 @@ export default class Skeleton extends unit {
     setAnimation(this.scene, 'enemy_walking', `${texture}_idle`, 0, 2, 5, -1);
     setAnimation(this.scene, 'enemy_attack', `${texture}_attack`, 0, 4, 10, 0);
     setAnimation(this.scene, 'enemy_lose', `${texture}_lose`, 0, 5, 8, 0);
+    setAnimation(
+      this.scene,
+      'enemy_take_damage',
+      `${texture}_lose`,
+      0,
+      5,
+      5,
+      0
+    );
 
     this.addCollision(groundLayer, this.onCollide);
     this.addCollision(player, this.onCollide);
@@ -109,9 +118,9 @@ export default class Skeleton extends unit {
 
     console.log('enemy? ', this);
     this.anims.play('enemy_idle');
-    setTimeout(() => {
+    this.scene.time.delayedCall(1000, () => {
       this.#getRandomDirection();
-    }, 1000);
+    });
   }
 
   #setZone(player: Phaser.Types.Physics.ArcadeWithDynamicBody) {
@@ -165,56 +174,30 @@ export default class Skeleton extends unit {
       }
     );
 
-    gameStore.emitter.on(
-      'enemy-take-damage',
-      (data: { index: number; result: number }) => {
-        if (this.keys['mouseLeft'] === 1) {
-          // Release key
-          this.keys['mouseLeft'] = 0;
+    gameStore.emitter.on('enemy-lose', (index: number) => {
+      // Proceed to level up if the enemy is active
+      if (this.index === index) {
+        this.anims.play('enemy_lose');
+        this.ray?.destroy();
+        this.zone?.destroy();
+        if (this.path) this.path = null;
+        this.target = null;
+        this.disableBody();
+        // this.scene.removeEnemyIntheRoom(this.index);
+        // this.scene.events.off('update', this.#update);
+
+        // Drop items
+        if (this.data.values.bag.length) {
+          this.prepareDropItems();
         }
 
-        const { index, result } = data;
-
-        if (index === this.index) {
-          // Need a value to decide if the enemy should stop moving
-          this.body?.setVelocity(0);
-
-          this.scene.anims.get('enemy_lose').frames[0].textureFrame;
-
-          this.data.values.total_attribute.hp -=
-            result > this.data.values.total_attribute.hp
-              ? this.data.values.total_attribute.hp
-              : result;
-
-          // Proceed to level up if the enemy is active
-          if (this.data.values.total_attribute.hp === 0 && this.active) {
-            this.anims.play('enemy_lose');
-            this.status = 'dead';
-            this.ray?.destroy();
-            this.zone?.destroy();
-            if (this.path) this.path = null;
-            this.target = null;
-            // this.scene.removeEnemyIntheRoom(this.index);
-            this.disableBody();
-            // this.scene.events.off('update', this.#update);
-
-            // Drop items
-            if (this.data.values.bag.length) {
-              this.prepareDropItems();
-            }
-
-            gainExp(this.data.values as enemy);
-          } else {
-            this.scene.time.delayedCall(200, () => {
-              if (!this.inSight) {
-                this.anims?.play('enemy_idle');
-                this.#getRandomDirection();
-              }
-            });
-          }
-        }
+        gainExp(this.data.values as enemy);
       }
-    );
+    });
+
+    gameStore.emitter.emit('enemy-resume', (index: number) => {
+      if (this.index === index && !this.inSight) this.#getRandomDirection();
+    });
   }
 
   #setRay(raycaster: Raycaster, x: number, y: number, player: any) {
@@ -313,9 +296,9 @@ export default class Skeleton extends unit {
           this.scene.walkable[
             Phaser.Math.Between(0, this.scene.walkable.length - 1)
           ];
+      } else {
+        this.target = tempMap[Phaser.Math.Between(0, tempMap.length - 1)];
       }
-
-      this.target = tempMap[Phaser.Math.Between(0, tempMap.length - 1)];
 
       this.#alterRayAngle();
       this.#GetPath();
@@ -478,9 +461,7 @@ export default class Skeleton extends unit {
               }
             }
           }
-        }
-
-        if (distance <= 0 && !this.keys['mouseLeft']) {
+        } else if (distance <= 0 && !this.keys['mouseLeft']) {
           // If there are path to go
           if (this.path.length) {
             this.target = this.path.shift();
@@ -500,7 +481,7 @@ export default class Skeleton extends unit {
             target.y
           );
 
-          if (this && this.active)
+          if (this.active)
             this.body?.setVelocity(
               Math.cos(angleToTarget) * this.tileSize,
               Math.sin(angleToTarget) * this.tileSize
