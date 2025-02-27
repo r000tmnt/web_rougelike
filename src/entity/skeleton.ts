@@ -124,11 +124,10 @@ export default class Skeleton extends unit {
   }
 
   #setZone(player: Phaser.Types.Physics.ArcadeWithDynamicBody) {
-    const half = this.tileSize / 2;
     this.zone = this.scene.add.zone(
-      this.flipX ? this.x + this.tileSize : this.x - half,
+      this.flipX ? this.x + this.tileSize : this.x,
       this.y,
-      half,
+      5,
       this.tileSize
     );
     this.zone.setOrigin(0, 0);
@@ -244,24 +243,27 @@ export default class Skeleton extends unit {
       } else if (this.status === 'dead') {
         // DO NOTHING, just stay dead
       } else {
+          if (this.scene.player){
+            this.overlap = this.scene.physics.overlap(
+              this.zone,
+              this.scene.player
+            );
+          }
+
         // If the ray doesn't hit anything and the player were in sight
         if (!this.ray?.body.embedded && this.inSight) {
           console.log(`${this.name} lost the player`);
           this.inSight = false;
           this.data.values.phase = 'searching';
-        }
+          // Get the last known position of the player
+          this.#markPlayerInSight(this.scene.player)
+        }else{
+          if (this.target) {
+            this.#alterRayAngle();
 
-        if (this.scene.player)
-          this.overlap = this.scene.physics.overlap(
-            this.zone,
-            this.scene.player
-          );
-
-        if (this.target) {
-          this.#alterRayAngle();
-
-          if (delta >= 200 && !this.keys['mouseLeft']) {
-            this.#moveToTarget(this.target);
+            if (delta >= 200 && !this.keys['mouseLeft']) {
+              this.#moveToTarget(this.target);
+            }
           }
         }
       }
@@ -271,15 +273,16 @@ export default class Skeleton extends unit {
   getRandomDirection() {
     if (!this.inSight && this.ray) {
       // Define a range of pixels to move
+      const half = this.tileSize / 2
       const defaultBorder = this.tileSize * this.data.values.total_attribute.vd;
 
       let tempMap = JSON.parse(JSON.stringify(this.scene.walkable)).filter(
         (t: { x: number; y: number }) => {
           if (
-            t.x >= this.x - defaultBorder &&
-            t.x <= this.x + defaultBorder &&
-            t.y >= this.y - defaultBorder &&
-            t.y <= this.y + defaultBorder
+            t.x >= (this.x + half) - defaultBorder &&
+            t.x <= (this.x + half) + defaultBorder &&
+            t.y >= (this.y + half) - defaultBorder &&
+            t.y <= (this.y + half) + defaultBorder
           ) {
             return t;
           }
@@ -309,13 +312,13 @@ export default class Skeleton extends unit {
       const half = this.tileSize / 2;
 
       // Get the angle between the enemy and the player or the angle of moving direction
-      const radain =
+      const radian =
         this.data.values.phase === 'aggro' ||
         this.data.values.phase === 'chasing'
           ? Phaser.Math.Angle.BetweenPoints(this, this.scene.player)
           : Math.atan2(this.body.velocity.y, this.body.velocity.x);
 
-      this.facingAngle = Phaser.Math.RadToDeg(radain);
+      this.facingAngle = Phaser.Math.RadToDeg(radian);
 
       this.ray.setAngleDeg(this.facingAngle);
 
@@ -327,41 +330,41 @@ export default class Skeleton extends unit {
 
       switch (facingDirection) {
         case 0: // up
-          this.zone.setPosition(this.x, this.y - half);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(this.x, this.y - 5);
+          this.zone.setDisplaySize(this.tileSize, 5);
           break;
         case 1: // up right
-          this.zone.setPosition(this.x + half, this.y - half);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(this.x + 5, this.y - 5);
+          this.zone.setDisplaySize(this.tileSize, 5);
           this.setFlipX(true);
           break;
         case 2: // right
-          this.zone.setPosition(this.x + half, this.y);
-          this.zone.setDisplaySize(half, this.tileSize);
+          this.zone.setPosition(this.x + this.tileSize, this.y);
+          this.zone.setDisplaySize(5, this.tileSize);
           this.setFlipX(true);
           break;
         case 3: // right down
-          this.zone.setPosition(this.x + half, this.y + this.tileSize);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(this.x + 5, this.y + this.tileSize);
+          this.zone.setDisplaySize(this.tileSize, 5);
           this.setFlipX(true);
           break;
         case 4: // down
           this.zone.setPosition(this.x, this.y + this.tileSize);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setDisplaySize(this.tileSize, 5);
           break;
         case 5: // left down
-          this.zone.setPosition(this.x - half, this.y + this.tileSize);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(this.x, this.y + this.tileSize);
+          this.zone.setDisplaySize(this.tileSize, 5);
           this.setFlipX(false);
           break;
         case 6: // left
-          this.zone.setPosition(this.x - half, this.y);
-          this.zone.setDisplaySize(half, this.tileSize);
+          this.zone.setPosition(this.x, this.y);
+          this.zone.setDisplaySize(5, this.tileSize);
           this.setFlipX(false);
           break;
         case 7: // left up
-          this.zone.setPosition(this.x - half, this.y - half);
-          this.zone.setDisplaySize(this.tileSize, half);
+          this.zone.setPosition(this.x, this.y + 5);
+          this.zone.setDisplaySize(this.tileSize, 5);
           this.setFlipX(false);
           break;
       }
@@ -418,11 +421,8 @@ export default class Skeleton extends unit {
         this.#markTileAsChecked(this.target);
       }
     }
-    // If the target/player is too close to get a path with navmesh
-    else if (!validTarget && this.inSight) {
+    else{
       this.#moveToTarget(this.target);
-    } else {
-      this.#markTileAsChecked(this.target);
     }
   }
 
