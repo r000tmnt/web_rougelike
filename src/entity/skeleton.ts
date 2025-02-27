@@ -119,7 +119,7 @@ export default class Skeleton extends unit {
     console.log('enemy? ', this);
     this.anims.play('enemy_idle');
     this.scene.time.delayedCall(1000, () => {
-      this.#getRandomDirection();
+      this.getRandomDirection();
     });
   }
 
@@ -173,31 +173,24 @@ export default class Skeleton extends unit {
         this.#markPlayerInSight(player);
       }
     );
+  }
 
-    gameStore.emitter.on('enemy-lose', (index: number) => {
-      // Proceed to level up if the enemy is active
-      if (this.index === index) {
-        this.anims.play('enemy_lose');
-        this.ray?.destroy();
-        this.zone?.destroy();
-        if (this.path) this.path = null;
-        this.target = null;
-        this.disableBody();
-        // this.scene.removeEnemyIntheRoom(this.index);
-        // this.scene.events.off('update', this.#update);
+  enemyLose() {
+    this.anims.play('enemy_lose');
+    this.ray?.destroy();
+    this.zone?.destroy();
+    if (this.path) this.path = null;
+    this.target = null;
+    this.disableBody();
+    // this.scene.removeEnemyIntheRoom(this.index);
+    // this.scene.events.off('update', this.#update);
 
-        // Drop items
-        if (this.data.values.bag.length) {
-          this.prepareDropItems();
-        }
+    // Drop items
+    if (this.data.values.bag.length) {
+      this.prepareDropItems();
+    }
 
-        gainExp(this.data.values as enemy);
-      }
-    });
-
-    gameStore.emitter.emit('enemy-resume', (index: number) => {
-      if (this.index === index && !this.inSight) this.#getRandomDirection();
-    });
+    gainExp(this.data.values as enemy);
   }
 
   #setRay(raycaster: Raycaster, x: number, y: number, player: any) {
@@ -238,8 +231,11 @@ export default class Skeleton extends unit {
     );
   }
 
-  #update() {
-    if (this && this.ray?.body) {
+  // https://docs.phaser.io/api-documentation/event/scenes-events#update
+  // time: The current time. Either a High Resolution Timer value if it comes from Request Animation Frame, or Date.now if using SetTimeout.
+  // delta: The delta time in ms since the last frame. This is a smoothed and capped value based on the FPS rate.
+  #update(time: number, delta: number) {
+    if (this.ray?.body) {
       if (this.status === 'hit') {
         // TODO: Play get hit animation
         this.scene.time.delayedCall(200, () => {
@@ -248,28 +244,33 @@ export default class Skeleton extends unit {
       } else if (this.status === 'dead') {
         // DO NOTHING, just stay dead
       } else {
-        this.#alterRayAngle();
-
         // If the ray doesn't hit anything and the player were in sight
         if (!this.ray?.body.embedded && this.inSight) {
           console.log(`${this.name} lost the player`);
           this.inSight = false;
           this.data.values.phase = 'searching';
         }
+
+        if (this.scene.player)
+          this.overlap = this.scene.physics.overlap(
+            this.zone,
+            this.scene.player
+          );
+
+        if (this.target) {
+          this.#alterRayAngle();
+
+          if (delta >= 200 && !this.keys['mouseLeft']) {
+            this.#moveToTarget(this.target);
+          }
+        }
       }
     }
   }
 
-  #getRandomDirection() {
+  getRandomDirection() {
     if (!this.inSight && this.ray) {
       // Define a range of pixels to move
-      const { x, y } = getPosition(
-        this,
-        this.scene.offsetX,
-        this.scene.offsetY,
-        this.tileSize
-      );
-
       const defaultBorder = this.tileSize * this.data.values.total_attribute.vd;
 
       let tempMap = JSON.parse(JSON.stringify(this.scene.walkable)).filter(
@@ -299,8 +300,6 @@ export default class Skeleton extends unit {
       } else {
         this.target = tempMap[Phaser.Math.Between(0, tempMap.length - 1)];
       }
-
-      this.#alterRayAngle();
       this.#GetPath();
     }
   }
@@ -428,65 +427,61 @@ export default class Skeleton extends unit {
   }
 
   #moveToTarget(target: Phaser.Geom.Point) {
-    if (this.ray && target) {
-      this.#alterRayAngle();
-      this.anims.play('enemy_walking');
-      const half = this.tileSize / 2;
-      if (this.status !== 'dead') {
-        const distance = Phaser.Math.Distance.Between(
+    this.#alterRayAngle();
+    const half = this.tileSize / 2;
+    if (this.status !== 'dead') {
+      const distance = Phaser.Math.Distance.Between(
+        this.x + half,
+        this.y + half,
+        target.x,
+        target.y
+      );
+
+      if (this.inSight && this.scene.player) {
+        // If the player is in the range of attack
+        if (this.overlap) {
+          // Attack
+          if (this.scene.player.active) {
+            if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
+              console.log('enemy attack!');
+              this.keys['mouseLeft'] = 1;
+              this.data.values.phase = 'aggro';
+              this.path = null;
+              this.body?.setVelocity(0);
+              this.#alterRayAngle();
+              this.anims.play('enemy_attack', true);
+            }
+            return;
+          }
+        }
+      }
+
+      if (distance <= 0 && !this.keys['mouseLeft']) {
+        // If there are path to go
+        if (this.path.length) {
+          this.target = this.path.shift();
+          this.body?.setVelocity(0);
+          this.scene.time.delayedCall(300, () => {
+            this.#moveToTarget(this.target);
+          });
+        } else {
+          // Mark the point as checked
+          this.#markTileAsChecked(this.target);
+        }
+      } else {
+        const angleToTarget = Phaser.Math.Angle.Between(
           this.x + half,
           this.y + half,
           target.x,
           target.y
         );
 
-        if (this.inSight && this.scene.player) {
-          const distanceToPlayer = Phaser.Math.Distance.Between(
-            this.x + half,
-            this.y + half,
-            this.scene.player.x + half,
-            this.scene.player.y + half
-          );
-          // If the player is in the range of attack
-          if (distanceToPlayer <= this.tileSize + 5) {
-            // Attack
-            if (this.scene.player.active) {
-              this.data.values.phase = 'aggro';
-              this.path = null;
-              this.body?.setVelocity(0);
-              this.#alterRayAngle();
-              if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
-                this?.anims.play('enemy_attack', true);
-                this.keys['mouseLeft'] = 1;
-              }
-            }
-          }
-        } else if (distance <= 0 && !this.keys['mouseLeft']) {
-          // If there are path to go
-          if (this.path.length) {
-            this.target = this.path.shift();
-            this.body?.setVelocity(0);
-            this.scene.time.delayedCall(300, () => {
-              this.#moveToTarget(this.target);
-            });
-          } else {
-            // Mark the point as checked
-            this.#markTileAsChecked(this.target);
-          }
-        } else {
-          const angleToTarget = Phaser.Math.Angle.Between(
-            this.x + half,
-            this.y + half,
-            target.x,
-            target.y
-          );
-
-          if (this.active)
-            this.body?.setVelocity(
-              Math.cos(angleToTarget) * this.tileSize,
-              Math.sin(angleToTarget) * this.tileSize
-            );
-        }
+        if (this.active) this.anims.play('enemy_walking', true);
+        console.log('enemy walking');
+        this.body?.setVelocity(
+          Math.cos(angleToTarget) * this.tileSize,
+          Math.sin(angleToTarget) * this.tileSize
+        );
       }
     }
   }
@@ -500,7 +495,7 @@ export default class Skeleton extends unit {
         // Starting moving again
         setTimeout(() => {
           this.idleTimer = null;
-          if (this.status !== 'dead') this.#getRandomDirection();
+          if (this.status !== 'dead') this.getRandomDirection();
         }, 2000);
       }
     }
