@@ -116,24 +116,84 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         this.dmgText.setVisible(true);
       }
 
-      const gameStore = useGameStore();
-
-      gameStore.emitter.emit(
-        `${isPlayer ? 'enemy' : 'player'}-take-damage`,
-        isPlayer
-          ? {
-              index: target.index,
-              result: result.value,
-            }
-          : result.value
-      );
+      target.takeDamage(result.value, !isPlayer);
     }
 
-    setTimeout(() => {
+    this.scene.time.delayedCall(500, () => {
       this.dmgText.setVisible(false);
       this.dmgText.setFontSize(this.tileSize * 0.3);
       this.dmgText.setStyle({ color: '#ffffff' });
-    }, 500);
+    });
+  }
+
+  takeDamage(dmg: number, isPlayer: boolean) {
+    const gameStore = useGameStore();
+    this.status = 'hit';
+
+    this.body?.setVelocity(0);
+
+    this.data.values.total_attribute.hp -=
+      dmg > this.data.values.total_attribute.hp
+        ? this.data.values.total_attribute.hp
+        : dmg;
+
+    const name = this.name.split('_')[0];
+
+    // console.log('current hp ', this.data.values.base_attribute.hp
+    this.setFrame(
+      this.scene.anims.get(`${name}_take_damage`).frames[0].textureFrame
+    );
+    this.scene.juice.shake(this, { x: 1, repeat: 2 });
+
+    // If this unit run out of hp
+    if (this.data.values.total_attribute.hp === 0) {
+      this.status = 'dead';
+      // If the player is taking damage
+      if (isPlayer) {
+        this.active = false;
+        this.scene.camera?.pan(this.x, this.y, 200, 'Power2');
+        this.scene.camera?.zoomTo(2, 200);
+
+        this.scene.time.delayedCall(500, () => {
+          this.anims.play(`${name}_lose`);
+          this.setFrame(
+            this.scene.anims.get(`${name}_lose`).frames[1].textureFrame
+          );
+          // Tint the sprite with Decimal number
+          // this.setTint(8519680)
+          // this.setTintFill(8519680)
+
+          //FX Wipe
+          this.scene.time.delayedCall(500, () => {
+            const wipe = this.preFX?.addWipe(0.1, 0, 0);
+            this.scene.tweens.add({
+              targets: wipe,
+              progress: 1,
+              repeat: 0,
+              duration: 2000,
+            });
+            this.scene.time.delayedCall(2000, () => {
+              //Show Game over screen
+              gameStore.setGameOver(true);
+              this.scene.physics.pause();
+            });
+          });
+        });
+      } else {
+        // Enemy taking damage
+        if (this.active)
+          gameStore.emitter.emit('enemy-lose', Number(this.name.split('_')[1]));
+      }
+    } else {
+      this.scene.time.delayedCall(200, () => {
+        this.status = '';
+        this.anims.play(`${name}_idle`);
+        this.keys['mouseLeft'] = 0;
+        gameStore.emitter.emit('enemy-resume', Number(this.name.split('_')[1]));
+      });
+    }
+
+    if (isPlayer) gameStore.setPlayerStatus(this.data.values as player);
   }
 
   prepareDropItems() {
@@ -329,7 +389,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
   pickUpItem(item: Phaser.GameObjects.Sprite, group: number, index: number) {
     if (this.scene.player) {
       const { x, y, data } = this.scene.player;
-      // Check if the bag if full
+      // Check if the bag is not full
       if (data.values.bag.length < data.values.attribute_limit.bag) {
         // Pick up the item
         // Display item name on top of player sprite
