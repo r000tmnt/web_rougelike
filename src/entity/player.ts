@@ -169,65 +169,6 @@ export default class Player extends unit {
       gameStore.emitter.emit('chase-countdown-start', this);
     });
 
-    gameStore.emitter.on('player-take-damage', (dmg: number) => {
-      this.status = 'hit';
-
-      this.body?.setVelocity(0);
-
-      const data = gameStore.getPlayer;
-      data.total_attribute.hp -=
-        dmg > data.total_attribute.hp ? data.total_attribute.hp : dmg;
-
-      // console.log('current hp ', this.data.values.base_attribute.hp
-      this.setFrame(
-        this.scene.anims.get(`${this.name}_take_damage`).frames[0].textureFrame
-      );
-      this.scene.juice.shake(this, { x: 1, repeat: 2 });
-
-      // If player lose
-      if (data.total_attribute.hp === 0) {
-        this.active = false;
-        this.status = 'dead';
-        this.scene.camera?.pan(this.x, this.y, 200, 'Power2');
-        this.scene.camera?.zoomTo(2, 200);
-        setTimeout(() => {
-          this.anims.play(`${this.name}_lose`);
-
-          setTimeout(() => {
-            this.setFrame(
-              this.scene.anims.get(`${this.name}_lose`).frames[1].textureFrame
-            );
-            // Tint the sprite with Decimal number
-            // this.setTint(8519680)
-            // this.setTintFill(8519680)
-
-            //FX Wipe
-            this.scene.time.delayedCall(500, () => {
-              const wipe = this.preFX?.addWipe(0.1, 0, 0);
-              this.scene.tweens.add({
-                targets: wipe,
-                progress: 1,
-                repeat: 0,
-                duration: 2000,
-              });
-              this.scene.time.delayedCall(2000, () => {
-                //Show Game over screen
-                gameStore.setGameOver(true);
-                this.scene.physics.pause();
-              });
-            });
-          }, 500);
-        }, 500);
-      } else {
-        setTimeout(() => {
-          this.status = '';
-          this.anims.play(`${this.name}_lose`);
-          this.keys['mouseLeft'] = 0;
-        }, 200);
-      }
-      gameStore.setPlayerStatus(data);
-    });
-
     gameStore.emitter.on('player-level-up', () => {
       try {
         this.status = 'levelUp';
