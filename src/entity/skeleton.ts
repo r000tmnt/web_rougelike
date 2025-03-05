@@ -243,12 +243,12 @@ export default class Skeleton extends unit {
       } else if (this.status === 'dead') {
         // DO NOTHING, just stay dead
       } else {
-          if (this.scene.player){
-            this.overlap = this.scene.physics.overlap(
-              this.zone,
-              this.scene.player
-            );
-          }
+        if (this.scene.player) {
+          this.overlap = this.scene.physics.overlap(
+            this.zone,
+            this.scene.player
+          );
+        }
 
         // If the ray doesn't hit anything and the player were in sight
         if (!this.ray?.body.embedded && this.inSight) {
@@ -256,8 +256,8 @@ export default class Skeleton extends unit {
           this.inSight = false;
           this.data.values.phase = 'searching';
           // Get the last known position of the player
-          this.#markPlayerInSight(this.scene.player)
-        }else{
+          this.#markPlayerInSight(this.scene.player);
+        } else {
           if (this.target) {
             this.#alterRayAngle();
 
@@ -273,16 +273,16 @@ export default class Skeleton extends unit {
   getRandomDirection() {
     if (!this.inSight && this.ray) {
       // Define a range of pixels to move
-      const half = this.tileSize / 2
+      const half = this.tileSize / 2;
       const defaultBorder = this.tileSize * this.data.values.total_attribute.vd;
 
       let tempMap = JSON.parse(JSON.stringify(this.scene.walkable)).filter(
         (t: { x: number; y: number }) => {
           if (
-            t.x >= (this.x + half) - defaultBorder &&
-            t.x <= (this.x + half) + defaultBorder &&
-            t.y >= (this.y + half) - defaultBorder &&
-            t.y <= (this.y + half) + defaultBorder
+            t.x >= this.x + half - defaultBorder &&
+            t.x <= this.x + half + defaultBorder &&
+            t.y >= this.y + half - defaultBorder &&
+            t.y <= this.y + half + defaultBorder
           ) {
             return t;
           }
@@ -314,7 +314,8 @@ export default class Skeleton extends unit {
       // Get the angle between the enemy and the player or the angle of moving direction
       const radian =
         this.data.values.phase === 'aggro' ||
-        this.data.values.phase === 'chasing'
+        this.data.values.phase === 'chasing' ||
+        this.data.values.phase === 'searching'
           ? Phaser.Math.Angle.BetweenPoints(this, this.scene.player)
           : Math.atan2(this.body.velocity.y, this.body.velocity.x);
 
@@ -420,8 +421,7 @@ export default class Skeleton extends unit {
       } else {
         this.#markTileAsChecked(this.target);
       }
-    }
-    else{
+    } else {
       this.#moveToTarget(this.target);
     }
   }
