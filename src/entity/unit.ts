@@ -132,12 +132,10 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
 
     this.body?.setVelocity(0);
 
-    const data = (isPlayer)? gameStore.getPlayer : this.data.values
+    const data = isPlayer ? gameStore.getPlayer : this.data.values;
 
     data.total_attribute.hp -=
-      dmg > data.total_attribute.hp
-        ? data.total_attribute.hp
-        : dmg;
+      dmg > data.total_attribute.hp ? data.total_attribute.hp : dmg;
 
     const name = isPlayer ? this.name : this.name.split('_')[0];
 
@@ -391,10 +389,19 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
     if (this.scene.player) {
       const { x, y, data } = this.scene.player;
       // Check if the bag is not full
-      if (data.values.bag.length < data.values.attribute_limit.bag) {
+      const totalItem = data.values.bag.filter(
+        (i: item) => Object.entries(i).length
+      ).length;
+      if (totalItem < data.values.attribute_limit.bag) {
         // Pick up the item
         // Display item name on top of player sprite
-        const color = RARITY_COLORS[item.data.values.rarity].color || '#ffffff';
+        let color;
+        try {
+          color = RARITY_COLORS[item.data.values.rarity].color || '#ffffff';
+        } catch (error: any) {
+          console.log(error);
+          color = '#ffffff';
+        }
         const defaultY = y - 20;
         const lastText = this.activeText[this.activeText.length - 1];
         const updateY = lastText ? lastText.y - 20 : defaultY;
@@ -467,11 +474,17 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
           }
         }
 
-        if (
-          !isInTheBag &&
-          data.values.bag.length < data.values.attribute_limit.bag
-        ) {
-          data.values.bag.push(JSON.parse(JSON.stringify(item.data.values)));
+        if (!isInTheBag) {
+          const empty = data.values.bag.findIndex(
+            (i: item) => !i || !Object.entries(i).length
+          );
+          if (empty >= 0) {
+            data.values.bag[empty] = JSON.parse(
+              JSON.stringify(item.data.values)
+            );
+          } else {
+            data.values.bag.push(JSON.parse(JSON.stringify(item.data.values)));
+          }
         }
 
         // Remove the sprite on the screen
