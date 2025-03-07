@@ -15,37 +15,26 @@
         @mouseenter="(e) => getItemPosition(e, player.equip[value] as item, index)"
         @mouseleave="resetPosition"
         @mousedown="($event) => dragStart($event, value, index)"
-        @mousemove="onDrag"
-        @mouseup="onDrop"
         @dragover.prevent
       >
         <label :for="value">
-          <template v-if="Object.entries(player.equip[value]).length">
-            <div
-              class="item"
-              :style="`font-size:${itemFontSize}px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
-                borderSize,
-                index,
-                hoveredIndex
-              )}`"
-            >
-              <Sprite_image :index="(player.equip[value] as item).index" />
-              <!-- {{ (player.equip[value] as item).name }} -->
-            </div>
-          </template>
-          <template v-else>
-            <div
-              :style="`font-size:${itemFontSize}px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
-                borderSize,
-                index,
-                hoveredIndex
-              )}`"
-              @mouseenter="mouseOverEventWrapper"
-              @mouseleave="resetPosition"
-            >
-              {{ value }}
-            </div>
-          </template>
+          <div
+            class="item"
+            :style="`font-size:${itemFontSize}px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
+              borderSize,
+              index,
+              hoveredIndex
+            )}`"
+          >
+            <Sprite_image
+              v-if="
+                Object.entries(player.equip[value]).length &&
+                draggingIndex !== index
+              "
+              :index="(player.equip[value] as item).index"
+            />
+            <span v-else>{{ value }}</span>
+          </div>
         </label>
       </div>
     </div>
@@ -57,6 +46,17 @@
       :pixelated-border="pixelatedBorder(borderSize, -1, 0)"
       :item-data="hoveredItem"
     />
+
+    <!-- Dragging sprite -->
+    <Teleport to="body">
+      <label for="equip" v-show="Object.values(player.equip)[draggingIndex]">
+        <Sprite_image
+          ref="draggableSprite"
+          @drag-end="onDrop"
+          :index="(Object.values(player.equip)[draggingIndex] as item)?.index || 0"
+        />
+      </label>
+    </Teleport>
   </div>
 </template>
 
@@ -77,7 +77,6 @@ const {
   getPlayer: player,
   dynamicWidth,
   borderSize,
-  tileSize,
   windowWidth,
 } = storeToRefs(gameStore);
 
@@ -93,10 +92,7 @@ const draggingIndex = ref<number>(-1);
 
 const draggingItem = ref<item | object>({});
 
-const draggingPosition = ref({
-  x: 0,
-  y: 0,
-});
+const draggableSprite = ref();
 
 const props = defineProps({
   insideInventory: {
@@ -124,19 +120,6 @@ const getItemPosition = (e: MouseEvent, item: item, index: number) => {
   hoveredIndex.value = index;
 };
 
-const mouseOverEventWrapper = (e: MouseEvent) => {
-  // console.log(e);
-  if (e.target) {
-    const target = e.target as HTMLDivElement;
-    if (target.dataset.type) {
-      const type = Number(target.dataset.type);
-      const equips = Object.entries(player.value.equip).map((e) => e);
-      console.log(equips);
-      getItemPosition(e, equips[type][1] as item, type);
-    }
-  }
-};
-
 const resetPosition = () => {
   hoveredIndex.value = -1;
   hoveredItem.value = {};
@@ -156,15 +139,9 @@ const dragStart = (e: MouseEvent, part: AllowedEquipType, index: number) => {
   if ((player.value.equip[part] as item).id) {
     draggingItem.value = player.value.equip[part] as item;
     draggingIndex.value = index;
-  }
-};
 
-const onDrag = (e: MouseEvent) => {
-  // console.log('dragging :>>>', e);
-  draggingPosition.value = {
-    x: e.clientX - tileSize.value / 2,
-    y: e.clientY - tileSize.value / 2,
-  };
+    if (draggableSprite.value) draggableSprite.value.onDrag(e, true);
+  }
 };
 
 const storeItem = (item: item) => {
@@ -197,8 +174,8 @@ const storeItem = (item: item) => {
   emitter.emit('player-equip', item);
 };
 
-const onDrop = (e: MouseEvent) => {
-  console.log('On drop ', e);
+const onDrop = () => {
+  console.log('On drop');
 
   if (Object.entries(draggingItem.value).length) {
     // If the cursor is hover on inventory
@@ -225,15 +202,13 @@ const onDrop = (e: MouseEvent) => {
 
       // Deduct the un-equip item attributes
       emitter.emit('player-unequip', draggingItem.value);
-      return;
-    }
-
-    if (hoveredIndex.value >= 0) {
+    } else if (hoveredIndex.value >= 0) {
       storeItem(draggingItem.value as item);
     } else {
       // TODO - Drop item
       emitter.emit('item-drop', [draggingItem.value]);
     }
+    draggingIndex.value = -1;
   }
 };
 
@@ -245,3 +220,9 @@ defineExpose({
   storeItem,
 });
 </script>
+
+<style lang="scss" scoped>
+.equip {
+  width: fit-content;
+}
+</style>
