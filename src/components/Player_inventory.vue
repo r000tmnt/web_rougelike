@@ -153,7 +153,6 @@ const {
   windowWidth,
   windowHeight,
   dynamicWidth,
-  tileSize,
   borderSize,
 } = storeToRefs(gameStore);
 
@@ -237,7 +236,7 @@ const dragStart = (e: MouseEvent, item: item | object, index: number) => {
 
 const getEmptyIndex = () => {
   const empty = player.value.bag.findIndex(
-    (item: item) => !Object.entries(item).length
+    (item: item) => !item || !Object.entries(item).length
   );
   return empty >= 0 ? empty : player.value.bag.length;
 };
@@ -338,19 +337,21 @@ const onDrop = () => {
   const tempItem = JSON.parse(JSON.stringify(draggingItem.value));
   console.log('tempItem ', tempItem);
 
-  // If the cursor is hover on inventory
-  if (hoveredIndex.value >= 0) {
-    storeItem(tempItem);
-  }
-
-  // If the cursor is hover on equip section
-  if (insideEquip.value) {
-    // TODO - Equip item
-    equipRef.value?.storeItem(tempItem as item);
-    player.value.bag[draggingIndex.value] = {} as item;
-  } else {
-    // TODO - Drop item
-    emitter.emit('item-drop', [tempItem]);
+  switch (true) {
+    // If the cursor is hover on inventory
+    case hoveredIndex.value >= 0:
+      storeItem(tempItem);
+      break;
+    // If the cursor is hover on equip section
+    case insideEquip.value:
+      // Equip item
+      equipRef.value?.storeItem(tempItem as item);
+      player.value.bag[draggingIndex.value] = {} as item;
+      break;
+    // Drop item
+    default:
+      emitter.emit('item-drop', [tempItem]);
+      break;
   }
   draggingIndex.value = -1;
 };

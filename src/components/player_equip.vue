@@ -147,7 +147,7 @@ const dragStart = (e: MouseEvent, part: AllowedEquipType, index: number) => {
 const storeItem = (item: item) => {
   // If the cursor is hover on equip
   // Accept the item
-  switch ((item as item).type) {
+  switch (item.type) {
     case 0:
       checkingEquip(player.value.equip.head as item);
       player.value.equip.head = item;
@@ -178,35 +178,40 @@ const onDrop = () => {
   console.log('On drop');
 
   if (Object.entries(draggingItem.value).length) {
-    // If the cursor is hover on inventory
-    if (props.insideInventory) {
-      emit('passItem', draggingItem.value);
+    switch (true) {
+      // If the cursor is hover on inventory
+      case props.insideInventory:
+        emit('passItem', draggingItem.value);
 
-      switch ((draggingItem.value as item).type) {
-        case 0:
-          player.value.equip.head = {} as item;
-          break;
-        case 1:
-          player.value.equip.body = {} as item;
-          break;
-        case 2:
-          player.value.equip.hand = {} as item;
-          break;
-        case 3:
-          player.value.equip.feet = {} as item;
-          break;
-        case 4:
-          player.value.equip.accessory = {} as item;
-          break;
-      }
+        switch ((draggingItem.value as item).type) {
+          case 0:
+            player.value.equip.head = {} as item;
+            break;
+          case 1:
+            player.value.equip.body = {} as item;
+            break;
+          case 2:
+            player.value.equip.hand = {} as item;
+            break;
+          case 3:
+            player.value.equip.feet = {} as item;
+            break;
+          case 4:
+            player.value.equip.accessory = {} as item;
+            break;
+        }
 
-      // Deduct the un-equip item attributes
-      emitter.emit('player-unequip', draggingItem.value);
-    } else if (hoveredIndex.value >= 0) {
-      storeItem(draggingItem.value as item);
-    } else {
-      // TODO - Drop item
-      emitter.emit('item-drop', [draggingItem.value]);
+        // Deduct the un-equip item attributes
+        emitter.emit('player-unequip', draggingItem.value);
+        break;
+      // If the cursor is hovered on equip section
+      case hoveredIndex.value >= 0:
+        storeItem(draggingItem.value as item);
+        break;
+      // Drop item
+      default:
+        emitter.emit('item-drop', [draggingItem.value]);
+        break;
     }
     draggingIndex.value = -1;
   }
