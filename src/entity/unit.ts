@@ -390,7 +390,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
       const { x, y, data } = this.scene.player;
       // Check if the bag is not full
       const totalItem = data.values.bag.filter(
-        (i: item) => Object.entries(i).length
+        (i: item) => i && Object.entries(i).length
       ).length;
       if (totalItem < data.values.attribute_limit.bag) {
         // Pick up the item
@@ -460,7 +460,7 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
 
         // Check if the same item is in the bag
         const itemsInBag: item[] = data.values.bag.filter(
-          (e: item) => e.id === item.data.values.id
+          (e: item) => e && e.id === item.data.values.id
         );
 
         // Check each item that is the same
