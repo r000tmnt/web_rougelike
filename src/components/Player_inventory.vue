@@ -90,41 +90,25 @@
                   index
                 )
             "
-            @mousemove="onDrag"
-            @mouseup="onDrop"
             @dragover.prevent
           >
-            <label :for="String(index)" v-if="draggingIndex !== index">
+            <label :for="String(index)">
               <!-- {{ index }} -->
-
-              <template v-if="player.bag[index]">
-                <div
-                  class="q-pa-sm"
-                  :data-type="player.bag[index].type"
-                  :style="`font-size:${
-                    Math.floor(windowWidth / 100) * 0.9
-                  }px;pointer-events:none;height:100%;`"
-                >
-                  <Sprite_image :index="player.bag[index].index" />
-                  <div
-                    v-if="player.bag[index].amount > 1"
-                    class="text-right"
-                    style="transform: translate(12%, 140%)"
-                  >
-                    {{ player.bag[index].amount }}
-                  </div>
+              <div
+                v-if="player.bag[index] && draggingIndex !== index"
+                class="q-pa-sm"
+                :data-type="player.bag[index].type"
+                :style="`font-size:${
+                  Math.floor(windowWidth / 100) * 0.9
+                }px;pointer-events:none;height:100%;`"
+              >
+                <Sprite_image :index="player.bag[index].index" />
+                <div class="text-right" style="transform: translate(12%, 140%)">
+                  {{
+                    player.bag[index].amount > 1 ? player.bag[index].amount : ''
+                  }}
                 </div>
-              </template>
-            </label>
-
-            <label :for="String(index)" v-else>
-              <template v-if="player.bag[index]">
-                <Sprite_image
-                  id="draggable"
-                  :index="player.bag[index].index"
-                  :style="`left: ${draggingPosition.x}px; top:${draggingPosition.y}px;`"
-                />
-              </template>
+              </div>
             </label>
           </div>
         </div>
@@ -137,6 +121,17 @@
         :pixelated-border="gameStore.pixelatedBorder(borderSize, -1, 0)"
         :item-data="player.bag[hoveredIndex] || {}"
       />
+
+      <!-- Dragging sprite -->
+      <Teleport to="body">
+        <label for="inventory" v-show="player.bag[draggingIndex]">
+          <Sprite_image
+            ref="draggableSprite"
+            @drag-end="onDrop"
+            :index="player.bag[draggingIndex]?.index || 0"
+          />
+        </label>
+      </Teleport>
     </div>
   </section>
 </template>
@@ -182,10 +177,7 @@ const draggingIndex = ref<number>(-1);
 
 const draggingItem = ref<item | object>({});
 
-const draggingPosition = ref({
-  x: 0,
-  y: 0,
-});
+const draggableSprite = ref();
 
 const insideInventory = ref<boolean>(false);
 
@@ -237,30 +229,38 @@ const useItem = (item: item) => {
 
 const dragStart = (e: MouseEvent, item: item | object, index: number) => {
   console.log('inventory drag start ', e);
+  if (draggableSprite.value) draggableSprite.value.onDrag(e, true);
   // console.log('drag item ', item);
   draggingIndex.value = index;
   draggingItem.value = item;
 };
 
-const onDrag = (e: MouseEvent) => {
-  // console.log('dragging :>>>', e);
-  draggingPosition.value = {
-    x: e.clientX - tileSize.value / 2,
-    y: e.clientY - tileSize.value / 2,
-  };
+const getEmptyIndex = () => {
+  const empty = player.value.bag.findIndex(
+    (item: item) => !Object.entries(item).length
+  );
+  return empty >= 0 ? empty : player.value.bag.length;
 };
 
-const swapeItems = (item1: item, item2: item | null) => {
-  player.value.bag[hoveredIndex.value] = item1;
-  player.value.bag[draggingIndex.value] = item2
-    ? JSON.parse(JSON.stringify(item2))
-    : undefined;
+/**
+ * Move the items inside inventory
+ * @param itemToPlace - The dragging item
+ * @param itemToBeMove - The item which is occupied the space, pass null if not exist
+ */
+const swapeItems = (itemToPlace: item, itemToBeMove: item | null) => {
+  player.value.bag[hoveredIndex.value] = itemToPlace;
+  player.value.bag[draggingIndex.value] = itemToBeMove
+    ? JSON.parse(JSON.stringify(itemToBeMove))
+    : ({} as item);
 };
 
 const appendOrDropItem = (item: item, index: number) => {
   // If the bag is not full
-  if (index >= 0 && index <= player.value.attribute_limit.bag - 1) {
-    swapeItems(item, player.value.bag[index] ? player.value.bag[index] : null);
+  const totalItem = player.value.bag.filter(
+    (i) => Object.entries(i).length
+  ).length;
+  if (totalItem < player.value.attribute_limit.bag) {
+    swapeItems(item, player.value.bag[index] || null);
   } else {
     // TODO - Bag is full, drop item
     emitter.emit('item-drop', [item]);
@@ -274,7 +274,7 @@ const stackOrAppendItem = (item: item) => {
     player.value.bag[hoveredIndex.value].amount = limit;
     item.amount = over;
     // Find space for the remaining item
-    const empty = player.value.bag.findIndex((i) => !i);
+    const empty = getEmptyIndex();
     // Drop the remaining items
     appendOrDropItem(item, empty);
   } else {
@@ -287,26 +287,45 @@ const storeItem = (item: item) => {
 
   // If the room is occupied
   if (player.value.bag[hoveredIndex.value]) {
-    // If the item is not an equipment
-    if (item.type >= 5) {
-      // If the item is stackable
-      if (item.type === player.value.bag[hoveredIndex.value].type) {
-        stackOrAppendItem(item);
+    // If the room is not the same as the dragged item was
+    if (hoveredIndex.value >= 0 && hoveredIndex.value !== draggingIndex.value) {
+      // If the item is not an equipment
+      if (item.type >= 5) {
+        // If the item is stackable
+        if (item.type === player.value.bag[hoveredIndex.value].type) {
+          stackOrAppendItem(item);
+        } else {
+          // Swap the items
+          swapeItems(item, player.value.bag[hoveredIndex.value] as item);
+        }
       } else {
-        // Swap the items
-        swapeItems(item, player.value.bag[hoveredIndex.value]);
-      }
-    } else {
-      // If the item is an equipment
-      // If move items inside inventory
-      if (draggingIndex.value >= 0) {
-        swapeItems(item, player.value.bag[hoveredIndex.value]);
-      } else {
-        // If the item is move from equip section
-        const next = player.value.bag.length;
-        player.value.bag[next] = item;
+        // If the item is an equipment
+        // If move items inside inventory
+        if (draggingIndex.value >= 0) {
+          // swapeItems(item, player.value.bag[hoveredIndex.value]);
+          const itemToSwap = JSON.parse(
+            JSON.stringify(player.value.bag[hoveredIndex.value])
+          );
+
+          // If both are the same type of equipment
+          if (item.type === itemToSwap.type) {
+            appendOrDropItem(item, hoveredIndex.value);
+            equipRef.value?.storeItem(itemToSwap as item);
+          } else {
+            // Move the itemToSwap to a new place
+            // Store the item to the hovered one
+            const empty = getEmptyIndex();
+            appendOrDropItem(itemToSwap, empty);
+            appendOrDropItem(item, hoveredIndex.value);
+          }
+        } else {
+          // If the item is move from equip section
+          const empty = getEmptyIndex();
+          player.value.bag[empty] = item;
+        }
       }
     }
+    // Else, nothing happend. Return the item to where it belongs
   } else {
     // If the bag is not full
     // Bag is full, drop the item
@@ -314,8 +333,8 @@ const storeItem = (item: item) => {
   }
 };
 
-const onDrop = (e: MouseEvent) => {
-  console.log('On drop ', e);
+const onDrop = () => {
+  console.log('On drop');
   const tempItem = JSON.parse(JSON.stringify(draggingItem.value));
   console.log('tempItem ', tempItem);
 
@@ -357,9 +376,3 @@ onMounted(() => {
   gameStore.setBorderSize(Math.floor(dynamicWidth.value / 40));
 });
 </script>
-
-<style scoped lang="scss">
-#draggable {
-  position: absolute;
-}
-</style>
