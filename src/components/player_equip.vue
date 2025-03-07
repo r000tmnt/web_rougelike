@@ -174,6 +174,29 @@ const storeItem = (item: item) => {
   emitter.emit('player-equip', item);
 };
 
+const removeItem = () => {
+  switch ((draggingItem.value as item).type) {
+    case 0:
+      player.value.equip.head = {} as item;
+      break;
+    case 1:
+      player.value.equip.body = {} as item;
+      break;
+    case 2:
+      player.value.equip.hand = {} as item;
+      break;
+    case 3:
+      player.value.equip.feet = {} as item;
+      break;
+    case 4:
+      player.value.equip.accessory = {} as item;
+      break;
+  }
+
+  // Deduct the item attributes
+  emitter.emit('player-unequip', draggingItem.value);
+}
+
 const onDrop = () => {
   console.log('On drop');
 
@@ -182,27 +205,7 @@ const onDrop = () => {
       // If the cursor is hover on inventory
       case props.insideInventory:
         emit('passItem', draggingItem.value);
-
-        switch ((draggingItem.value as item).type) {
-          case 0:
-            player.value.equip.head = {} as item;
-            break;
-          case 1:
-            player.value.equip.body = {} as item;
-            break;
-          case 2:
-            player.value.equip.hand = {} as item;
-            break;
-          case 3:
-            player.value.equip.feet = {} as item;
-            break;
-          case 4:
-            player.value.equip.accessory = {} as item;
-            break;
-        }
-
-        // Deduct the un-equip item attributes
-        emitter.emit('player-unequip', draggingItem.value);
+        removeItem()
         break;
       // If the cursor is hovered on equip section
       case hoveredIndex.value >= 0:
@@ -210,6 +213,7 @@ const onDrop = () => {
         break;
       // Drop item
       default:
+        removeItem()
         emitter.emit('item-drop', [draggingItem.value]);
         break;
     }

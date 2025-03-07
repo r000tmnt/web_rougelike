@@ -246,7 +246,7 @@ const getEmptyIndex = () => {
  * @param itemToPlace - The dragging item
  * @param itemToBeMove - The item which is occupied the space, pass null if not exist
  */
-const swapeItems = (itemToPlace: item, itemToBeMove: item | null) => {
+const swapItems = (itemToPlace: item, itemToBeMove: item | null) => {
   player.value.bag[hoveredIndex.value] = itemToPlace;
   player.value.bag[draggingIndex.value] = itemToBeMove
     ? JSON.parse(JSON.stringify(itemToBeMove))
@@ -259,9 +259,10 @@ const appendOrDropItem = (item: item, index: number) => {
     (i) => Object.entries(i).length
   ).length;
   if (totalItem < player.value.attribute_limit.bag) {
-    swapeItems(item, player.value.bag[index] || null);
+    swapItems(item, player.value.bag[index] || null);
   } else {
-    // TODO - Bag is full, drop item
+    // Bag is full, drop item
+    player.value.bag[draggingIndex.value] = {} as item
     emitter.emit('item-drop', [item]);
   }
 };
@@ -295,13 +296,13 @@ const storeItem = (item: item) => {
           stackOrAppendItem(item);
         } else {
           // Swap the items
-          swapeItems(item, player.value.bag[hoveredIndex.value] as item);
+          swapItems(item, player.value.bag[hoveredIndex.value] as item);
         }
       } else {
         // If the item is an equipment
         // If move items inside inventory
         if (draggingIndex.value >= 0) {
-          // swapeItems(item, player.value.bag[hoveredIndex.value]);
+          // swapItems(item, player.value.bag[hoveredIndex.value]);
           const itemToSwap = JSON.parse(
             JSON.stringify(player.value.bag[hoveredIndex.value])
           );
@@ -350,6 +351,7 @@ const onDrop = () => {
       break;
     // Drop item
     default:
+      player.value.bag[draggingIndex.value] = {} as item
       emitter.emit('item-drop', [tempItem]);
       break;
   }
