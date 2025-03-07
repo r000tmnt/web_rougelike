@@ -2,12 +2,11 @@
   <div
     v-show="index >= 0"
     class="sprite"
-    :style="`background-position: ${spriteStyle}; position: ${spritePosition}; ${draggingStyle}`"
+    :style="`background-position: ${spriteStyle}; ${dragging? draggingStyle : ''}`"
   ></div>
 </template>
 
 <script lang="ts" setup>
-// import { useGameStore } from 'src/stores/game';
 import { computed, ref } from 'vue';
 
 const props = defineProps({
@@ -19,22 +18,19 @@ const props = defineProps({
 
 const emit = defineEmits(['dragEnd']);
 
-const spritePosition = ref<string>('relative');
+const dragging = ref<boolean>(false)
 
 const draggingPosition = ref({
   x: 0,
   y: 0,
 });
 
-const draggingStyle = computed(() =>
-  spritePosition.value === 'absolute'
-    ? `left: ${draggingPosition.value.x}px; top: ${draggingPosition.value.y}px;`
-    : ''
+const draggingStyle = computed(() => `left: ${draggingPosition.value.x}px; top: ${draggingPosition.value.y}px;`
 );
 
 const onDrag = (e: MouseEvent, signal: boolean) => {
-  spritePosition.value = signal ? 'absolute' : 'relative';
   onMove(e);
+  dragging.value = signal
   if (signal) {
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onDrop);
@@ -63,12 +59,15 @@ defineExpose({
 });
 </script>
 
-<style scpoed>
+<style scoped>
 .sprite {
+  position: absolute;
   background-image: url('/assets/demo_item.png');
   width: 24px;
   height: 24px;
   background-size: auto;
-  margin: 0 auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

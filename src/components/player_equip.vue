@@ -19,7 +19,7 @@
       >
         <label :for="value">
           <div
-            class="item"
+            class="item q-pa-sm relative-position"
             :style="`font-size:${itemFontSize}px;width: ${dynamicWidth}px;height: ${dynamicWidth}px; box-shadow: ${pixelatedBorder(
               borderSize,
               index,

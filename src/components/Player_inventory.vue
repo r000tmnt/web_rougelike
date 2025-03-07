@@ -15,7 +15,7 @@
               currentSideView
             )}`"
             @click="currentSideView = 0"
-            >equipt</small
+            >equip</small
           >
           <small
             class="q-pa-sm"
@@ -96,14 +96,14 @@
               <!-- {{ index }} -->
               <div
                 v-if="player.bag[index] && draggingIndex !== index"
-                class="q-pa-sm"
+                class="q-pa-sm relative-position"
                 :data-type="player.bag[index].type"
                 :style="`font-size:${
                   Math.floor(windowWidth / 100) * 0.9
                 }px;pointer-events:none;height:100%;`"
               >
                 <Sprite_image :index="player.bag[index].index" />
-                <div class="text-right" style="transform: translate(12%, 140%)">
+                <div class="text-right" style="transform: translate(12%, 260%)">
                   {{
                     player.bag[index].amount > 1 ? player.bag[index].amount : ''
                   }}
@@ -124,7 +124,7 @@
 
       <!-- Dragging sprite -->
       <Teleport to="body">
-        <label for="inventory" v-show="player.bag[draggingIndex]">
+        <label for="inventory" v-show="player.bag[draggingIndex] && Object.entries(player.bag[draggingIndex]).length">
           <Sprite_image
             ref="draggableSprite"
             @drag-end="onDrop"
@@ -256,7 +256,7 @@ const swapItems = (itemToPlace: item, itemToBeMove: item | null) => {
 const appendOrDropItem = (item: item, index: number) => {
   // If the bag is not full
   const totalItem = player.value.bag.filter(
-    (i) => Object.entries(i).length
+    (i) =>  i && Object.entries(i).length
   ).length;
   if (totalItem < player.value.attribute_limit.bag) {
     swapItems(item, player.value.bag[index] || null);
