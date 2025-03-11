@@ -12,7 +12,6 @@ import { PhaserNavMeshPlugin } from 'phaser-navmesh';
 import phaserJuice from '../lib/phaserJuice.min.js';
 import { resetParams } from 'src/model/dungeon.js';
 import { enemy, player } from 'src/model/character.js';
-import { item } from 'src/model/item.js';
 
 export default class Dungeon extends Scene {
   content: DungeonGenerator | null;
@@ -30,7 +29,7 @@ export default class Dungeon extends Scene {
   doorTouching: number;
   droppedItems: { group: number; value: Phaser.GameObjects.Sprite[] }[];
   itemIndex: number[];
-  enemies: Skeleton[];
+  enemies: Phaser.Physics.Arcade.Group;
   enemyContact: number;
   limitWidth: number;
   limitHeight: number;
@@ -56,7 +55,7 @@ export default class Dungeon extends Scene {
     this.camera = null;
     this.player = null;
     this.playerIdleCount = 0;
-    this.enemies = [];
+    this.enemies = {} as Phaser.Physics.Arcade.Group;
     this.offsetX = 0;
     this.offsetY = 0;
     this.cursor = null;
@@ -69,8 +68,6 @@ export default class Dungeon extends Scene {
     this.limitHeight = 0;
     this.raycaster = null;
     this.eventsToRemove = [
-      'chase-countdown-start',
-      'chase-countdown-calling',
       'player-update',
       'player-equip',
       'player-unequip',
@@ -552,6 +549,8 @@ export default class Dungeon extends Scene {
   }
 
   #setEnemy(tileSize: number, gameStore: any) {
+    this.enemies = this.physics.add.group();
+
     // Set enemies
     if (this.content && this.player && this.groundLayer && this.raycaster) {
       const enemyPosition = this.content.enemyPositions[this.content.roomIndex];
@@ -593,7 +592,7 @@ export default class Dungeon extends Scene {
           console.log('new enemy data :>>>', enemy.data.values);
           // enemy.updateData(newEnemyData);
 
-          this.enemies.push(enemy);
+          this.enemies.add(enemy);
         }
       } else {
         // Create enemy from stored data
@@ -614,7 +613,7 @@ export default class Dungeon extends Scene {
               tileSize,
               this.navMesh
             );
-            this.enemies.push(enemy);
+            this.enemies.add(enemy);
           }
           console.log('stored enemy data :>>>', storedEnemy[i]);
         }
@@ -639,13 +638,20 @@ export default class Dungeon extends Scene {
 
   #setCollision(room: number[][], gameStore: any) {
     // Add collision to each other
-    this.enemies.forEach((enemy, i) => {
-      this.player?.addOverlap(enemy);
-      this.player?.addCollision(enemy, this.player?.onCollide);
-      const others = this.enemies.filter((e, n) => n !== i);
-
-      others.forEach((o) => enemy.addOverlap(o));
+    this.player?.addCollision(this.enemies, this.player?.onCollide);
+    this.enemies.children.iterate((e: any) => {
+      this.player?.addOverlap(e);
+      return true;
     });
+    this.physics.add.overlap(
+      this.enemies,
+      this.enemies,
+      (enemy1: any, enemy2: any) => {
+        // TODO - Not sure what to do when enemy overlap with each other. Apply buff if any?
+        console.log('enemy1 :>>>', enemy1);
+        console.log('enemy2 :>>>', enemy2);
+      }
+    );
 
     // Enable zone
     // create overlap
@@ -673,10 +679,7 @@ export default class Dungeon extends Scene {
       // Keep enemies if any
       this.#storeEnemyData(gameStore);
       // Destory ray
-      this.enemies.forEach((e) => {
-        e.destroy();
-        e.ray?.destroy();
-      });
+      this.enemies.destroy(true);
       // Remove mapped objects
       this.raycaster?.removeMappedObjects(this.groundLayer);
       // destroy raycaster
@@ -694,7 +697,7 @@ export default class Dungeon extends Scene {
       this.offsetX = 0;
       this.offsetY = 0;
       // Clear enemy array
-      this.enemies.splice(0);
+      // this.enemies.splice(0);
       // Disable key input event
       if (this.input.keyboard) this.input.keyboard.enabled = false;
 
@@ -748,7 +751,7 @@ export default class Dungeon extends Scene {
     if (this.content) {
       const copy: enemy[] = [];
 
-      this.enemies.forEach((e) => {
+      this.enemies.children.iterate((e: any) => {
         if (e.data.values.total_attribute.hp > 0) {
           // Update position
           e.data.values.position = {
@@ -758,6 +761,7 @@ export default class Dungeon extends Scene {
 
           copy.push(JSON.parse(JSON.stringify(e.data.values)));
         }
+        return true;
       });
 
       gameStore.storeEnemyIntheRoom(copy, this.content.roomIndex);
