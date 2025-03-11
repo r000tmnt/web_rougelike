@@ -126,6 +126,12 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  /**
+   *
+   * @param dmg - The number to subtract from hp
+   * @param isPlayer - If the player is taking damage
+   * @param self - The one who do cause the damage
+   */
   takeDamage(dmg: number, isPlayer: boolean, self: any) {
     const gameStore = useGameStore();
     this.status = 'hit';
