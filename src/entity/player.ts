@@ -165,9 +165,6 @@ export default class Player extends unit {
 
   #setCustomEvent() {
     const gameStore = useGameStore();
-    gameStore.emitter.on('chase-countdown-calling', () => {
-      gameStore.emitter.emit('chase-countdown-start', this);
-    });
 
     gameStore.emitter.on('player-level-up', () => {
       try {
@@ -237,7 +234,7 @@ export default class Player extends unit {
 
   addOverlap(target: any) {
     this.scene.physics.add.overlap(this.zone, target, () => {
-      // console.log('overlap with ', target);
+      console.log('zone overlap with :>>>', target);
       this.overlap = true;
 
       if (!this.target.find((t) => t.name === target.name))
@@ -444,13 +441,8 @@ export default class Player extends unit {
       if (this.overlap) {
         // console.log('zoon overlap with the enemy');
         this.target.forEach((t) => {
-          const enemyIndex = Number(t.name.split('_')[1]);
-
-          if (
-            this.scene.enemies[enemyIndex] &&
-            this.scene.enemies[enemyIndex].data.values.total_attribute.hp > 0
-          ) {
-            this.attack(this.scene.enemies[enemyIndex], true);
+          if (t.data.values.total_attribute.hp > 0) {
+            this.attack(t, true);
           }
         });
       } else {
