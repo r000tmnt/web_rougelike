@@ -1,11 +1,12 @@
 import { enemy } from 'src/model/character';
 import { Animations } from 'phaser';
-import { getDirection, getPosition } from 'src/utils/path';
+import { getDirection } from 'src/utils/path';
 import { gainExp } from 'src/utils/battle';
 import unit from './unit';
 import { addTexture, setAnimation } from 'src/utils/asset';
 import { useGameStore } from 'src/stores/game';
 import Dungeon from 'src/scene/dungeon';
+import Player from './player';
 
 export default class Skeleton extends unit {
   index: number;
@@ -146,7 +147,7 @@ export default class Skeleton extends unit {
     // Clear current path if exist
     if (this.path && this.path.length) this.path = null;
 
-    if (this.status !== 'dead')
+    if (this.status !== 'dead' && this.status !== 'hit')
       // Get a new path
       this.#GetPath();
   }
@@ -163,15 +164,6 @@ export default class Skeleton extends unit {
       this.#animationComplete,
       this
     );
-
-    const gameStore = useGameStore();
-
-    gameStore.emitter.on(
-      'chase-countdown-start',
-      (player: Phaser.Types.Physics.ArcadeWithDynamicBody) => {
-        this.#markPlayerInSight(player);
-      }
-    );
   }
 
   enemyLose() {
@@ -181,8 +173,6 @@ export default class Skeleton extends unit {
     if (this.path) this.path = null;
     this.target = null;
     this.disableBody();
-    // this.scene.removeEnemyIntheRoom(this.index);
-    // this.scene.events.off('update', this.#update);
 
     // Drop items
     if (this.data.values.bag.length) {
@@ -236,17 +226,14 @@ export default class Skeleton extends unit {
   #update(time: number, delta: number) {
     if (this.ray?.body) {
       if (this.status === 'hit') {
-        // TODO: Play get hit animation
-        this.scene.time.delayedCall(200, () => {
-          this.status = '';
-        });
+        // DO NOTHING, play the animation
       } else if (this.status === 'dead') {
         // DO NOTHING, just stay dead
       } else {
-        if (this.scene.player) {
+        if (this.scene && Object.hasOwn(this.scene, 'player')) {
           this.overlap = this.scene.physics.overlap(
             this.zone,
-            this.scene.player
+            this.scene.player as Player
           );
         }
 
@@ -271,7 +258,7 @@ export default class Skeleton extends unit {
   }
 
   getRandomDirection() {
-    if (!this.inSight && this.ray) {
+    if (!this.inSight && this.ray && this.data) {
       // Define a range of pixels to move
       const half = this.tileSize / 2;
       const defaultBorder = this.tileSize * this.data.values.total_attribute.vd;
