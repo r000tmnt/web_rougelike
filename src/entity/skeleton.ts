@@ -106,6 +106,7 @@ export default class Skeleton extends unit {
     this.scene.events.on('update', this.#update, this);
 
     this.on('destroy', () => {
+      this.ray?.destroy();
       this.scene.events.off('update', this.#update);
     });
 
