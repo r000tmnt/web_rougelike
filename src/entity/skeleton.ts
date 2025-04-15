@@ -243,18 +243,17 @@ export default class Skeleton extends unit {
           this.inSight = false;
           if (this.data.values.phase !== 'searching') {
             this.data.values.phase = 'searching';
-            // If the enemy can't catch the player within 500 ms, give up the chase.
-            this.scene.time.addEvent({
-              delay: 500, //ms
-              callback: () => {
+            // If the enemy can't catch the player within 10s, give up the chase.
+            this.scene.time.delayedCall(
+              10000, //ms
+              () => {
                 if (!this.inSight) {
                   this.target = null;
+                  this.data.values.phase = 'roaming';
                   this.#stopMoving();
                 }
-              },
-              callbackScope: this,
-              loop: false,
-            });
+              }
+            );
             // Get the last known position of the player
             this.markPlayerInSight(this.scene.player);
           }
@@ -315,8 +314,7 @@ export default class Skeleton extends unit {
       // Get the angle between the enemy and the player or the angle of moving direction
       const radian =
         this.data.values.phase === 'aggro' ||
-        this.data.values.phase === 'chasing' ||
-        this.data.values.phase === 'searching'
+        this.data.values.phase === 'chasing'
           ? Phaser.Math.Angle.BetweenPoints(this, this.scene.player)
           : Math.atan2(this.body.velocity.y, this.body.velocity.x);
 
