@@ -127,7 +127,7 @@ export default class Skeleton extends unit {
     this.zone = this.scene.add.zone(
       this.flipX ? this.x + this.tileSize : this.x,
       this.y,
-      5,
+      this.tileSize,
       this.tileSize
     );
     this.zone.setOrigin(0, 0);
@@ -331,40 +331,32 @@ export default class Skeleton extends unit {
       switch (facingDirection) {
         case 0: // up
           this.zone.setPosition(this.x, this.y - 5);
-          this.zone.setDisplaySize(this.tileSize, 5);
           break;
         case 1: // up right
           this.zone.setPosition(this.x + 5, this.y - 5);
-          this.zone.setDisplaySize(this.tileSize, 5);
           this.setFlipX(true);
           break;
         case 2: // right
-          this.zone.setPosition(this.x + this.tileSize, this.y);
-          this.zone.setDisplaySize(5, this.tileSize);
+          this.zone.setPosition(this.x + 5, this.y - 5);
           this.setFlipX(true);
           break;
         case 3: // right down
-          this.zone.setPosition(this.x + 5, this.y + this.tileSize);
-          this.zone.setDisplaySize(this.tileSize, 5);
+          this.zone.setPosition(this.x + 5, this.y + 5);
           this.setFlipX(true);
           break;
         case 4: // down
-          this.zone.setPosition(this.x, this.y + this.tileSize);
-          this.zone.setDisplaySize(this.tileSize, 5);
+          this.zone.setPosition(this.x, this.y + 5);
           break;
         case 5: // left down
-          this.zone.setPosition(this.x, this.y + this.tileSize);
-          this.zone.setDisplaySize(this.tileSize, 5);
+          this.zone.setPosition(this.x - 5, this.y + 5);
           this.setFlipX(false);
           break;
         case 6: // left
-          this.zone.setPosition(this.x, this.y);
-          this.zone.setDisplaySize(5, this.tileSize);
+          this.zone.setPosition(this.x - 5, this.y);
           this.setFlipX(false);
           break;
         case 7: // left up
-          this.zone.setPosition(this.x, this.y + 5);
-          this.zone.setDisplaySize(this.tileSize, 5);
+          this.zone.setPosition(this.x - 5, this.y + 5);
           this.setFlipX(false);
           break;
       }
