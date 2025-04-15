@@ -6,7 +6,7 @@
 
       <ul class="text-h4">
         <li @click="restart">Try again</li>
-        <li @click="closeGame">Rest</li>
+        <li @click="closeGame">END</li>
       </ul>
     </div>
   </section>
