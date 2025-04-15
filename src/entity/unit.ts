@@ -208,15 +208,21 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
   prepareDropItems() {
     const rates: number[] = this.data.values.bag.map((d: item) => {
       switch (d.rarity) {
-        case 0:
+        case 0: // common
           return 0.7;
-        case 1:
-          return 0.2;
-        case 2:
+        case 1: // advance
+          return 0.5;
+        case 2: // rare
+          if (this.data.values.elite) return 0.14;
+          if (this.data.values.boss) return 0.28;
           return 0.07;
-        case 3:
+        case 3: // unique
+          if (this.data.values.elite) return 0.06;
+          if (this.data.values.boss) return 0.12;
           return 0.03;
-        case 4:
+        case 4: // legendary
+          if (this.data.values.elite) return 0.02;
+          if (this.data.values.boss) return 0.04;
           return 0.01;
         default:
           return 0.5;
