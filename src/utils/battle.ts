@@ -44,6 +44,10 @@ export const setInitialStatus = (
   data.lv = randomlv;
   const over = randomlv - 1;
 
+  if (boss) data.boss = true;
+
+  if (elite) data.elite = true;
+
   for (const [key, value] of Object.entries(data.base_attribute)) {
     for (let i = 0; i < over; i++) {
       if (key !== 'vd')
