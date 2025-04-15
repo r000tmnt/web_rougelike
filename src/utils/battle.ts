@@ -27,7 +27,20 @@ export const levelUp = (data: player) => {
   return data;
 };
 
-export const setInitialStatus = (data: enemy, randomlv: number) => {
+/**
+ * Set the initial status of the enemy
+ * @param data - The object representing the enemy base status
+ * @param randomlv - The level of the enemy
+ * @param boss - If the enemy is a boss
+ * @param elite - If the enemy is an elite
+ * @returns
+ */
+export const setInitialStatus = (
+  data: enemy,
+  randomlv: number,
+  boss: boolean,
+  elite: boolean
+) => {
   data.lv = randomlv;
   const over = randomlv - 1;
 
@@ -36,6 +49,16 @@ export const setInitialStatus = (data: enemy, randomlv: number) => {
       if (key !== 'vd')
         data.base_attribute[key as keyof base_attribute] +=
           playerGrows[Math.floor(Math.random() * playerGrows.length)];
+
+      if (boss) {
+        // If the enemy is a boss
+        data.base_attribute[key as keyof base_attribute] += 3;
+      }
+
+      if (elite) {
+        // if the enemy is an elite
+        data.base_attribute[key as keyof base_attribute] += 1;
+      }
     }
   }
   return data;
