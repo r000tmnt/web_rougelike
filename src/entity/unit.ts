@@ -194,7 +194,11 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         this.status = '';
         this.anims.play(`${name}_idle`);
         this.keys['mouseLeft'] = 0;
-        if (!isPlayer && !self.inSight) self.getRandomDirection();
+        // if (!isPlayer) {
+        //   // if (!self.inSight) self.getRandomDirection();
+        //   // else
+        //   self.markPlayerInSight();
+        // }
       });
     }
 
@@ -268,21 +272,13 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         endY = defaultLimit;
 
       blockedTiles.forEach((tile) => {
-        if (tile[0] < x) {
-          startX = 0;
-        }
+        startX = tile[0] < x ? 0 : -this.tileSize;
 
-        if (tile[0] > x) {
-          endX = this.tileSize;
-        }
+        endX = tile[0] > x ? this.tileSize : 0;
 
-        if (tile[1] < y) {
-          startY = 0;
-        }
+        startY = tile[1] < y ? 0 : -this.tileSize;
 
-        if (tile[1] > y) {
-          endY = this.tileSize;
-        }
+        endY = tile[1] > y ? this.tileSize : 0;
       });
 
       const dropX = this.x + Phaser.Math.Between(startX, endX);
