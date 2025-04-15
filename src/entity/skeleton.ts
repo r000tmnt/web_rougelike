@@ -15,7 +15,6 @@ export default class Skeleton extends unit {
   step: number;
   target: any;
   collidedTarget: any;
-  idleTimer: NodeJS.Timeout | null;
   ray: Raycaster.Ray | null;
   navMesh: any;
   path: any;
@@ -45,7 +44,6 @@ export default class Skeleton extends unit {
     this.collidedTarget = null;
     this.ray = null;
     this.facingAngle = 0;
-    this.idleTimer = null;
     // this.data.values.phase = 'roaming'; // roaming, searching, aggro
     this.step = 0;
     this.navMesh = navMesh;
@@ -138,7 +136,7 @@ export default class Skeleton extends unit {
     this.addOverlap(player);
   }
 
-  #markPlayerInSight(target: Phaser.Types.Physics.ArcadeWithDynamicBody) {
+  markPlayerInSight(target: Phaser.Types.Physics.ArcadeWithDynamicBody) {
     const gameStore = useGameStore();
     const half = gameStore.tileSize / 2;
     this.target = {
@@ -211,8 +209,9 @@ export default class Skeleton extends unit {
          * What to do with game objects in line of sight.
          */
         // console.log('rayFoVCircle :>>>', rayFoVCircle);
+        // console.log('overlap with ray :>>>', target);
         if (player.data.values.total_attribute.hp > 0) {
-          this.#markPlayerInSight(target);
+          this.markPlayerInSight(target);
           this.inSight = true;
           this.data.values.phase = 'chasing';
         }
@@ -227,7 +226,7 @@ export default class Skeleton extends unit {
   #update(time: number, delta: number) {
     if (this.ray?.body) {
       if (this.status === 'hit') {
-        // DO NOTHING, play the animation
+        // TODO - Need to decide if the enemy ignore the attack (ex. Protected by energy shield)
       } else if (this.status === 'dead') {
         // DO NOTHING, just stay dead
       } else {
@@ -242,9 +241,23 @@ export default class Skeleton extends unit {
         if (!this.ray?.body.embedded && this.inSight) {
           console.log(`${this.name} lost the player`);
           this.inSight = false;
-          this.data.values.phase = 'searching';
-          // Get the last known position of the player
-          this.#markPlayerInSight(this.scene.player);
+          if (this.data.values.phase !== 'searching') {
+            this.data.values.phase = 'searching';
+            // If the enemy can't catch the player within 500 ms, give up the chase.
+            this.scene.time.addEvent({
+              delay: 500, //ms
+              callback: () => {
+                if (!this.inSight) {
+                  this.target = null;
+                  this.#stopMoving();
+                }
+              },
+              callbackScope: this,
+              loop: false,
+            });
+            // Get the last known position of the player
+            this.markPlayerInSight(this.scene.player);
+          }
         } else {
           if (this.target) {
             this.#alterRayAngle();
@@ -417,7 +430,7 @@ export default class Skeleton extends unit {
   #moveToTarget(target: Phaser.Geom.Point) {
     this.#alterRayAngle();
     const half = this.tileSize / 2;
-    if (this.status !== 'dead') {
+    if (this.status !== 'dead' && target) {
       const distance = Phaser.Math.Distance.Between(
         this.x + half,
         this.y + half,
@@ -430,7 +443,7 @@ export default class Skeleton extends unit {
         if (this.overlap) {
           // Attack
           if (this.scene.player.active) {
-            if (!this.keys['mouseLeft'] || this.keys['mouseLeft'] === 0) {
+            if (!this.keys['mouseLeft']) {
               console.log('enemy attack!');
               this.keys['mouseLeft'] = 1;
               this.data.values.phase = 'aggro';
@@ -438,6 +451,11 @@ export default class Skeleton extends unit {
               this.body?.setVelocity(0);
               this.#alterRayAngle();
               this.anims.play('enemy_attack', true);
+              this.scene.time.delayedCall(750, () => {
+                // release key
+                this.keys['mouseLeft'] = 0;
+              });
+              return;
             }
             return;
           }
@@ -482,7 +500,6 @@ export default class Skeleton extends unit {
       if (!this.inSight) {
         // Starting moving again
         setTimeout(() => {
-          this.idleTimer = null;
           if (this.status !== 'dead') this.getRandomDirection();
         }, 2000);
       }
@@ -528,7 +545,7 @@ export default class Skeleton extends unit {
       if (target.name && target.name.includes('player')) {
         if (this.data.values.phase !== 'chasing') {
           this.data.values.phase = 'chasing';
-          this.#markPlayerInSight(target);
+          this.markPlayerInSight(target);
         }
       } else {
         if (this.shouldAvoid(target)) {
@@ -569,10 +586,6 @@ export default class Skeleton extends unit {
     ) {
       this.body?.setVelocity(0);
       this.anims.play('enemy_idle');
-      this.scene.time.delayedCall(500, () => {
-        // release key
-        this.keys['mouseLeft'] = 0;
-      });
     }
   }
 }
