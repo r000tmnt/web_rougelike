@@ -565,13 +565,34 @@ export default class Dungeon extends Scene {
 
         console.log('levelRange :>>>', levelRange);
 
+        let bossIndex = -1;
+        const eliteIndex = [];
+
+        // If this is the last room of the level
+        if (this.content.clearedRoom.length === this.content.level.length - 1) {
+          // Set one of the enemy to be the BOSS
+          bossIndex = Math.floor(Math.random() * enemyPosition.length);
+        } else {
+          // Decide how many elite enemy in the room
+          const eliteCount = Math.floor(enemyPosition.length / 3);
+          if (eliteCount > 0)
+            for (let i = 0; i < eliteCount; i++) {
+              eliteIndex.push(Math.floor(Math.random() * enemyPosition.length));
+            }
+        }
+
         for (let i = 0; i < enemyPosition.length; i++) {
           const randomLv =
             levelRange[Math.floor(Math.random() * levelRange.length)];
 
           let newEnemyData = JSON.parse(JSON.stringify(skeleton));
 
-          newEnemyData = setInitialStatus(newEnemyData, randomLv);
+          newEnemyData = setInitialStatus(
+            newEnemyData,
+            randomLv,
+            bossIndex === i,
+            eliteIndex.find((e) => e === i) ? true : false
+          );
 
           const enemyX = enemyPosition[i].x * tileSize;
           const enemyY = enemyPosition[i].y * tileSize;
