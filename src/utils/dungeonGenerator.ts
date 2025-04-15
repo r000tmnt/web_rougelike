@@ -213,8 +213,6 @@ export default class DungeonGenerator {
   }
 
   #digTunnels(room: number[][], width: number, height: number) {
-    // console.log('room :>>>', this.level[i]);
-
     let randomDirection: number[] = [];
     let randomLength = 0;
     let radomWidth = 0;
@@ -537,9 +535,6 @@ export default class DungeonGenerator {
           }
           break;
       }
-      this.#setEnemyPosition(walkables);
-
-      // this.ready = true;
     } else {
       const lastRow = walkables.length - 1;
 
@@ -608,9 +603,8 @@ export default class DungeonGenerator {
           ];
           break;
       }
-
-      this.#setEnemyPosition(walkables);
     }
+    this.#setEnemyPosition(walkables);
   }
 
   #setEnemyPosition(walkables: mapBorder[]) {
