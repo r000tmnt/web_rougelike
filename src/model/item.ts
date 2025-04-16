@@ -52,12 +52,13 @@ export interface item {
   id: string;
   name: string;
   type: number;
+  subType?: number;
   rarity: number;
-  desc: string;
-  modifier: string;
+  desc?: string;
+  modifier?: string;
   equip?: boolean;
   effect?: modifier;
-  amount: number;
+  qty: number;
   limit: number; // The number of the item can be stack up
   index?: number; // Path of the image
 }
