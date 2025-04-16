@@ -104,9 +104,7 @@
               >
                 <Sprite_image :index="player.bag[index].index" />
                 <div class="text-right" style="transform: translate(12%, 260%)">
-                  {{
-                    player.bag[index].amount > 1 ? player.bag[index].amount : ''
-                  }}
+                  {{ player.bag[index].qty > 1 ? player.bag[index].qty : '' }}
                 </div>
               </div>
             </label>
@@ -124,7 +122,13 @@
 
       <!-- Dragging sprite -->
       <Teleport to="body">
-        <label for="inventory" v-show="player.bag[draggingIndex] && Object.entries(player.bag[draggingIndex]).length">
+        <label
+          for="inventory"
+          v-show="
+            player.bag[draggingIndex] &&
+            Object.entries(player.bag[draggingIndex]).length
+          "
+        >
           <Sprite_image
             ref="draggableSprite"
             @drag-end="onDrop"
@@ -256,29 +260,29 @@ const swapItems = (itemToPlace: item, itemToBeMove: item | null) => {
 const appendOrDropItem = (item: item, index: number) => {
   // If the bag is not full
   const totalItem = player.value.bag.filter(
-    (i) =>  i && Object.entries(i).length
+    (i) => i && Object.entries(i).length
   ).length;
   if (totalItem < player.value.attribute_limit.bag) {
     swapItems(item, player.value.bag[index] || null);
   } else {
     // Bag is full, drop item
-    player.value.bag[draggingIndex.value] = {} as item
+    player.value.bag[draggingIndex.value] = {} as item;
     emitter.emit('item-drop', [item]);
   }
 };
 
 const stackOrAppendItem = (item: item) => {
-  const { amount, limit } = player.value.bag[hoveredIndex.value];
-  if (amount + item.amount > limit) {
-    const over = item.amount - (limit - amount);
-    player.value.bag[hoveredIndex.value].amount = limit;
-    item.amount = over;
+  const { qty, limit } = player.value.bag[hoveredIndex.value];
+  if (qty + item.qty > limit) {
+    const over = item.qty - (limit - qty);
+    player.value.bag[hoveredIndex.value].qty = limit;
+    item.qty = over;
     // Find space for the remaining item
     const empty = getEmptyIndex();
     // Drop the remaining items
     appendOrDropItem(item, empty);
   } else {
-    player.value.bag[hoveredIndex.value].amount += item.amount;
+    player.value.bag[hoveredIndex.value].qty += item.qty;
   }
 };
 
@@ -351,7 +355,7 @@ const onDrop = () => {
       break;
     // Drop item
     default:
-      player.value.bag[draggingIndex.value] = {} as item
+      player.value.bag[draggingIndex.value] = {} as item;
       emitter.emit('item-drop', [tempItem]);
       break;
   }
