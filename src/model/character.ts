@@ -30,7 +30,7 @@ interface unit {
   attribute_limit: Record<AllowedAttributeLimits, number>;
 }
 
-type equipType = Record<AllowedEquipType, item | object>;
+type equipType = Record<AllowedEquipType, item | object | string>;
 
 export type player = unit & {
   equip: equipType;
@@ -50,7 +50,7 @@ export type enemy = unit & {
   phase: string;
   elite: boolean;
   boss: boolean;
-  bag: Array<item>;
+  bag: Array<string>;
   pattern: string;
   base_attribute: {
     vd: number; // view distant
