@@ -475,8 +475,8 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
         let isInTheBag = false;
         for (let i = 0; i < itemsInBag.length; i++) {
           // If the item is not full
-          if (itemsInBag[i].amount < itemsInBag[i].limit) {
-            itemsInBag[i].amount += 1;
+          if (itemsInBag[i].qty < itemsInBag[i].limit) {
+            itemsInBag[i].qty += 1;
             isInTheBag = true;
             break;
           }
