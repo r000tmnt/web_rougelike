@@ -1,0 +1,20 @@
+[
+  {
+    "id": "hand_01",
+    "name": "Wooden sword",
+    "rarity": 0,
+    "type": 2,
+    "modifier": "",
+    "qty": 1,
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "desc": "Used for practice mostly",
+    "effect": {
+      "str": {
+        "type": 0,
+        "value": 5
+      }
+    }
+  }
+]

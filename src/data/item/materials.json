@@ -1,0 +1,38 @@
+[
+  {
+    "id": "material_01",
+    "name": "Bone",
+    "rarity": 0,
+    "type": 6,
+    "modifier": "",
+    "qty": 1,
+    "limit": 99,
+    "index": 0,
+    "desc": "The remain of already dead. Can be use as projectile.",
+    "equip": false,
+    "effect": {
+      "hp": {
+        "type": 2,
+        "value": 1
+      }
+    }
+  },
+  {
+    "id": "material_02",
+    "name": "Rotten meat",
+    "rarity": 0,
+    "type": 6,
+    "modifier": "",
+    "qty": 1,
+    "limit": 99,
+    "index": 0,
+    "desc": "The remain of already dead. Not something eatable.",
+    "equip": false,
+    "effect": {
+      "hp": {
+        "type": 4,
+        "value": 1
+      }
+    }
+  }
+]

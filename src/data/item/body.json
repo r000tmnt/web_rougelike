@@ -1,0 +1,24 @@
+[
+  {
+    "id": "body_01",
+    "name": "Traveler's tunic",
+    "rarity": 0,
+    "type": 1,
+    "modifier": "",
+    "qty": 1,
+    "desc": "Simple outfit with a few pockets",
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "effect": {
+      "def": {
+        "type": 0,
+        "value": 2
+      },
+      "bag": {
+        "type": 0,
+        "value": 5
+      }
+    }
+  }
+]

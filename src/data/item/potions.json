@@ -1,0 +1,20 @@
+[
+  {
+    "id": "potion_01",
+    "name": "Tonic",
+    "rarity": 0,
+    "type": 6,
+    "modifier": "The kind of drink that comes with bitter taste.",
+    "qty": 1,
+    "limit": 99,
+    "index": 0,
+    "desc": "",
+    "equip": false,
+    "effect": {
+      "hp": {
+        "type": 1,
+        "value": 10
+      }
+    }
+  }
+]

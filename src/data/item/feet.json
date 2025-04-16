@@ -1,0 +1,20 @@
+[
+  {
+    "id": "feet_01",
+    "name": "Leather boots",
+    "rarity": 0,
+    "type": 3,
+    "modifier": "",
+    "qty": 1,
+    "index": 0,
+    "limit": 1,
+    "desc": "Good to protect the wearer's feet",
+    "equip": true,
+    "effect": {
+      "def": {
+        "type": 0,
+        "value": 1
+      }
+    }
+  }
+]

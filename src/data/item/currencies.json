@@ -1,0 +1,29 @@
+[
+  {
+    "id": "currency_01",
+    "name": "Bronze coin",
+    "rarity": 0,
+    "type": 5,
+    "qty": 1,
+    "limit": 5000,
+    "index": 0
+  },
+  {
+    "id": "currency_02",
+    "name": "Silver coin",
+    "rarity": 1,
+    "type": 5,
+    "qty": 1,
+    "limit": 5000,
+    "index": 0
+  },
+  {
+    "id": "currency_03",
+    "name": "Gold coin",
+    "rarity": 2,
+    "type": 5,
+    "qty": 1,
+    "limit": 5000,
+    "index": 0
+  }
+]
