@@ -49,52 +49,7 @@ export default {
     pd: 0.25,
     vd: 3,
   },
-  bag: [
-    {
-      id: 'm01',
-      name: 'Bone',
-      rarity: 0,
-      type: 6,
-      modifier: '',
-      amount: 1,
-      limit: 99,
-      index: 0,
-      desc: 'The remain of already dead. Can be use as projectile.',
-      equip: false,
-      effect: {
-        hp: {
-          type: 2,
-          value: 1,
-        },
-      },
-    },
-    {
-      id: 'c01',
-      name: 'Gold',
-      rarity: 0,
-      type: 5,
-      amount: 1,
-      limit: 5000,
-      index: 0,
-    },
-    {
-      id: 's01',
-      name: 'The silent song',
-      rarity: 0,
-      type: 7,
-      modifier: '',
-      amount: 1,
-      limit: 5,
-      index: 2,
-      desc: 'Lesser enemies in the next room.',
-      effect: {
-        enemy: {
-          type: 2,
-          value: 2,
-        },
-      },
-    },
-  ],
+  bag: ['material_01', 'currency_01', 'card_01'], // Id of items
   pattern: '',
   position: {
     x: 0,
