@@ -1,0 +1,149 @@
+[
+  {
+    "name": "Refined",
+    "minRarity": 3,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "all": {
+        "type": 1,
+        "value": 10
+      }
+    }
+  },
+  {
+    "name": "Crystalize",
+    "minRarity": 4,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory", "card"],
+    "scale": {
+      "level": 0.3
+    },
+    "effect": {
+      "all": {
+        "type": 1,
+        "value": 15
+      }
+    }
+  },
+  {
+    "name": "Insightful",
+    "minRarity": 1,
+    "tag": ["potion", "head", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "int": {
+        "type": 0,
+        "value": 5
+      }
+    }
+  },
+  {
+    "name": "Magical",
+    "minRarity": 1,
+    "tag": ["potion", "head", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "mp": {
+        "type": 0,
+        "value": 3
+      }
+    }
+  },
+  {
+    "name": "Shine",
+    "minRarity": 1,
+    "tag": ["potion", "accessory"],
+    "scale": {
+      "level": 0.2,
+      "limit": 4
+    },
+    "effect": {
+      "vd": {
+        "type": 1,
+        "value": 1
+      }
+    }
+  },
+  {
+    "name": "Glooming",
+    "minRarity": 1,
+    "tag": ["potion", "accessory"],
+    "scale": {
+      "level": 0.2,
+      "limit": 4
+    },
+    "effect": {
+      "vd": {
+        "type": 2,
+        "value": 1
+      }
+    }
+  },
+  {
+    "name": "Compact",
+    "minRarity": 1,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "atk": {
+        "type": 0,
+        "value": 1
+      },
+      "def": {
+        "type": 0,
+        "value": 3
+      }
+    }
+  },
+  {
+    "name": "Impact",
+    "minRarity": 1,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "atk": {
+        "type": 1,
+        "value": 2
+      },
+      "def": {
+        "type": 1,
+        "value": 3
+      }
+    }
+  },
+  {
+    "name": "Rusty",
+    "minRarity": 1,
+    "tag": ["head", "body", "hand", "feet", "accessory"],
+    "effect": {
+      "def": {
+        "type": 0,
+        "value": 2
+      },
+      "spd": {
+        "type": 2,
+        "value": 1
+      }
+    }
+  },
+  {
+    "name": "Mirrored",
+    "minRarity": 2,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory", "card"],
+    "effect": {
+      "reverse": {
+        "type": 0
+      }
+    }
+  }
+]

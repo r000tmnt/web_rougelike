@@ -1,0 +1,176 @@
+[
+  {
+    "name": "of solar flame",
+    "minRarity": 4,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory"],
+    "scale": {
+      "level": 0.25
+    },
+    "effect": {
+      "hp": {
+        "type": 1,
+        "value": 10
+      },
+      "str": {
+        "type": 1,
+        "value": 5
+      },
+      "def": {
+        "type": 1,
+        "value": 7
+      },
+      "luck": {},
+      "resist": {
+        "froze": {},
+        "poison": {}
+      }
+    }
+  },
+  {
+    "name": "of stary light",
+    "minRarity": 1,
+    "tag": ["potion", "head", "body", "hand", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "mp": {
+        "type": 0,
+        "value": 10
+      }
+    }
+  },
+  {
+    "name": "with grace",
+    "minRarity": 2,
+    "tag": ["potion", "head", "body", "feet", "hand", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "int": {
+        "type": 1,
+        "value": 2
+      },
+      "spd": {
+        "type": 1,
+        "value": 3
+      }
+    }
+  },
+  {
+    "name": "of endurance",
+    "minRarity": 2,
+    "tag": ["potion", "head", "body", "feet", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "def": {
+        "type": 1,
+        "value": 3
+      },
+      "resist": {
+        "type": 0,
+        "value": 1
+      }
+    }
+  },
+  {
+    "name": "from the sky",
+    "minRarity": 2,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory", "card"],
+    "scale": {
+      "level": 0.3
+    },
+    "effect": {
+      "spd": {
+        "type": 1,
+        "value": 3
+      },
+      "luck": {
+        "type": 1,
+        "value": 1
+      }
+    }
+  },
+  {
+    "name": "from the underworld",
+    "minRarity": 2,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory", "card"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "str": {
+        "type": 1,
+        "value": 3
+      },
+      "def": {
+        "type": 1,
+        "value": 1
+      }
+    }
+  },
+  {
+    "name": "Compact",
+    "minRarity": 1,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "atk": {
+        "type": 0,
+        "value": 1
+      },
+      "def": {
+        "type": 0,
+        "value": 3
+      }
+    }
+  },
+  {
+    "name": "Impact",
+    "minRarity": 1,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory"],
+    "scale": {
+      "level": 0.2
+    },
+    "effect": {
+      "atk": {
+        "type": 1,
+        "value": 2
+      },
+      "def": {
+        "type": 1,
+        "value": 3
+      }
+    }
+  },
+  {
+    "name": "Rusty",
+    "minRarity": 1,
+    "tag": ["head", "body", "hand", "feet", "accessory"],
+    "effect": {
+      "def": {
+        "type": 0,
+        "value": 2
+      },
+      "spd": {
+        "type": 2,
+        "value": 1
+      }
+    }
+  },
+  {
+    "name": "Mirrored",
+    "minRarity": 2,
+    "tag": ["potion", "head", "body", "hand", "feet", "accessory", "card"],
+    "effect": {
+      "reverse": {
+        "type": 0
+      }
+    }
+  }
+]
