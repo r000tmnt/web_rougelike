@@ -4,6 +4,7 @@ import Dungeon from 'src/scene/dungeon';
 import { useGameStore } from 'src/stores/game';
 import { calculateDamage } from 'src/utils/battle';
 import { getPosition } from 'src/utils/path';
+import { getItemData } from 'src/utils/item';
 
 export default class unit extends Phaser.Physics.Arcade.Sprite {
   scene: Dungeon;
@@ -229,13 +230,17 @@ export default class unit extends Phaser.Physics.Arcade.Sprite {
       }
     });
 
+    // Base data of items
+    const itemData = this.data.values.bag.map((id: string) => getItemData(id));
+
     const dropItems: item[] = [];
 
     const random = Math.random();
 
     rates.forEach((rate: number, index: number) => {
       if (random < rate) {
-        dropItems.push(JSON.parse(JSON.stringify(this.data.values.bag[index])));
+        // TODO - Set prefix or suffix
+        dropItems.push(JSON.parse(JSON.stringify(itemData[index])));
       }
     });
 

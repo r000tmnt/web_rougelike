@@ -6,6 +6,7 @@ import { item } from 'src/model/item';
 import unit from './unit';
 import { addTexture, setAnimation } from 'src/utils/asset';
 import Dungeon from 'src/scene/dungeon';
+import { getItemData } from 'src/utils/item';
 
 export default class Player extends unit {
   target: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
@@ -114,13 +115,10 @@ export default class Player extends unit {
       // Check if there's equipment to count
       if ('equip' in this.data.values && this.data.values.equip) {
         Object.entries(this.data.values.equip).forEach((e) => {
-          if (
-            e[1] &&
-            typeof e[1] === 'object' &&
-            'id' in e[1] &&
-            'name' in e[1]
-          ) {
-            this.modifyEquip(e[1] as item, 'equip');
+          // Get item data
+          const itemData = getItemData(String(e[1]));
+          if (itemData) {
+            this.modifyEquip(itemData, 'equip');
           }
         });
       }
