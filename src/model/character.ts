@@ -19,14 +19,28 @@ export interface base_attribute {
   luck: number;
 }
 
+export interface resistance {
+  fire: number;
+  ice: number;
+  wind: number;
+  light: number;
+  dark: number;
+  poison: number;
+  numb: number;
+  sleep: number;
+}
+
 interface unit {
   lv: number;
   class: string;
   name: string;
   status: string;
   base_attribute: base_attribute;
+  res: resistance;
   add_attribute: base_attribute;
+  add_res: resistance;
   total_attribute: base_attribute;
+  total_res: resistance;
   attribute_limit: Record<AllowedAttributeLimits, number>;
 }
 

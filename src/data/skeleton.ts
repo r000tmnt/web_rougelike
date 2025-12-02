@@ -21,6 +21,16 @@ export default {
     bag: 0,
     exp: 0,
   },
+  res: {
+    fire: 0,
+    ice: 0,
+    wind: 0,
+    light: 0,
+    dark: 0,
+    poison: 0,
+    numb: 0,
+    sleep: 0,
+  },
   add_attribute: {
     hp: 0,
     mp: 0,
@@ -29,7 +39,16 @@ export default {
     int: 0,
     spd: 0,
     luck: 0,
-    vd: 0,
+  },
+  add_res: {
+    fire: 0,
+    ice: 0,
+    wind: 0,
+    light: 0,
+    dark: 0,
+    poison: 0,
+    numb: 0,
+    sleep: 0,
   },
   total_attribute: {
     hp: 0,
@@ -39,7 +58,16 @@ export default {
     int: 0,
     spd: 0,
     luck: 0,
-    vd: 0,
+  },
+  total_res: {
+    fire: 0,
+    ice: 0,
+    wind: 0,
+    light: 0,
+    dark: 0,
+    poison: 0,
+    numb: 0,
+    sleep: 0,
   },
   attribute_limit: {
     hp: 5,
@@ -49,7 +77,7 @@ export default {
     pd: 0.25,
     vd: 3,
   },
-  bag: ['material_01', 'currency_01', 'card_01'], // Id of items
+  bag: ['material_01', 'currency_01'], // Id of items
   pattern: '',
   position: {
     x: 0,
