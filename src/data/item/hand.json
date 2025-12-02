@@ -9,11 +9,47 @@
     "equip": true,
     "index": 0,
     "limit": 1,
-    "desc": "Used for practice mostly",
+    "desc": "Used for practice mostly.",
     "effect": {
       "str": {
         "type": 0,
         "value": 5
+      }
+    }
+  },
+  {
+    "id": "hand_02",
+    "name": "Compact dagger",
+    "rarity": 0,
+    "type": 2,
+    "modifier": "",
+    "qty": 1,
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "desc": "A knife that is easy to use and carry.",
+    "effect": {
+      "str": {
+        "type": 0,
+        "value": 2
+      }
+    }
+  },
+  {
+    "id": "hand_03",
+    "name": "Lite axe",
+    "rarity": 0,
+    "type": 2,
+    "modifier": "A beginer friendly axe.",
+    "qty": 1,
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "desc": "",
+    "effect": {
+      "str": {
+        "type": 0,
+        "value": 7
       }
     }
   }

@@ -20,5 +20,45 @@
         "value": 5
       }
     }
+  },
+  {
+    "id": "body_02",
+    "name": "White upper garment",
+    "rarity": 0,
+    "type": 1,
+    "modifier": "",
+    "qty": 1,
+    "desc": "A cloth without sleeves for easier arms movement.",
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "effect": {
+      "def": {
+        "type": 0,
+        "value": 2
+      },
+      "spd": {
+        "type": 0,
+        "value": 1
+      }
+    }
+  },
+  {
+    "id": "body_03",
+    "name": "Cloak",
+    "rarity": 0,
+    "type": 1,
+    "modifier": "",
+    "qty": 1,
+    "desc": "Something nice to keep you warm.",
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "effect": {
+      "def": {
+        "type": 0,
+        "value": 3
+      }
+    }
   }
 ]

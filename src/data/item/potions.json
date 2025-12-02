@@ -4,7 +4,7 @@
     "name": "Tonic",
     "rarity": 0,
     "type": 6,
-    "modifier": "The kind of drink that comes with bitter taste.",
+    "modifier": "The kind of drink that makes you feel better.",
     "qty": 1,
     "limit": 99,
     "index": 0,
@@ -14,6 +14,46 @@
       "hp": {
         "type": 1,
         "value": 10
+      }
+    }
+  },
+  {
+    "id": "potion_02",
+    "name": "Syrup",
+    "rarity": 0,
+    "type": 6,
+    "modifier": "Too sweet to drink without water.",
+    "qty": 1,
+    "limit": 99,
+    "index": 0,
+    "desc": "",
+    "equip": false,
+    "effect": {
+      "mp": {
+        "type": 1,
+        "value": 10
+      }
+    }
+  },
+  {
+    "id": "potion_03",
+    "name": "Mixed capsule",
+    "rarity": 1,
+    "type": 6,
+    "modifier": "It comes with a bitter taste.",
+    "qty": 1,
+    "limit": 99,
+    "index": 0,
+    "desc": "",
+    "equip": false,
+    "effect": {
+      "hp": {
+        "type": 1,
+        "value": 15
+      },
+      "mp": {
+        "type": 1,
+        "value": 15
       }
     }
   }

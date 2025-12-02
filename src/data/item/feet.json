@@ -16,5 +16,23 @@
         "value": 1
       }
     }
+  },
+  {
+    "id": "feet_02",
+    "name": "Sandal",
+    "rarity": 0,
+    "type": 3,
+    "modifier": "",
+    "qty": 1,
+    "index": 0,
+    "limit": 1,
+    "desc": "Simple and easy to ware.",
+    "equip": true,
+    "effect": {
+      "spd": {
+        "type": 0,
+        "value": 2
+      }
+    }
   }
 ]

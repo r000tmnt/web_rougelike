@@ -34,5 +34,23 @@
         "value": 1
       }
     }
+  },
+  {
+    "id": "material_03",
+    "name": "Spectral dust",
+    "rarity": 0,
+    "type": 6,
+    "modifier": "Out of nothingness.",
+    "qty": 1,
+    "limit": 99,
+    "index": 0,
+    "desc": "",
+    "equip": false,
+    "effect": {
+      "mp": {
+        "type": 2,
+        "value": 3
+      }
+    }
   }
 ]

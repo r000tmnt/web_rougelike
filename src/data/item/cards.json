@@ -6,13 +6,110 @@
     "type": 7,
     "modifier": "",
     "qty": 1,
-    "limit": 5,
+    "limit": 1,
     "index": 2,
     "desc": "Lesser enemies in the next room.",
     "effect": {
       "enemy": {
         "type": 2,
         "value": 2
+      }
+    }
+  },
+  {
+    "id": "card_02",
+    "name": "A moment of peace",
+    "rarity": 0,
+    "type": 7,
+    "modifier": "",
+    "qty": 1,
+    "limit": 1,
+    "index": 2,
+    "desc": "The next room becomes a save point.",
+    "effect": null
+  },
+  {
+    "id": "card_03",
+    "name": "Call of action",
+    "rarity": 0,
+    "type": 7,
+    "modifier": "",
+    "qty": 1,
+    "limit": 1,
+    "index": 2,
+    "desc": "Opponents are more agile to deal with.",
+    "effect": {
+      "enemy_spd": {
+        "type": 0,
+        "value": 5
+      }
+    }
+  },
+  {
+    "id": "card_04",
+    "name": "I come prepared",
+    "rarity": 0,
+    "type": 7,
+    "modifier": "",
+    "qty": 1,
+    "limit": 1,
+    "index": 2,
+    "desc": "Skill level + 1 (If any) for the next room.",
+    "effect": {
+      "skill_lv": {
+        "type": 0,
+        "value": 1
+      }
+    }
+  },
+  {
+    "id": "card_05",
+    "name": "They just keep coming",
+    "rarity": 0,
+    "type": 7,
+    "modifier": "",
+    "qty": 1,
+    "limit": 1,
+    "index": 2,
+    "desc": "More enemies in the next room.",
+    "effect": {
+      "enemy": {
+        "type": 0,
+        "value": 5
+      }
+    }
+  },
+  {
+    "id": "card_06",
+    "name": "Gold fever",
+    "rarity": 2,
+    "type": 7,
+    "modifier": "",
+    "qty": 1,
+    "limit": 1,
+    "index": 2,
+    "desc": "Time to make money.",
+    "effect": {
+      "coin": {
+        "type": 1,
+        "value": 5
+      }
+    }
+  },
+  {
+    "id": "card_07",
+    "name": "Lighting in the bottle",
+    "rarity": 2,
+    "type": 7,
+    "modifier": "",
+    "qty": 1,
+    "limit": 1,
+    "index": 2,
+    "desc": "You feel the magic in the air.",
+    "effect": {
+      "element": {
+        "type": 1,
+        "value": 5
       }
     }
   }

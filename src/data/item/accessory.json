@@ -1,5 +1,38 @@
 [
   {
-    "//": "Base data of accessory goes here..."
+    "id": "accessory_01",
+    "name": "Bone ring",
+    "rarity": 0,
+    "type": 1,
+    "modifier": "",
+    "qty": 1,
+    "desc": "Better not going to find out where the bone came from.",
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "effect": {
+      "darkRes": {
+        "type": 0,
+        "value": 3
+      }
+    }
+  },
+  {
+    "id": "accessory_02",
+    "name": "Dreaded necklace",
+    "rarity": 0,
+    "type": 1,
+    "modifier": "",
+    "qty": 1,
+    "desc": "It makes you look like a lunatic.",
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "effect": {
+      "spd": {
+        "type": 1,
+        "value": 3
+      }
+    }
   }
 ]

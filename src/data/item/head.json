@@ -1,5 +1,20 @@
 [
   {
-    "//": "Head Gears base data..."
+    "id": "head_01",
+    "name": "Pale mask",
+    "rarity": 0,
+    "type": 1,
+    "modifier": "",
+    "qty": 1,
+    "desc": "Wear this if you are going to scare people.",
+    "equip": true,
+    "index": 0,
+    "limit": 1,
+    "effect": {
+      "def": {
+        "type": 0,
+        "value": 3
+      }
+    }
   }
 ]
