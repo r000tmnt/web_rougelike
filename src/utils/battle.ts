@@ -50,18 +50,23 @@ export const setInitialStatus = (
 
   for (const [key, value] of Object.entries(data.base_attribute)) {
     for (let i = 0; i < over; i++) {
-      if (key !== 'vd')
+      if (key !== 'vd') {
         data.base_attribute[key as keyof base_attribute] +=
           playerGrows[Math.floor(Math.random() * playerGrows.length)];
 
-      if (boss) {
-        // If the enemy is a boss
-        data.base_attribute[key as keyof base_attribute] += 3;
-      }
+        if (boss) {
+          // If the enemy is a boss
+          data.base_attribute[key as keyof base_attribute] += Math.floor(
+            data.base_attribute[key as keyof base_attribute] * 0.7
+          );
+        }
 
-      if (elite) {
-        // if the enemy is an elite
-        data.base_attribute[key as keyof base_attribute] += 1;
+        if (elite) {
+          // if the enemy is an elite
+          data.base_attribute[key as keyof base_attribute] += Math.floor(
+            data.base_attribute[key as keyof base_attribute] * 0.5
+          );
+        }
       }
     }
   }

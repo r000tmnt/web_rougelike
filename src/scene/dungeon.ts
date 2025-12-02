@@ -574,11 +574,10 @@ export default class Dungeon extends Scene {
           bossIndex = Math.floor(Math.random() * enemyPosition.length);
         } else {
           // Decide how many elite enemy in the room
-          const eliteCount = Math.floor(enemyPosition.length / 3);
-          if (eliteCount > 0)
-            for (let i = 0; i < eliteCount; i++) {
-              eliteIndex.push(Math.floor(Math.random() * enemyPosition.length));
-            }
+          const eliteCount = Math.floor(Math.random() * enemyPosition.length);
+          for (let i = 0; i < eliteCount; i++) {
+            eliteIndex.push(Math.floor(Math.random() * enemyPosition.length));
+          }
         }
 
         for (let i = 0; i < enemyPosition.length; i++) {

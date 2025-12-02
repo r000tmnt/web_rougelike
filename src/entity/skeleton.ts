@@ -179,6 +179,8 @@ export default class Skeleton extends unit {
     }
 
     gainExp(this.data.values as enemy);
+
+    // TODO - If no more enemy in the room. Drop the card (min: 1, max: <doors>)
   }
 
   #setRay(raycaster: Raycaster, x: number, y: number, player: any) {
