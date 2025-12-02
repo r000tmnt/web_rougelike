@@ -21,9 +21,9 @@ export default {
     3: 'Unique',
   },
   effect: {
-    0: 'Increase in solide',
+    0: 'Increase in solid',
     1: 'Increase in percentage',
-    2: 'Decrease in soilde',
+    2: 'Decrease in solid',
     3: 'Decrease in percentage',
   },
 };
